@@ -443,11 +443,28 @@
     }
     
     function createFuturesMarketTakeProfitOrder ($orders) {
+      
+      foreach ($orders as $i => $order) {
+        
+        $orders[$i]['side'] = ($this->isLong () ? self::SELL : self::BUY);
+        
+      }
+      
       return $this->createFuturesTypeOrder ($orders, 'TAKE_PROFIT', 'TAKE_PROFIT_MARKET', __FUNCTION__);
+      
     }
     
     function createFuturesMarketStopOrder ($orders) {
+      
+      foreach ($orders as $i => $order) {
+        
+        $orders[$i]['price_type'] = 'MARK_PRICE';
+        $orders[$i]['side'] = ($this->isLong () ? self::SELL : self::BUY);
+        
+      }
+      
       return $this->createFuturesTypeOrder ($orders, 'STOP', 'STOP_MARKET', __FUNCTION__);
+      
     }
     
     protected function createFuturesTypeOrder ($orders, $type1, $type2, $func) {
@@ -499,12 +516,18 @@
         'side' => $order['side'],
         'quantity' => $this->amount ($order['quantity']),
         'callbackRate' => $order['rate'],
+        'priceProtect' => 'TRUE',
+        'workingType' => 'MARK_PRICE',
+        'side' => ($this->isLong () ? self::SELL : self::BUY),
         'reduceOnly' => 'true',
         
       ];
       
       if (isset ($order['price']))
         $request->params['activationPrice'] = $this->price ($order['price']);
+      
+      if (isset ($order['name']))
+        $request->params['newClientOrderId'] = $order['name'];
       
       $request->market = Request::FUTURES;
       $request->method = Request::POST;
