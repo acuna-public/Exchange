@@ -114,16 +114,20 @@
         $this->liquid = (100 / $this->leverage);
         $this->notional = ($this->margin * $this->leverage);
         
+        $this->quantity = $this->getQuantity ($this->markPrice);
+        
         if ($this->entryPrice <= 0)
           $this->entryPrice = $this->getEntryPrice ();
         
-        $this->quantity = $this->getQuantity ($this->markPrice);
-        
-        $this->pnl = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
-        
-        $this->roe = $this->getROE ($this->pnl);
-        
-        $this->futuresFees = $this->getFuturesFee ();
+        if ($this->entryPrice > 0) {
+          
+          $this->pnl = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
+          
+          $this->roe = $this->getROE ($this->pnl);
+          
+          $this->futuresFees = $this->getFuturesFee ();
+          
+        }
         
         return true;
         
