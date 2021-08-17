@@ -33,11 +33,11 @@
     
     protected $userKey, $futuresKey;
     
-    function __construct ($timeOffset = -1) {
+    function __construct ($creds) {
       
-      parent::__construct ([]);
+      parent::__construct ($creds);
       
-      $this->timeOffset = $timeOffset;
+      $this->timeOffset = -1;
       
       if ($this->timeOffset < 0) {
         
@@ -783,9 +783,9 @@
         }
         
         $options[CURLOPT_PROXY] = $proxy;
-        $options[CURLOPT_PROXYTYPE] = CURLPROXY_SOCKS5;
+        //$options[CURLOPT_PROXYTYPE] = CURLPROXY_SOCKS5;
         
-      }
+      } else $proxy = '';
       
       curl_setopt_array ($ch, $options);
       
@@ -794,21 +794,23 @@
       
       $this->binance->queryNum++;
       
+      $options[CURLOPT_SSL_CIPHER_LIST] = 'TLSv1';
+      
       if ($error = curl_error ($ch))
-        throw new \ExchangeConnectException ($error, curl_errno ($ch), $this->func, $this->order);
+        throw new \ExchangeConnectException ($error, curl_errno ($ch), $this->func, $proxy, $this->order);
       elseif (in_array ($info['http_code'], $this->errorCodes))
-        throw new \ExchangeException ($options[CURLOPT_URL].' '.http_get_message ($info['http_code']), $info['http_code'], $this->func, $this->order);
+        throw new \ExchangeException ($options[CURLOPT_URL].' '.http_get_message ($info['http_code']), $info['http_code'], $this->func, $proxy, $this->order);
       
       $data = json_decode ($data, true);
       
       curl_close ($ch);
       
       if (isset ($data[0]['msg']) or (isset ($data[0]['code']) and $data[0]['code'] == 400))
-        throw new \ExchangeException ($data[0]['msg'], $data[0]['code'], $this->func, $this->order); // Типа ошибка
+        throw new \ExchangeException ($data[0]['msg'], $data[0]['code'], $this->func, $proxy, $this->order); // Типа ошибка
       elseif (isset ($data['msg']) and !isset ($data['code']))
-        throw new \ExchangeException ($data['msg'], 0, $this->func, $this->order);
+        throw new \ExchangeException ($data['msg'], 0, $this->func, $proxy, $this->order);
       elseif (isset ($data['msg']) and $data['code'] != 200)
-        throw new \ExchangeException ($data['msg'], $data['code'], $this->func, $this->order);
+        throw new \ExchangeException ($data['msg'], $data['code'], $this->func, $proxy, $this->order);
       
       return $data;
       
