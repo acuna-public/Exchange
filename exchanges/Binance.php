@@ -33,13 +33,11 @@
     
     protected $userKey, $futuresKey;
     
-    function __construct ($creds) {
+    function setCredentials ($cred) {
       
-      parent::__construct ($creds);
+      parent::setCredentials ($cred);
       
-      $this->timeOffset = -1;
-      
-      if ($this->timeOffset < 0) {
+      if ($this->timeOffset == null) {
         
         $request = $this->getRequest (__FUNCTION__);
         
@@ -742,7 +740,7 @@
       
       if ($this->params and $this->method != self::POST)
         $path .= '?'.http_build_query ($this->params);
-      
+      //echo ($url.'/'.$path."\n");
       $options = [
         
         CURLOPT_URL => $url.'/'.$path,

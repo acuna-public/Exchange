@@ -12,6 +12,7 @@
       $qtyPercent = 100,
       $debug = 0,
       $entryPrice = 0,
+      $testBalance = 0,
       $market = true;
     
     public
@@ -108,6 +109,11 @@
         
         if ($this->leverage <= 0)
           $this->leverage = $this->getLeverage ();
+        
+        if ($this->testBalance > 0)
+          $this->futuresBalance = $this->testBalance;
+        elseif ($this->futuresBalance <= 0)
+          $this->futuresBalance = $this->getFuturesBalance ($cur2);
         
         $this->margin = (($this->futuresBalance * $this->qtyPercent) / 100);
         
