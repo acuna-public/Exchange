@@ -764,7 +764,7 @@
       elseif ($this->method != self::GET)
         $options[CURLOPT_CUSTOMREQUEST] = $this->method;
       
-      $options[CURLOPT_HTTPHEADER] = [];
+      $options[CURLOPT_HTTPHEADER] = ['Connection: keep-alive'];
       
       if ($this->signed)
         $options[CURLOPT_HTTPHEADER][] = 'X-MBX-APIKEY: '.$this->binance->cred['key'];
@@ -783,7 +783,7 @@
         }
         
         $options[CURLOPT_PROXY] = $proxy;
-        //$options[CURLOPT_PROXYTYPE] = CURLPROXY_SOCKS5;
+        $options[CURLOPT_PROXYTYPE] = CURLPROXY_SOCKS5;
         
       } else $proxy = '';
       
