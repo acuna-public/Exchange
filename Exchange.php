@@ -1,7 +1,6 @@
 <?php
   
   require 'ExchangeException.php';
-  require 'ExchangeConnectException.php';
   
   require 'WebSocketException.php';
   require 'WebSocket.php';
@@ -11,9 +10,9 @@
     public
       $qtyPercent = 100,
       $debug = 0,
-      $entryPrice = 0,
-      $testBalance = 0,
-      $market = true;
+      $entryPrice = 0, // Только для расчета PNL
+      $market = true,
+      $ignoreErrors = [];
     
     public
       $futuresBalance = -1,
@@ -34,7 +33,7 @@
     
     public $side = self::LONG, $marginType = self::ISOLATED, $leverage = 0, $margin = 0;
     
-    const LONG = 'LONG', SHORT = 'SHORT', ISOLATED = 'ISOLATED', BUY = 'BUY', SELL = 'SELL', MAKER = 'MAKER', TAKER = 'TAKER';
+    const LONG = 'LONG', SHORT = 'SHORT', ISOLATED = 'ISOLATED', CROSS = 'CROSS', BUY = 'BUY', SELL = 'SELL', MAKER = 'MAKER', TAKER = 'TAKER';
     
     protected $balances = [], $futuresBalances = [];
     
@@ -81,7 +80,7 @@
       
     }
     
-    abstract function getCharts ($cur1, $cur2);
+    abstract function getCharts ($cur1, $cur2, $interval);
     abstract function getBalances ();
     
     function getFuturesBalances () {
@@ -102,47 +101,37 @@
       
       $this->markPrice = $this->getMarkPrice ();
       
-      if ($this->markPrice > 0) {
-        
-        if ($this->qtyPercent >= 100)
-          $this->qtyPercent = 95;
-        
-        if ($this->leverage <= 0)
-          $this->leverage = $this->getLeverage ();
-        
-        if ($this->testBalance > 0)
-          $this->futuresBalance = $this->testBalance;
-        elseif ($this->futuresBalance <= 0)
-          $this->futuresBalance = $this->getFuturesBalance ($cur2);
-        
-        $this->margin = (($this->futuresBalance * $this->qtyPercent) / 100);
-        
-        $this->liquid = (100 / $this->leverage);
-        $this->notional = ($this->margin * $this->leverage);
-        
-        $this->quantity = $this->getQuantity ($this->markPrice);
-        
-        if ($this->entryPrice <= 0)
-          $this->entryPrice = $this->getEntryPrice ();
-        
-        if ($this->entryPrice > 0) {
-          
-          $this->pnl = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
-          
-          $this->roe = $this->getROE ($this->pnl);
-          
-          $this->futuresFees = $this->getFuturesFee ();
-          
-        }
-        
-        return true;
-        
-      } else return false;
+      if ($this->markPrice == 0)
+        $this->markPrice = $this->getFuturesPrices ($cur1, $cur2)['index_price'];
       
-    }
-    
-    function getROE ($pnl) {
-      return ($this->margin > 0 ? (($pnl * 100) / $this->margin) : 0);
+      if ($this->qtyPercent >= 100)
+        $this->qtyPercent = 95;
+      
+      if ($this->leverage <= 0)
+        $this->leverage = $this->getLeverage ();
+      
+      if ($this->futuresBalance <= 0)
+        $this->futuresBalance = $this->getFuturesBalance ($cur2);
+      
+      $this->margin = (($this->futuresBalance * $this->qtyPercent) / 100);
+      
+      $this->liquid = (100 / $this->leverage);
+      $this->notional = ($this->margin * $this->leverage);
+      
+      $this->quantity = $this->getQuantity ($this->markPrice);
+      
+      if ($this->entryPrice <= 0)
+        $this->entryPrice = $this->getEntryPrice ();
+      
+      if ($this->entryPrice <= 0)
+        $this->entryPrice = $this->markPrice;
+      
+      $this->pnl = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
+      
+      $this->roe = $this->getROE ($this->pnl);
+      
+      $this->futuresFees = $this->getFuturesFee ();
+      
     }
     
     function getFee ($type) {
@@ -193,6 +182,10 @@
       return ($entry > 0 ? ($this->getProfit ($entry, $exit) * $quantity) : 0);
     }
     
+    function getROE ($pnl) {
+      return ($this->margin > 0 ? (($pnl * 100) / $this->margin) : 0);
+    }
+    
     function getProfit ($entry, $exit) {
       
       if ($this->isLong ())
@@ -231,12 +224,12 @@
       
     }
     
-    function longShortRatio ($cur1, $cur2) {
+    function longShortRatio ($cur1, $cur2, $period) {
       throw new \Exception ('Long/Short Ratio not implemented');
     }
     
     function setFuturesLeverage ($cur1, $cur2, $leverage) {}
-    function setMarginType ($cur1, $cur2) {}
+    function setFuturesMarginType ($cur1, $cur2, $type) {}
     
     function getFuturesPositions ($cur1, $cur2) {}
     
@@ -252,6 +245,7 @@
     
     function getTrades ($cur1, $cur2) {}
     function getExchangeInfo () {}
+    function getFuturesExchangeInfo () {}
     function getFuturesOpenOrders ($cur1, $cur2) {}
     function createFuturesOrder ($orders) {}
     function openFuturesMarketPosition ($order) {}
@@ -274,5 +268,8 @@
     function getAccountStatus () {
       return '';
     }
+    
+    function getFuturesCurrencyPairs ($cur2 = '') {}
+    function getBrackets ($cur1 = '', $cur2 = '') {}
     
   }

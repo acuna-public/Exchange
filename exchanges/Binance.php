@@ -4,6 +4,13 @@
   
   class Binance extends \Exchange {
     
+    public $ignoreErrors = [
+      
+      -2021,
+      -4046,
+      
+    ];
+    
     public $days = ['1m' => 1, '5m' => 2, '30m' => 10, '1h' => 20, '2h' => 499, '4h' => 120, '1d' => 1], $ratios = ['2h' => [1.2, 1.8]];
     public $limit = 120;
     
@@ -29,6 +36,8 @@
       
     ];
     
+    public $amount = 3, $precision = 2;
+    
     public $interval = '1m', $timeOffset;
     
     protected $userKey, $futuresKey;
@@ -43,7 +52,7 @@
         
         $request->signed = false;
         
-        $data = $request->connect ('v3/time');
+        $data = $request->connect ('api/v3/time');
         
         if (isset ($data['serverTime']))
           $this->timeOffset = ($data['serverTime'] - (microtime (true) * 1000));
@@ -56,16 +65,16 @@
       return $cur1.$cur2;
     }
     
-    function getCharts ($cur1, $cur2) {
+    function getCharts ($cur1, $cur2, $interval) {
       
-      $summary = ['first_close' => 0, 'last_close' => 0, 'last_high' => 0, 'charts' => []];
+      $summary = [];
       
       $request = $this->getRequest (__FUNCTION__);
       
       $request->params = [
         
         'symbol' => $this->pair ($cur1, $cur2),
-        'interval' => $this->interval,
+        'interval' => $interval,
         //'limit' => $this->limit,
         
       ];
@@ -73,25 +82,16 @@
       $request->signed = false;
       $request->debug = 0;
       
-      foreach ($request->connect ('v3/klines') as $i => $value) {
-        
-        if ($i == 0) $summary['first_close'] = $value[4];
-        
-        $summary['charts'][] = [
+      foreach ($request->connect ('api/v3/klines') as $value)
+        $summary[] = [
           
           'date' => ($value[0] / 1000),
           'low' => $value[3],
           'high' => $value[2],
-          'open' => $value[1],
-          'close' => $value[4],
+          'open' => $value[1], // Покупка
+          'close' => $value[4], // Продажа
           
         ];
-        
-      }
-      
-      $summary['last_close'] = $value[4]; // Продажа
-      $summary['last_high'] = $value[2]; // Покупка
-      $summary['last_open'] = $value[1];
       
       return $summary;
       
@@ -100,7 +100,7 @@
     function getBalances () {
       
       if (!$this->balances)
-        foreach ($this->request ('v3/account')['balances'] as $data)
+        foreach ($this->request ('api/v3/account')['balances'] as $data)
           $this->balances[$data['asset']] = $data['free'];
       
       return $this->balances;
@@ -124,7 +124,7 @@
       
       $request->method = Request::POST;
       
-      return $request->connect ('v3/order');
+      return $request->connect ('api/v3/order');
       
     }
     
@@ -143,7 +143,7 @@
       
       $request->method = Request::POST;
       
-      return $request->connect ('v3/order');
+      return $request->connect ('api/v3/order');
       
     }
     
@@ -157,7 +157,7 @@
         
       ];
       
-      $data = $request->connect ('v3/allOrders');
+      $data = $request->connect ('api/v3/allOrders');
       
       $output = [];
       
@@ -191,12 +191,12 @@
         
       ];
       
-      return $this->orderData ($request->connect ('v3/order'));
+      return $this->orderData ($request->connect ('api/v3/order'));
       
     }
     
     function getHolds ($id) {
-      return $this->request ('v3/balances/'.$id.'/holds');
+      return $this->request ('api/v3/balances/'.$id.'/holds');
     }
     
     function getFuturesBalances () {
@@ -205,7 +205,7 @@
       
       $request->market = Request::FUTURES;
       
-      foreach ($request->connect ('v2/balance') as $data)
+      foreach ($request->connect ('fapi/v2/balance') as $data)
         $this->futuresBalances[$data['asset']] = $data['availableBalance'];
       
       return $this->futuresBalances;
@@ -226,25 +226,25 @@
       $request->method = Request::POST;
       $request->market = Request::FUTURES;
       
-      return $request->connect ('v1/leverage');
+      return $request->connect ('fapi/v1/leverage');
       
     }
     
-    function setMarginType ($cur1, $cur2) {
+    function setFuturesMarginType ($cur1, $cur2, $type) {
       
       $request = $this->getRequest (__FUNCTION__);
       
       $request->params = [
         
         'symbol' => $this->pair ($cur1, $cur2),
-        'marginType' => $this->marginType,
+        'marginType' => $type,
         
       ];
       
       $request->method = Request::POST;
       $request->market = Request::FUTURES;
       
-      return $request->connect ('v1/marginType');
+      return $request->connect ('fapi/v1/marginType');
       
     }
     
@@ -260,7 +260,7 @@
       
       $request->market = Request::FUTURES;
       
-      return $request->connect ('v2/positionRisk');
+      return $request->connect ('fapi/v2/positionRisk');
       
     }
     
@@ -270,7 +270,7 @@
       
       $request->method = Request::POST;
       
-      $data = $request->connect ('v3/userDataStream');
+      $data = $request->connect ('api/v3/userDataStream');
       $this->userKey = $data['listenKey'];
       
     }
@@ -287,7 +287,7 @@
       
       $request->method = Request::PUT;
       
-      return $request->connect ('v3/userDataStream');
+      return $request->connect ('api/v3/userDataStream');
       
     }
     
@@ -316,7 +316,7 @@
       $request->method = Request::POST;
       $request->market = Request::FUTURES;
       
-      $data = $request->connect ('v1/listenKey');
+      $data = $request->connect ('fapi/v1/listenKey');
       $this->futuresKey = $data['listenKey'];
       
     }
@@ -349,14 +349,45 @@
       
       $request->market = Request::FUTURES;
       
-      return $request->connect ('v1/userTrades');
+      return $request->connect ('fapi/v1/userTrades');
       
     }
     
     function getExchangeInfo () {
       
       $request = $this->getRequest (__FUNCTION__);
-      return $request->connect ('v3/exchangeInfo');
+      return $request->connect ('api/v3/exchangeInfo');
+      
+    }
+    
+    function getFuturesExchangeInfo () {
+      
+      $request = $this->getRequest (__FUNCTION__);
+      
+      $request->market = Request::FUTURES;
+      
+      return $request->connect ('fapi/v1/exchangeInfo');
+      
+    }
+    
+    function getFuturesCurrencyPairs ($cur2 = '') {
+      
+      $symbols = [];
+      
+      foreach ($this->getFuturesExchangeInfo ()['symbols'] as $symbol) {
+        
+        if ((!$cur2 or $symbol['marginAsset'] == $cur2) and $symbol['underlyingType'] == 'COIN') {
+          
+          $symbol['cur1'] = $symbol['baseAsset'];
+          $symbol['cur2'] = $symbol['marginAsset'];
+          
+          $symbols[$symbol['symbol']] = $symbol;
+          
+        }
+        
+      }
+      
+      return $symbols;
       
     }
     
@@ -372,7 +403,7 @@
       
       $request->market = Request::FUTURES;
       
-      return $request->connect ('v1/openOrders');
+      return $request->connect ('fapi/v1/openOrders');
       
     }
     
@@ -389,7 +420,7 @@
       $request->market = Request::FUTURES;
       $request->method = Request::POST;
       
-      return $request->connect ('v1/batchOrders');
+      return $request->connect ('fapi/v1/batchOrders');
       
     }
     
@@ -409,16 +440,16 @@
       $request->market = Request::FUTURES;
       $request->method = Request::POST;
       
-      return $request->connect ('v1/order');
+      return $request->connect ('fapi/v1/order');
     
     }
     
-    protected function amount ($amount) {
-      return mash_number_format ($amount, 3, '.', '');
+    function amount ($amount) {
+      return mash_number_format ($amount, $this->amount, '.', '');
     }
     
-    protected function price ($amount) {
-      return mash_number_format ($amount, 2, '.', '');
+    function price ($amount) {
+      return mash_number_format ($amount, $this->precision, '.', '');
     }
     
     protected function createFuturesBatchOrder ($orders, $func) {
@@ -436,7 +467,7 @@
       $request->market = Request::FUTURES;
       $request->method = Request::POST;
       
-      return $request->connect ('v1/batchOrders');
+      return $request->connect ('fapi/v1/batchOrders');
       
     }
     
@@ -530,7 +561,7 @@
       $request->market = Request::FUTURES;
       $request->method = Request::POST;
       
-      return $request->connect ('v1/order');
+      return $request->connect ('fapi/v1/order');
       
     }
     
@@ -547,11 +578,11 @@
       $request->market = Request::FUTURES;
       $request->method = Request::DELETE;
       
-      return $request->connect ('v1/allOpenOrders');
+      return $request->connect ('fapi/v1/allOpenOrders');
       
     }
     
-    function longShortRatio ($cur1, $cur2) {
+    function longShortRatio ($cur1, $cur2, $period) {
       
       $summary = [];
       
@@ -560,6 +591,7 @@
       $request->params = [
         
         'symbol' => $this->pair ($cur1, $cur2),
+        'period' => $period,
         
       ];
       
@@ -615,7 +647,7 @@
       $request->market = Request::FUTURES;
       $request->method = Request::DELETE;
       
-      return $request->connect ('v1/batchOrders');
+      return $request->connect ('fapi/v1/batchOrders');
       
     }
     
@@ -633,7 +665,7 @@
       $request->market = Request::FUTURES;
       $request->method = Request::DELETE;
       
-      return $request->connect ('v1/batchOrders');
+      return $request->connect ('fapi/v1/batchOrders');
       
     }
     
@@ -657,7 +689,7 @@
       
       $request->market = Request::FUTURES;
       
-      $data = $request->connect ('v1/premiumIndex');
+      $data = $request->connect ('fapi/v1/premiumIndex');
       
       return ['mark_price' => $data['markPrice'], 'index_price' => $data['indexPrice']];
       
@@ -667,9 +699,49 @@
       
       $request = $this->getRequest (__FUNCTION__);
       
-      $request->market = Request::ACCOUNT;
+      return $request->connect ('sapi/v1/account/status')['data'];
       
-      return $request->connect ('v1/account/status')['data'];
+    }
+    
+    function getBrackets ($cur1 = '', $cur2 = '') {
+      
+      $request = $this->getRequest (__FUNCTION__);
+      
+      if ($cur1 and $cur2)
+        $request->params['symbol'] = $this->pair ($cur1, $cur2);
+      
+      $request->market = Request::FUTURES;
+      
+      $data = $request->connect ('fapi/v1/leverageBracket');
+      
+      if (!$cur1 and !$cur2) {
+        
+        $output = [];
+        
+        foreach ($data as $pair)
+          $output[$pair['symbol']] = $this->prepBracket ($pair['brackets']);
+        
+      } else $output = $this->prepBracket ($data[0]['brackets']);
+      
+      return $output;
+      
+    }
+    
+    protected function prepBracket ($brackets) {
+      
+      $output = [];
+      $count = count ($brackets) - 1;
+      
+      $i2 = 0;
+      
+      for ($i = $count; $i >= 0; $i--) {
+        
+        $output[$i2] = ['leverage' => $brackets[$i]['initialLeverage'], 'notional' => $brackets[$i]['notionalCap']];
+        $i2++;
+        
+      }
+      
+      return $output;
       
     }
     
@@ -678,14 +750,13 @@
   class Request {
     
     public
-      $apiUrl = 'https://api.binance.com/api',
-      $futuresUrl = 'https://fapi.binance.com/fapi',
-      $accountUrl = 'https://api.binance.com/sapi',
+      $apiUrl = 'https://api.binance.com',
+      $futuresUrl = 'https://fapi.binance.com',
       $streamsUrl = 'tls://stream.binance.com',
       
-      $testApiUrl = 'https://testnet.binance.vision/api',
-      $testFuturesUrl = 'https://testnet.binancefuture.com/fapi',
-      $testStreamsUrl = 'tls://testnet-dex.binance.org/api';
+      $testApiUrl = 'https://testnet.binance.vision',
+      $testFuturesUrl = 'https://testnet.binancefuture.com',
+      $testStreamsUrl = 'tls://testnet-dex.binance.org';
     
     public
       $params = [],
@@ -699,7 +770,7 @@
       $recvWindow = 60000; // 1 minute
     
     const GET = 'GET', POST = 'POST', PUT = 'PUT', DELETE = 'DELETE';
-    const FUTURES = 'FUTURES', ACCOUNT = 'ACCOUNT';
+    const FUTURES = 'FUTURES';
     
     protected $socket, $binance;
     
@@ -723,8 +794,6 @@
         
         if ($this->market == self::FUTURES)
           $url = $this->futuresUrl;
-        elseif ($this->market == self::ACCOUNT)
-          $url = $this->accountUrl;
         else
           $url = $this->apiUrl;
         
@@ -795,7 +864,7 @@
       $options[CURLOPT_SSL_CIPHER_LIST] = 'TLSv1';
       
       if ($error = curl_error ($ch))
-        throw new \ExchangeConnectException ($error, curl_errno ($ch), $this->func, $proxy, $this->order);
+        throw new \ExchangeException ($error, curl_errno ($ch), $this->func, $proxy, $this->order);
       elseif (in_array ($info['http_code'], $this->errorCodes))
         throw new \ExchangeException ($options[CURLOPT_URL].' '.http_get_message ($info['http_code']), $info['http_code'], $this->func, $proxy, $this->order);
       
