@@ -4,13 +4,6 @@
   
   class Binance extends \Exchange {
     
-    public $ignoreErrors = [
-      
-      -2021,
-      -4046,
-      
-    ];
-    
     public $days = ['1m' => 1, '5m' => 2, '30m' => 10, '1h' => 20, '2h' => 499, '4h' => 120, '1d' => 1], $ratios = ['2h' => [1.2, 1.8]];
     public $limit = 120;
     
@@ -41,6 +34,14 @@
     public $interval = '1m', $timeOffset;
     
     protected $userKey, $futuresKey;
+    
+    function getName () {
+      return 'binance';
+    }
+    
+    function getTitle () {
+      return 'Binance';
+    }
     
     function setCredentials ($cred) {
       
@@ -820,7 +821,7 @@
         CURLOPT_SSL_VERIFYHOST => false,
         
       ];
-      
+      //echo ($url.'/'.$path."\n");
       if ($this->method == self::POST) {
         
         $options[CURLOPT_POST] = 1;

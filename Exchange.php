@@ -11,15 +11,15 @@
       $qtyPercent = 100,
       $debug = 0,
       $entryPrice = 0, // Только для расчета PNL
-      $market = true,
-      $ignoreErrors = [];
+      $market = true;
     
     public
       $futuresBalance = -1,
       $notional = 0,
       $quantity,
       $futuresFees,
-      $pnl, $roe,
+      $pnl = 0, $roe = 0,
+      $level,
       $positions = [],
       $position = [],
       $markPrice = 0,
@@ -29,7 +29,7 @@
       $testQuantity = 0,
       $proxies = [];
     
-    public $level = 0, $rebate = 10, $type = 'USDT';
+    public $flevel = 0, $rebate = 10, $ftype = 'USDT';
     
     public $side = self::LONG, $marginType = self::ISOLATED, $leverage = 0, $margin = 0;
     
@@ -40,6 +40,9 @@
     function __construct ($cred = []) {
       $this->setCredentials ($cred);
     }
+    
+    abstract function getName ();
+    abstract function getTitle ();
     
     function setCredentials ($cred) {
       $this->cred = $cred;
@@ -126,17 +129,24 @@
       if ($this->entryPrice <= 0)
         $this->entryPrice = $this->markPrice;
       
-      $this->pnl = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
+      $pnl = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
+      $this->pnl += $pnl;
       
-      $this->roe = $this->getROE ($this->pnl);
+      $this->roe += $this->getROE ($pnl);
+      
+      $this->level = $this->getLevel ($this->roe);
       
       $this->futuresFees = $this->getFuturesFee ();
       
     }
     
+    function getLevel ($roe) {
+      return ($roe / 100);
+    }
+    
     function getFee ($type) {
       
-      $fee = $this->fees[$this->type][$this->level][($type == self::MAKER ? 0 : 1)];
+      $fee = $this->fees[$this->ftype][$this->flevel][($type == self::MAKER ? 0 : 1)];
       $fee -= (($fee * $this->rebate) / 100);
       
       return $fee;
@@ -192,6 +202,15 @@
         return ($exit - $entry);
       else
         return ($entry - $exit);
+      
+    }
+    
+    function getRPRatio ($entryPrice, $stopLoss, $takeProfit) {
+      
+      $output = $this->getProfit ($entryPrice, $stopLoss);
+      $output /= $this->getProfit ($takeProfit, $entryPrice);
+      
+      return $output;
       
     }
     
