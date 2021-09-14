@@ -29,6 +29,12 @@
       
     ];
     
+    public $curChanges = [
+      
+      '1000SHIB' => 'SHIB',
+      
+    ];
+    
     public $amount = 3, $precision = 2;
     
     public $interval = '1m', $timeOffset;
@@ -66,22 +72,33 @@
       return $cur1.$cur2;
     }
     
-    function getCharts ($cur1, $cur2, $interval) {
-      
-      $summary = [];
+    function getCharts (array $data) {
       
       $request = $this->getRequest (__FUNCTION__);
       
+      if (isset ($this->curChanges[$data['cur1']]))
+        $data['cur1'] = $this->curChanges[$data['cur1']];
+      
       $request->params = [
         
-        'symbol' => $this->pair ($cur1, $cur2),
-        'interval' => $interval,
-        //'limit' => $this->limit,
+        'symbol' => $this->pair ($data['cur1'], $data['cur2']),
+        'interval' => $data['interval'],
         
       ];
       
+      if (isset ($data['start_time']))
+        $request->params['startTime'] = ($data['start_time'] * 1000);
+      
+      if (isset ($data['end_time']))
+        $request->params['endTime'] = ($data['end_time'] * 1000);
+      
+      if (isset ($data['limit']))
+        $request->params['limit'] = $data['limit'];
+      
       $request->signed = false;
       $request->debug = 0;
+      
+      $summary = [];
       
       foreach ($request->connect ('api/v3/klines') as $value)
         $summary[] = [

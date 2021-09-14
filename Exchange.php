@@ -18,7 +18,7 @@
       $notional = 0,
       $quantity,
       $futuresFees,
-      $pnl = 0, $roe = 0,
+      $pnl = 0, $roe,
       $level,
       $positions = [],
       $position = [],
@@ -83,7 +83,7 @@
       
     }
     
-    abstract function getCharts ($cur1, $cur2, $interval);
+    abstract function getCharts (array $data);
     abstract function getBalances ();
     
     function getFuturesBalances () {
@@ -129,10 +129,9 @@
       if ($this->entryPrice <= 0)
         $this->entryPrice = $this->markPrice;
       
-      $pnl = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
-      $this->pnl += $pnl;
+      $this->pnl += $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
       
-      $this->roe += $this->getROE ($pnl);
+      $this->roe = $this->getROE ($this->pnl);
       
       $this->level = $this->getLevel ($this->roe);
       
@@ -290,5 +289,35 @@
     
     function getFuturesCurrencyPairs ($cur2 = '') {}
     function getBrackets ($cur1 = '', $cur2 = '') {}
+    
+    function getVolatility ($cur1, $cur2, $interval = '1h') {
+      
+      $date = new \Date ();
+      
+      $charts = $this->getCharts (['cur1' => $cur1, 'cur2' => $cur2, 'interval' => $interval, 'start_time' => $date->add (-\Date::DAY * 1)->getTime ()]);
+      
+      $min = $charts[0]['close'];
+      $max = 0;
+      
+      foreach ($charts as $price) {
+        
+        if ($price['close'] > $max) {
+          $max = $price['close'];
+          
+          //debug ([1, date ('d.m H:i:s', $price['date']), $max]);
+          
+        } elseif ($price['close'] < $min) {
+          $min = $price['close'];
+          
+          //debug ([date ('d.m H:i:s', $price['date']), $min]);
+          
+        }
+        
+      }
+      
+      //return ($max - $min);
+      return ((($max - $min) * 100) / $max);
+      
+    }
     
   }
