@@ -35,8 +35,6 @@
       
     ];
     
-    public $amount = 3, $precision = 2;
-    
     public $interval = '1m', $timeOffset;
     
     protected $userKey, $futuresKey;
@@ -104,6 +102,7 @@
         $summary[] = [
           
           'date' => ($value[0] / 1000),
+          'date_text' => $this->date ($value[0] / 1000),
           'low' => $value[3],
           'high' => $value[2],
           'open' => $value[1], // Покупка
@@ -460,14 +459,6 @@
       
       return $request->connect ('fapi/v1/order');
     
-    }
-    
-    function amount ($amount) {
-      return mash_number_format ($amount, $this->amount, '.', '');
-    }
-    
-    function price ($amount) {
-      return mash_number_format ($amount, $this->precision, '.', '');
     }
     
     protected function createFuturesBatchOrder ($orders, $func) {

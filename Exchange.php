@@ -11,7 +11,10 @@
       $qtyPercent = 100,
       $debug = 0,
       $entryPrice = 0, // Только для расчета PNL
-      $market = true;
+      $market = true,
+      $amount = 3,
+      $precision = 2,
+      $date = 'd.m.y H:i';
     
     public
       $futuresBalance = -1,
@@ -107,7 +110,7 @@
       if ($this->markPrice == 0)
         $this->markPrice = $this->getFuturesPrices ($cur1, $cur2)['index_price'];
       
-      if ($this->qtyPercent >= 100)
+      if ($this->qtyPercent <= 0 or $this->qtyPercent >= 100)
         $this->qtyPercent = 95;
       
       if ($this->leverage <= 0)
@@ -116,7 +119,7 @@
       if ($this->futuresBalance <= 0)
         $this->futuresBalance = $this->getFuturesBalance ($cur2);
       
-      $this->margin = (($this->futuresBalance * $this->qtyPercent) / 100);
+      $this->margin = $this->getMargin ($this->futuresBalance);
       
       $this->liquid = (100 / $this->leverage);
       $this->notional = ($this->margin * $this->leverage);
@@ -141,6 +144,10 @@
     
     function getLevel ($roe) {
       return ($roe / 100);
+    }
+    
+    function getMargin ($balance) {
+      return (($balance * $this->qtyPercent) / 100);
     }
     
     function getFee ($type) {
@@ -318,6 +325,18 @@
       //return ($max - $min);
       return ((($max - $min) * 100) / $max);
       
+    }
+    
+    function amount ($amount) {
+      return mash_number_format ($amount, $this->amount, '.', '');
+    }
+    
+    function price ($amount) {
+      return mash_number_format ($amount, $this->precision, '.', '');
+    }
+    
+    function date ($date) {
+      return date ($this->date, $date);
     }
     
   }
