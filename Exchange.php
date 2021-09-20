@@ -22,7 +22,7 @@
       $quantity,
       $futuresFees,
       $pnl = 0, $roe,
-      $level,
+      $change,
       $positions = [],
       $position = [],
       $markPrice = 0,
@@ -134,7 +134,7 @@
       $this->pnl += $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
       
       $this->roe = $this->getROE ($this->pnl);
-      $this->level = $this->getLevel ($this->roe);
+      $this->change = $this->getLevel ($this->roe);
       
       $this->futuresFees = $this->getFuturesFee ();
       
