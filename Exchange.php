@@ -110,11 +110,10 @@
       if ($this->markPrice == 0)
         $this->markPrice = $this->getFuturesPrices ($cur1, $cur2)['index_price'];
       
-      if ($this->qtyPercent <= 0 or $this->qtyPercent >= 100)
-        $this->qtyPercent = 95;
+      if ($this->qtyPercent <= 0)
+        $this->qtyPercent = 100;
       
-      if ($this->leverage <= 0)
-        $this->leverage = $this->getLeverage ();
+      $this->leverage = $this->getLeverage ();
       
       if ($this->futuresBalance <= 0)
         $this->futuresBalance = $this->getFuturesBalance ($cur2);
@@ -135,7 +134,6 @@
       $this->pnl += $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
       
       $this->roe = $this->getROE ($this->pnl);
-      
       $this->level = $this->getLevel ($this->roe);
       
       $this->futuresFees = $this->getFuturesFee ();
@@ -296,6 +294,7 @@
     
     function getFuturesCurrencyPairs ($cur2 = '') {}
     function getBrackets ($cur1 = '', $cur2 = '') {}
+    function ticker ($cur1 = '', $cur2 = '') {}
     
     function getVolatility ($cur1, $cur2, $interval = '1h') {
       

@@ -754,6 +754,34 @@
       
     }
     
+    function ticker ($cur1 = '', $cur2 = '') {
+      
+      $request = $this->getRequest (__FUNCTION__);
+      
+      if ($cur1 and $cur2)
+        $request->params['symbol'] = $this->pair ($cur1, $cur2);
+      
+      $request->market = Request::FUTURES;
+      
+      $data = $request->connect ('fapi/v1/ticker/24hr');
+      
+      if (!$cur1 and !$cur2) {
+        
+        $output = [];
+        
+        foreach ($data as $pair)
+          $output[$pair['symbol']] = $this->prepTicker ($pair);
+        
+      } else $output = $this->prepTicker ($data);
+      
+      return $output;
+      
+    }
+    
+    protected function prepTicker ($item) {
+      return ['change' => $item['priceChange'], 'change_percent' => $item['priceChangePercent']];
+    }
+    
   }
   
   class Request {
