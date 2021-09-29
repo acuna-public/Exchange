@@ -197,7 +197,7 @@
     }
     
     function getROE ($pnl) {
-      return ($this->margin > 0 ? (($pnl * 100) / $this->margin) : 0);
+      return ($this->margin != 0 ? (($pnl * 100) / $this->margin) : 0);
     }
     
     function getProfit ($entry, $exit) {
