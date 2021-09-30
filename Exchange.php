@@ -122,10 +122,10 @@
       
       $this->quantity = $this->getQuantity ($this->markPrice);
       
-      if (!$this->entryPrice)
+      if ($this->entryPrice == 0)
         $this->entryPrice = $this->getEntryPrice ();
       
-      if (!$this->entryPrice)
+      if ($this->entryPrice == 0)
         $this->entryPrice = $this->markPrice;
       
       $this->pnl += $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
