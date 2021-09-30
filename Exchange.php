@@ -115,9 +115,6 @@
       
       $this->leverage = $this->getLeverage ();
       
-      if ($this->futuresBalance <= 0)
-        $this->futuresBalance = $this->getFuturesBalance ($cur2);
-      
       $this->margin = $this->getMargin ($this->futuresBalance);
       
       $this->liquid = (100 / $this->leverage);
@@ -125,10 +122,10 @@
       
       $this->quantity = $this->getQuantity ($this->markPrice);
       
-      if ($this->entryPrice <= 0)
+      if (!$this->entryPrice)
         $this->entryPrice = $this->getEntryPrice ();
       
-      if ($this->entryPrice <= 0)
+      if (!$this->entryPrice)
         $this->entryPrice = $this->markPrice;
       
       $this->pnl += $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
