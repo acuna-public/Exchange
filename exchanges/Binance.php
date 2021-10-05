@@ -801,7 +801,7 @@
       
       $request->market = Request::FUTURES;
       
-      $data = $request->connect ('fapi/v1/futuresTicker/24hr');
+      $data = $request->connect ('fapi/v1/ticker/24hr');
       
       if (!$cur1 and !$cur2) {
         
