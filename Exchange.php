@@ -38,6 +38,8 @@
     
     const LONG = 'LONG', SHORT = 'SHORT', ISOLATED = 'ISOLATED', CROSS = 'CROSS', BUY = 'BUY', SELL = 'SELL', MAKER = 'MAKER', TAKER = 'TAKER';
     
+    static $PERPETUAL = 'PERPETUAL', $LEVERAGED = 'LEVERAGED';
+    
     protected $balances = [], $futuresBalances = [];
     
     function __construct ($cred = []) {
@@ -292,6 +294,7 @@
     function getFuturesCurrencyPairs ($cur2 = '') {}
     function getBrackets ($cur1 = '', $cur2 = '') {}
     function ticker ($cur1 = '', $cur2 = '') {}
+    function futuresTicker ($cur1 = '', $cur2 = '') {}
     
     function getVolatility ($cur1, $cur2, $interval = '1h') {
       
@@ -334,5 +337,7 @@
     function date ($date) {
       return date ($this->date, $date);
     }
+    
+    function getCurrencyPairs ($type, $cur2 = '') {}
     
   }
