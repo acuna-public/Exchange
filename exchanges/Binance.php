@@ -895,7 +895,7 @@
         CURLOPT_SSL_VERIFYHOST => false,
         
       ];
-      //echo ($url.'/'.$path."\n");
+      //debug ($url.'/'.$path);
       if ($this->method == self::POST) {
         
         $options[CURLOPT_POST] = 1;
