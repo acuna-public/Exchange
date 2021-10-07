@@ -380,6 +380,18 @@
       
     }
     
+    function getFuturesExchangeInfo () {
+      
+      $request = $this->getRequest (__FUNCTION__);
+      
+      $request->signed = false;
+      
+      $request->market = Request::FUTURES;
+      
+      return $request->connect ('fapi/v1/exchangeInfo');
+      
+    }
+    
     function getCurrencyPairs ($type, $cur2 = '') {
       
       $symbols = [];
