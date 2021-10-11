@@ -122,16 +122,17 @@
       $this->liquid = (100 / $this->leverage);
       $this->notional = ($this->margin * $this->leverage);
       
-      $this->quantity = $this->getQuantity ($this->markPrice);
-      
       if ($this->entryPrice == 0)
         $this->entryPrice = $this->getEntryPrice ();
       
       if ($this->entryPrice == 0)
         $this->entryPrice = $this->markPrice;
       
-      $this->pnl += $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
+      if ($this->quantity <= 0)
+        $this->quantity = $this->getQuantity ($this->entryPrice);
       
+      $this->pnl += $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
+      //debug ([$this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity), $this->pnl]);
       $this->roe = $this->getROE ($this->pnl);
       $this->change = $this->getLevel ($this->roe);
       
