@@ -103,11 +103,13 @@
       return $this->getFuturesBalances ()[$cur];
     }
     
-    function futuresUpdate ($cur1, $cur2) {
+    function futuresInit ($cur1, $cur2) {
       
+      $this->positions = $this->getFuturesPositions ($cur1, $cur2);
       $this->position = $this->positions[0];
       
       $this->markPrice = $this->getMarkPrice ();
+      $this->leverage = $this->getLeverage ();
       
       if ($this->markPrice == 0)
         $this->markPrice = $this->getFuturesPrices ($cur1, $cur2)['index_price'];
@@ -115,12 +117,16 @@
       if ($this->qtyPercent <= 0)
         $this->qtyPercent = 100;
       
-      $this->leverage = $this->getLeverage ();
-      
       $this->margin = $this->getMargin ($this->futuresBalance);
       
       $this->liquid = (100 / $this->leverage);
       $this->notional = ($this->margin * $this->leverage);
+      
+    }
+    
+    function futuresUpdate ($cur1, $cur2) {
+      
+      $this->futuresInit ($cur1, $cur2);
       
       if ($this->entryPrice == 0)
         $this->entryPrice = $this->getEntryPrice ();
