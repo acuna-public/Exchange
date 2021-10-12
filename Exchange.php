@@ -119,7 +119,7 @@
       
     }
     
-    function futuresUpdate ($cur1, $cur2) {
+    function futuresUpdate () {
       
       $this->margin = $this->getMargin ($this->futuresBalance);
       
