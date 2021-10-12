@@ -117,16 +117,14 @@
       if ($this->qtyPercent <= 0)
         $this->qtyPercent = 100;
       
-      $this->margin = $this->getMargin ($this->futuresBalance);
-      
-      $this->liquid = (100 / $this->leverage);
-      $this->notional = ($this->margin * $this->leverage);
-      
     }
     
     function futuresUpdate ($cur1, $cur2) {
       
-      $this->futuresInit ($cur1, $cur2);
+      $this->margin = $this->getMargin ($this->futuresBalance);
+      
+      $this->liquid = (100 / $this->leverage);
+      $this->notional = ($this->margin * $this->leverage);
       
       if ($this->entryPrice == 0)
         $this->entryPrice = $this->getEntryPrice ();
