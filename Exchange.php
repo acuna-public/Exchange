@@ -135,7 +135,7 @@
       if ($this->quantity <= 0)
         $this->quantity = $this->getQuantity ($this->entryPrice);
       
-      $this->pnl += $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
+      $this->pnl = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
       //debug ([$this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity), $this->pnl]);
       $this->roe = $this->getROE ($this->pnl);
       $this->change = $this->getLevel ($this->roe);
