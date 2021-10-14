@@ -108,16 +108,14 @@
     function average () {
       
       $average = 0;
-      
       foreach ($this->prices as $price)
-        $average += $price;
+      $average += $price;
       
       $mu = ($average / $this->N);
       
       $summ = 0;
-      
       foreach ($this->prices as $price)
-        $summ += pow ($price - $mu, 2);
+      $summ += pow ($price - $mu, 2);
       
       if ($this->N > 1) $summ /= ($this->N - 1);
       
@@ -128,19 +126,14 @@
     function average2 () {
       
       $average = 0;
+      foreach ($this->prices as $price)
+      $average += $this->price ($price);
       
-      foreach ($this->prices as $price) {
-        
-        debug ($price['close']);
-        $average += $price['close'];
-        
-      }
       $mu = ($average / $this->N);
       
       $summ = 0;
-      
       foreach ($this->prices as $price)
-        $summ += pow ($price['close'] - $mu, 2);
+      $summ += pow ($this->price ($price) - $mu, 2);
       
       if ($this->N > 1) $summ /= ($this->N - 1);
       
@@ -226,6 +219,10 @@
       
     }
     
+    function price ($price) {
+      return $price['open'] - $price['close'];
+    }
+    
     // the traditional close-to-close volatility
     
     function c2c () {
@@ -235,25 +232,26 @@
       foreach ($this->prices as $i => $price) {
         
         if ($i > 0)
-          $avg += log ($price['close']) - log ($last);
+          $avg += ($this->price ($price) - $last);
         
-        $last = $price['close'];
+        $last = $this->price ($price);
         
       }
       
-      $avg *= 1 / $this->N;
+      $avg *= ($this->N - 1);
+      
       $summ = 0;
       
       foreach ($this->prices as $i => $price) {
         
         if ($i > 0) {
           
-          $ret = log ($price['close']) - log ($last);
+          $ret = ($this->price ($price) - $last);
           $summ += pow ($ret - $avg, 2);
           
         }
         
-        $last = $price['close'];
+        $last = $this->price ($price);
         
       }
       
