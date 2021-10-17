@@ -108,11 +108,16 @@
       $this->positions = $this->getFuturesPositions ($cur1, $cur2);
       $this->position = $this->positions[0];
       
-      $this->markPrice = $this->getMarkPrice ();
-      $this->leverage = $this->getLeverage ();
+      if ($this->futuresBalance == 0)
+        $this->futuresBalance = $this->getFuturesBalance ($cur2);
+      
+      if ($this->markPrice == 0)
+        $this->markPrice = $this->getMarkPrice ();
       
       if ($this->markPrice == 0)
         $this->markPrice = $this->getFuturesPrices ($cur1, $cur2)['index_price'];
+      
+      $this->leverage = $this->getLeverage ();
       
       if ($this->qtyPercent <= 0)
         $this->qtyPercent = 100;
@@ -129,11 +134,8 @@
       if ($this->entryPrice == 0)
         $this->entryPrice = $this->getEntryPrice ();
       
-      if ($this->entryPrice == 0)
-        $this->entryPrice = $this->markPrice;
-      
       if ($this->quantity <= 0)
-        $this->quantity = $this->getQuantity ($this->entryPrice);
+        $this->quantity = $this->getQuantity ($this->markPrice);
       
       $this->pnl = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
       //debug ([$this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity), $this->pnl]);
