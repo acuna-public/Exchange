@@ -21,7 +21,7 @@
       $notional = 0,
       $quantity,
       $futuresFees,
-      $pnl = 0, $roe,
+      $pnl = 0, $roe, $pnl2 = 0,
       $change,
       $positions = [],
       $position = [],
@@ -137,7 +137,9 @@
       if ($this->quantity <= 0)
         $this->quantity = $this->getQuantity ($this->markPrice);
       
-      $this->pnl = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
+      $this->pnl2 = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
+      
+      $this->pnl += $this->pnl2;
       //debug ([$this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity), $this->pnl]);
       $this->roe = $this->getROE ($this->pnl);
       $this->change = $this->getLevel ($this->roe);
