@@ -140,6 +140,7 @@
       $this->pnl2 = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
       
       $this->pnl += $this->pnl2;
+      
       //debug ([$this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity), $this->pnl]);
       $this->roe = $this->getROE ($this->pnl);
       $this->change = $this->getLevel ($this->roe);
