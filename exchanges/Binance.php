@@ -875,9 +875,14 @@
       
       $ch = curl_init ();
       
-      if ($this->binance->debug and $this->debug)
-        $url = ($this->market == self::FUTURES ? $this->testFuturesUrl : $this->testApiUrl);
-      else {
+      if ($this->binance->debug and $this->debug) {
+        
+        if ($this->market == self::FUTURES)
+          $url = $this->testFuturesUrl;
+        else
+          $url = $this->testApiUrl;
+        
+      } else {
         
         if ($this->market == self::FUTURES)
           $url = $this->futuresUrl;
@@ -896,7 +901,7 @@
       
       if ($this->params and $this->method != self::POST)
         $path .= '?'.http_build_query ($this->params);
-      //echo ($url.'/'.$path."\n");
+      
       $options = [
         
         CURLOPT_URL => $url.'/'.$path,
@@ -907,7 +912,9 @@
         CURLOPT_SSL_VERIFYHOST => false,
         
       ];
+      
       //debug ($url.'/'.$path);
+      
       if ($this->method == self::POST) {
         
         $options[CURLOPT_POST] = 1;

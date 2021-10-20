@@ -30,6 +30,8 @@
       $liquid = 0,
       $queryNum = 0,
       $testQuantity = 0,
+      $multiplierUp = 0,
+      $multiplierDown = 0,
       $proxies = [];
     
     public $flevel = 0, $rebate = 10, $ftype = 'USDT';
@@ -349,5 +351,14 @@
     }
     
     function getCurrencyPairs ($type, $cur2 = '') {}
+    
+    function getPrice ($price) {
+      
+      if ($this->isLong ())
+        return $this->markPrice * $this->multiplierUp;
+      else
+        return $this->markPrice * $this->multiplierDown;
+      
+    }
     
   }
