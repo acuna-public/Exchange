@@ -812,6 +812,7 @@
         $request->params['symbol'] = $this->pair ($cur1, $cur2);
       
       $request->market = Request::FUTURES;
+      $request->debug = 0;
       
       $data = $request->connect ('fapi/v1/ticker/24hr');
       
