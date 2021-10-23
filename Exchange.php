@@ -94,7 +94,7 @@
     abstract function getBalances ();
     
     function getFuturesBalances () {
-      return [];
+      return $this->getBalances ();
     }
     
     function getBalance ($cur) {
@@ -119,25 +119,24 @@
       if ($this->markPrice == 0)
         $this->markPrice = $this->getFuturesPrices ($cur1, $cur2)['index_price'];
       
+      if ($this->qtyPercent <= 0) $this->qtyPercent = 100;
+      
+      $this->margin = $this->getMargin ($this->futuresBalance);
       $this->leverage = $this->getLeverage ();
       
-      if ($this->qtyPercent <= 0)
-        $this->qtyPercent = 100;
+      $this->notional = ($this->margin * $this->leverage);
+      
+      if ($this->quantity == 0)
+        $this->quantity = $this->getQuantity ($this->markPrice);
       
     }
     
     function futuresUpdate () {
       
-      $this->margin = $this->getMargin ($this->futuresBalance);
-      
       $this->liquid = (100 / $this->leverage);
-      $this->notional = ($this->margin * $this->leverage);
       
       if ($this->entryPrice == 0)
         $this->entryPrice = $this->getEntryPrice ();
-      
-      if ($this->quantity <= 0)
-        $this->quantity = $this->getQuantity ($this->markPrice);
       
       $this->pnl2 = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
       
@@ -242,20 +241,12 @@
     }
     
     abstract function createOrder ($type, $cur1, $cur2, $amount, $price);
-    
-    function createMarketOrder ($type, $cur1, $cur2, $amount) {
-      return $this->createOrder ($type, $cur1, $cur2, $amount, 0);
-    }
-    
     abstract function getOrders ($cur1, $cur2);
     abstract function getOrderInfo ($id);
     abstract function getHolds ($id);
     
-    final function isOrderDone ($id) {
-      
-      $info = $this->getOrderInfo ($id);
-      return ($info && $info['done']);
-      
+    function createMarketOrder ($type, $cur1, $cur2, $amount) {
+      return $this->createOrder ($type, $cur1, $cur2, $amount, 0);
     }
     
     function longShortRatio ($cur1, $cur2, $period) {
@@ -277,8 +268,12 @@
       return $this->orderId ($order);
     }
     
-    function getTrades ($cur1, $cur2) {}
-    function getExchangeInfo () {}
+    abstract function ticker ($cur1 = '', $cur2 = '');
+    abstract function getTrades ($cur1, $cur2);
+    abstract function getExchangeInfo ();
+    abstract function isOrderTakeProfit ($order);
+    abstract function orderCreateDate ($order);
+    
     function getFuturesExchangeInfo () {}
     function getFuturesOpenOrders ($cur1, $cur2) {}
     function createFuturesOrder ($orders) {}
@@ -287,9 +282,12 @@
     function createFuturesMarketStopOrder ($orders) {}
     function createFuturesTrailingStopOrder ($order) {}
     function cancelFuturesOpenOrders ($cur1, $cur2) {}
-    function isOrderTakeProfit ($order) {}
+    
     function cancelFuturesOrders ($cur1, $cur2, $ids) {}
-    function orderCreateDate ($order) {}
+    
+    function futuresOrderCreateDate ($order) {
+      return $this->orderCreateDate ($order);
+    }
     
     function cancelFuturesOrdersNames ($cur1, $cur2, $ids) {
       return $this->cancelFuturesOrders ($cur1, $cur2, $ids);
@@ -305,7 +303,6 @@
     
     function getFuturesCurrencyPairs ($cur2 = '') {}
     function getBrackets ($cur1 = '', $cur2 = '') {}
-    function ticker ($cur1 = '', $cur2 = '') {}
     function futuresTicker ($cur1 = '', $cur2 = '') {}
     
     function getVolatility ($cur1, $cur2, $interval = '1h') {
@@ -350,7 +347,7 @@
       return date ($this->date, $date);
     }
     
-    function getCurrencyPairs ($type, $cur2 = '') {}
+    abstract function getCurrencyPairs ($type, $cur2 = '');
     
     function getPrice ($price) {
       
