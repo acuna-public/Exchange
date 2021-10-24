@@ -302,7 +302,7 @@
     }
     
     function getFuturesCurrencyPairs ($cur2 = '') {}
-    function getBrackets ($cur1 = '', $cur2 = '') {}
+    function getFuturesBrackets ($cur1 = '', $cur2 = '') {}
     function futuresTicker ($cur1 = '', $cur2 = '') {}
     
     function getVolatility ($cur1, $cur2, $interval = '1h') {

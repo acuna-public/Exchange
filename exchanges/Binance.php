@@ -738,7 +738,7 @@
       
     }
     
-    function getBrackets ($cur1 = '', $cur2 = '') {
+    function getFuturesBrackets ($cur1 = '', $cur2 = '') {
       
       $request = $this->getRequest (__FUNCTION__);
       
