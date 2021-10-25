@@ -32,6 +32,7 @@
       $testQuantity = 0,
       $multiplierUp = 0,
       $multiplierDown = 0,
+      $maxNotional = 0,
       $proxies = [];
     
     public $flevel = 0, $rebate = 10, $ftype = 'USDT';
@@ -124,7 +125,19 @@
       $this->margin = $this->getMargin ($this->futuresBalance);
       $this->leverage = $this->getLeverage ();
       
+      if ($this->maxNotional > 0) {
+        
+        $margin = ($this->maxNotional / $this->leverage);
+        
+        if ($this->margin > $margin)
+          $this->margin = $margin;
+        
+      }
+      
       $this->notional = ($this->margin * $this->leverage);
+      
+      if ($this->maxNotional > 0 and $this->notional > $this->maxNotional)
+        $this->notional = $this->maxNotional;
       
       if ($this->quantity == 0)
         $this->quantity = $this->getQuantity ($this->markPrice);
