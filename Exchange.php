@@ -143,8 +143,6 @@
       
     }
     
-    public $ggg = 0;
-    
     function futuresUpdate () {
       
       $this->liquid = (100 / $this->leverage);
@@ -152,9 +150,7 @@
       if ($this->entryPrice == 0)
         $this->entryPrice = $this->getEntryPrice ();
       
-      $this->pnl2 = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
-      
-      $this->pnl = $this->pnl2;
+      $this->pnl = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
       
       $this->roe = $this->getROE ($this->pnl);
       $this->change = $this->getLevel ($this->roe);
