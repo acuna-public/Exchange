@@ -136,14 +136,14 @@
       
       $this->notional = ($this->margin * $this->leverage);
       
-      if ($this->maxNotional > 0 and $this->notional > $this->maxNotional)
-        $this->notional = $this->maxNotional;
-      
       if ($this->quantity == 0)
         $this->quantity = $this->getQuantity ($this->markPrice);
+      
       $this->cur1 = $cur1;
       
     }
+    
+    public $ggg = 0;
     
     function futuresUpdate () {
       
@@ -154,9 +154,7 @@
       
       $this->pnl2 = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
       
-      $this->pnl += $this->pnl2;
-      
-      //debug ([$this->cur1, $this->entryPrice, $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity), $this->pnl, $this->quantity]);
+      $this->pnl = $this->pnl2;
       
       $this->roe = $this->getROE ($this->pnl);
       $this->change = $this->getLevel ($this->roe);
