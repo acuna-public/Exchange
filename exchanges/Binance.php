@@ -80,7 +80,7 @@
       $request->params = [
         
         'symbol' => $this->pair ($data['cur1'], $data['cur2']),
-        'interval' => (isset ($data['interval']) ? $data['interval'] : '1m'),
+        'interval' => (isset ($data['interval']) ? $data['interval'] : $this->interval),
         
       ];
       

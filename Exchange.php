@@ -106,10 +106,14 @@
       return $this->getFuturesBalances ()[$cur];
     }
     
-    function futuresInit ($cur1, $cur2) {
+    function getPosition ($cur1, $cur2) {
       
       $this->positions = $this->getFuturesPositions ($cur1, $cur2);
       $this->position = $this->positions[0];
+      
+    }
+    
+    function futuresInit ($cur1, $cur2) {
       
       if ($this->futuresBalance == 0)
         $this->futuresBalance = $this->getFuturesBalance ($cur2);
@@ -123,7 +127,11 @@
       if ($this->qtyPercent <= 0) $this->qtyPercent = 100;
       
       $this->margin = $this->getMargin ($this->futuresBalance);
-      $this->leverage = $this->getLeverage ();
+      
+      if ($this->leverage == 0)
+        $this->leverage = $this->getLeverage ();
+      
+      $this->liquid = (100 / $this->leverage);
       
       if ($this->maxNotional > 0) {
         
@@ -139,20 +147,16 @@
       if ($this->quantity == 0)
         $this->quantity = $this->getQuantity ($this->markPrice);
       
-      $this->cur1 = $cur1;
-      
     }
     
     function futuresUpdate () {
-      
-      $this->liquid = (100 / $this->leverage);
       
       if ($this->entryPrice == 0)
         $this->entryPrice = $this->getEntryPrice ();
       
       $this->pnl = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
-      
       $this->roe = $this->getROE ($this->pnl);
+      
       $this->change = $this->getLevel ($this->roe);
       
       $this->futuresFees = $this->getFuturesFee ();
