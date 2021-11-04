@@ -20,7 +20,7 @@
       $futuresBalance = -1,
       $notional = 0,
       $quantity,
-      $futuresFees,
+      $futuresFees = 0,
       $pnl = 0, $roe, $pnl2 = 0,
       $change,
       $positions = [],
@@ -159,7 +159,7 @@
       
       $this->change = $this->getLevel ($this->roe);
       
-      $this->futuresFees = $this->getFuturesFee ();
+      $this->futuresFees += $this->getFuturesFee ();
       
     }
     
