@@ -102,7 +102,7 @@
         $summary[] = [
           
           'date' => ($value[0] / 1000),
-          'date_text' => $this->date ($value[0] / 1000),
+          'date_text' => self::date ($value[0] / 1000),
           'low' => $value[3],
           'high' => $value[2],
           'open' => $value[1], // Покупка

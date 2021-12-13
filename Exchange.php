@@ -13,8 +13,9 @@
       $entryPrice = 0, // Только для расчета PNL
       $market = true,
       $amount = 3,
-      $precision = 2,
-      $date = 'd.m.y H:i';
+      $precision = 2;
+    
+    public static $date = 'd.m.y H:i';
     
     public
       $futuresBalance = -1,
@@ -114,10 +115,10 @@
     
     function futuresInit ($cur1, $cur2) {
       
-      if ($this->futuresBalance == 0)
+      if ($this->futuresBalance == 0) // NULLED
         $this->futuresBalance = $this->getFuturesBalance ($cur2);
       
-      if ($this->markPrice == 0)
+      if ($this->markPrice == 0) // NULLED
         $this->markPrice = $this->getMarkPrice ();
       
       if ($this->markPrice == 0)
@@ -125,39 +126,35 @@
       
       if ($this->qtyPercent <= 0) $this->qtyPercent = 100;
       
-      $this->margin = $this->getMargin ($this->futuresBalance);
-      
-      if ($this->leverage == 0)
+      if ($this->leverage == 0) // NULLED
         $this->leverage = $this->getLeverage ();
       
       $this->liquid = (100 / $this->leverage);
       
-      if ($this->maxNotional > 0) {
-        
-        $margin = ($this->maxNotional / $this->leverage);
-        
-        if ($this->margin > $margin)
-          $this->margin = $margin;
-        
-      }
+      $this->margin = $this->getMargin ($this->futuresBalance);
+      
+      if ($this->maxNotional > 0 and $this->margin > $this->maxNotional)
+        $this->margin = $this->maxNotional;
+      
+      //if ($this->margin <= 10) $this->margin = 0;
       
       $this->notional = ($this->margin * $this->leverage);
       
-      if ($this->quantity == 0)
+      if ($this->quantity == 0) // NULLED
         $this->quantity = $this->getQuantity ($this->markPrice);
       
     }
     
     function futuresUpdate () {
       
-      if ($this->entryPrice == 0)
+      if ($this->entryPrice == 0) // NULLED
         $this->entryPrice = $this->getEntryPrice ();
       
       $this->pnl = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
       $this->roe = $this->getROE ($this->pnl);
       
       $this->change = $this->getLevel ($this->roe);
-      
+      //debug ([$this->roe, $this->change]);
     }
     
     function getLevel ($roe) {
@@ -217,7 +214,7 @@
     }
     
     function getROE ($pnl) {
-      return (($pnl * 100) / $this->margin);
+      return $this->margin != 0 ? (($pnl * 100) / $this->margin) : 0;
     }
     
     function getProfit ($entry, $exit) {
@@ -353,8 +350,8 @@
       return mash_number_format ($amount, $this->precision, '.', '');
     }
     
-    function date ($date) {
-      return date ($this->date, $date);
+    static function date ($date) {
+      return date (self::$date, $date);
     }
     
     abstract function getCurrencyPairs ($type, $cur2 = '');
