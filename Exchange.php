@@ -29,6 +29,7 @@
       $cred = [],
       $liquid = 0,
       $queryNum = 0,
+      $minMargin = 10,
       $testQuantity = 0,
       $multiplierUp = 0,
       $multiplierDown = 0,
@@ -136,8 +137,6 @@
       if ($this->maxNotional > 0 and $this->margin > $this->maxNotional)
         $this->margin = $this->maxNotional;
       
-      //if ($this->margin <= 10) $this->margin = 0;
-      
       $this->notional = ($this->margin * $this->leverage);
       
       if ($this->quantity == 0) // NULLED
@@ -154,7 +153,7 @@
       $this->roe = $this->getROE ($this->pnl);
       
       $this->change = $this->getLevel ($this->roe);
-      //debug ([$this->roe, $this->change]);
+      
     }
     
     function getLevel ($roe) {
