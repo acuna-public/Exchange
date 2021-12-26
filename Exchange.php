@@ -29,7 +29,6 @@
       $cred = [],
       $liquid = 0,
       $queryNum = 0,
-      $minMargin = 10,
       $testQuantity = 0,
       $multiplierUp = 0,
       $multiplierDown = 0,
