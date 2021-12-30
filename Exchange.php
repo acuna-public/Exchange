@@ -109,7 +109,11 @@
     function getPosition ($cur1, $cur2) {
       
       $this->positions = $this->getFuturesPositions ($cur1, $cur2);
-      $this->position = $this->positions[0];
+      
+      if (isset ($this->positions[$this->side]))
+        $this->position = $this->positions[$this->side];
+      else
+        $this->position = $this->positions['BOTH'];
       
     }
     
@@ -362,5 +366,8 @@
         return $this->markPrice * $this->multiplierDown;
       
     }
+    
+    abstract function setFuturesHedgeMode (bool $hedge);
+    abstract function getFuturesHedgeMode ();
     
   }

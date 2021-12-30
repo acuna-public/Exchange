@@ -277,7 +277,12 @@
       
       $request->market = Request::FUTURES;
       
-      return $request->connect ('fapi/v2/positionRisk');
+      $data = [];
+      
+      foreach ($request->connect ('fapi/v2/positionRisk') as $pos)
+        $data[$pos['positionSide']] = $pos;
+      
+      return $data;
       
     }
     
@@ -479,12 +484,15 @@
         'quantity' => $this->amount ($order['quantity']),
         
       ];
-      //debug ([$this->futuresBalance, $this->margin, $order['quantity'], ($this->futuresBalance), $request->params]);
+      
+      if (isset ($order['hedge']) and $order['hedge'])
+        $request->params['positionSide'] = $order['side'];
+      
       $request->market = Request::FUTURES;
       $request->method = Request::POST;
       
       return $request->connect ('fapi/v1/order');
-    
+      
     }
     
     protected function createFuturesBatchOrder ($orders, $func) {
@@ -560,6 +568,9 @@
         
         if (isset ($order['price_type']))
           $data['workingType'] = $order['price_type'];
+        
+        if (isset ($order['hedge']) and $order['hedge'])
+          $data['positionSide'] = $order['pside'];
         
         $list[] = $data;
         
@@ -831,6 +842,33 @@
     
     protected function prepTicker ($item) {
       return ['change' => $item['priceChange'], 'change_percent' => $item['priceChangePercent'], 'close' => $item['lastPrice']];
+    }
+    
+    function setFuturesHedgeMode (bool $hedge) {
+      
+      $request = $this->getRequest (__FUNCTION__);
+      
+      $request->params = [
+        
+        'dualSidePosition' => $hedge ? 'true' : 'false'
+        
+      ];
+      
+      $request->market = Request::FUTURES;
+      $request->method = Request::POST;
+      
+      return $request->connect ('fapi/v1/positionSide/dual');
+      
+    }
+    
+    function getFuturesHedgeMode () {
+      
+      $request = $this->getRequest (__FUNCTION__);
+      
+      $request->market = Request::FUTURES;
+      
+      return $request->connect ('fapi/v1/positionSide/dual')['dualSidePosition'];
+      
     }
     
   }
