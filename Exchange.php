@@ -246,7 +246,7 @@
     }
     
     function pair ($cur1, $cur2) {
-      return $cur1.'-'.$cur2;
+      return $cur1.$cur2;
     }
     
     abstract function createOrder ($type, $cur1, $cur2, $amount, $price);

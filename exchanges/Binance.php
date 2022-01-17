@@ -66,10 +66,6 @@
       
     }
     
-    function pair ($cur1, $cur2) {
-      return $cur1.$cur2;
-    }
-    
     function getCharts (array $data) {
       
       $request = $this->getRequest (__FUNCTION__);
