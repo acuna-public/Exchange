@@ -567,6 +567,8 @@
         
         if (isset ($order['hedge']) and $order['hedge'])
           $data['positionSide'] = $order['pside'];
+        else
+          $data['positionSide'] = 'BOTH';
         
         $list[] = $data;
         
