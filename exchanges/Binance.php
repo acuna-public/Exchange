@@ -481,7 +481,7 @@
         
       ];
       
-      if (isset ($order['hedge']) and $order['hedge'])
+      if ($this->hedgeMode)
         $request->params['positionSide'] = $order['side'];
       
       $request->market = Request::FUTURES;
@@ -565,7 +565,7 @@
         if (isset ($order['price_type']))
           $data['workingType'] = $order['price_type'];
         
-        if (isset ($order['hedge']) and $order['hedge'])
+        if ($this->hedgeMode)
           $data['positionSide'] = $order['pside'];
         else
           $data['positionSide'] = 'BOTH';

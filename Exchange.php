@@ -13,7 +13,8 @@
       $entryPrice = 0, // Только для расчета PNL
       $market = true,
       $amount = 3,
-      $precision = 2;
+      $precision = 2,
+      $hedgeMode = true;
     
     public static $date = 'd.m.y H:i';
     
