@@ -8,7 +8,7 @@
   abstract class Exchange {
     
     public
-      $qtyPercent = 100,
+      $qtyPercent = 99,
       $debug = 0,
       $entryPrice = 0, // Только для расчета PNL
       $market = true,
