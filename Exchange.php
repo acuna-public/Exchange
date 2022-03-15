@@ -40,7 +40,7 @@
 		
 		public $side = self::LONG, $marginType = self::ISOLATED, $leverage = 0, $margin = 0;
 		
-		const LONG = 'LONG', SHORT = 'SHORT', ISOLATED = 'ISOLATED', CROSS = 'CROSS', BUY = 'BUY', SELL = 'SELL', MAKER = 'MAKER', TAKER = 'TAKER';
+		const LONG = 'LONG', SHORT = 'SHORT', ISOLATED = 'ISOLATED', CROSS = 'CROSSED', BUY = 'BUY', SELL = 'SELL', MAKER = 'MAKER', TAKER = 'TAKER';
 		
 		static $PERPETUAL = 'PERPETUAL', $LEVERAGED = 'LEVERAGED';
 		
@@ -127,7 +127,7 @@
 				$this->markPrice = $this->getMarkPrice ();
 			
 			if ($this->markPrice == 0)
-				$this->markPrice = $this->getFuturesPrices ($base, $quote)['index_price'];
+				$this->markPrice = $this->futuresTicker ($base, $quote)['index_price'];
 			
 			if ($this->qtyPercent <= 0) $this->qtyPercent = 100;
 			
@@ -239,11 +239,11 @@
 		}
 		
 		function getMarkPrice () {
-			return $this->position['markPrice'];
+			return 0;
 		}
 		
 		function getEntryPrice () {
-			return $this->position['entryPrice'];
+			return $this->position['entry_price'];
 		}
 		
 		function pair ($base, $quote) {
@@ -264,7 +264,7 @@
 		}
 		
 		function setFuturesLeverage ($base, $quote, $leverage) {}
-		function setFuturesMarginType ($base, $quote, $type) {}
+		function setFuturesMarginType ($base, $quote, $type, $longLeverage = 10, $shortLeverage = 10) {}
 		
 		function getFuturesPositions ($base, $quote) {}
 		
@@ -278,32 +278,34 @@
 			return $this->orderId ($order);
 		}
 		
-		abstract function ticker ($base = '', $quote = '');
 		abstract function getTrades ($base, $quote);
-		abstract function getExchangeInfo ();
+		abstract function getSymbols ($quote = '');
+		abstract function getSymbolsInfo ();
 		abstract function isOrderTakeProfit ($order);
 		abstract function orderCreateDate ($order);
 		
-		function getFuturesExchangeInfo () {}
+		function getFuturesSymbolsInfo () {
+			return $this->getSymbolsInfo ();
+		}
+		
+		function getFuturesSymbols ($quote = '') {
+			return $this->getSymbols ($quote);
+		}
+		
 		function getFuturesOpenOrders ($base, $quote) {}
-		function createFuturesOrder ($orders) {}
 		function openFuturesMarketPosition ($order) {}
 		function createFuturesMarketTakeProfitOrder ($orders) {}
 		function createFuturesMarketStopOrder ($orders) {}
 		function createFuturesTrailingStopOrder ($order) {}
 		function cancelFuturesOpenOrders ($base, $quote) {}
 		
-		function cancelFuturesOrders ($base, $quote, $ids) {}
+		function cancelFuturesOrders ($base, $quote, array $ids) {}
 		
 		function futuresOrderCreateDate ($order) {
 			return $this->orderCreateDate ($order);
 		}
 		
-		function cancelFuturesOrdersNames ($base, $quote, $ids) {
-			return $this->cancelFuturesOrders ($base, $quote, $ids);
-		}
-		
-		function getFuturesPrices ($base, $quote) {
+		function cancelFuturesOrdersNames ($base, $quote, array $ids) {
 			return [];
 		}
 		
@@ -311,9 +313,15 @@
 			return '';
 		}
 		
-		function getFuturesCurrencyPairs ($quote = '') {}
-		function getFuturesBrackets ($base = '', $quote = '') {}
-		function futuresTicker ($base = '', $quote = '') {}
+		function getFuturesBrackets ($base = '', $quote = '') {
+			return [];
+		}
+		
+		abstract function ticker ($base = '', $quote = '');
+		
+		function futuresTicker ($base = '', $quote = '') {
+			return $this->ticker ($base, $quote);
+		}
 		
 		function getVolatility ($base, $quote, $interval = '1h') {
 			
@@ -346,7 +354,12 @@
 		}
 		
 		function amount ($amount) {
-			return mash_number_format ($amount, $this->amount, '.', '');
+			
+			if ($this->amount > 0)
+				$amount = mash_number_format ($amount, $this->amount, '.', '');
+			
+			return $amount;
+			
 		}
 		
 		function price ($amount) {
@@ -357,8 +370,6 @@
 			return date (self::$date, $date);
 		}
 		
-		abstract function getCurrencyPairs ($type, $quote = '');
-		
 		function getPrice ($price) {
 			
 			if ($this->isLong ())
@@ -368,7 +379,38 @@
 			
 		}
 		
-		abstract function setFuturesHedgeMode (bool $hedge);
-		abstract function getFuturesHedgeMode ();
+		abstract function setFuturesHedgeMode (bool $hedge, $base = '', $quote = '');
+		
+		function getFuturesHedgeMode () {
+			return false;
+		}
+		
+		function getUFR ($execOrders, $totalOrders) {
+			return (1 - ($execOrders / $totalOrders));
+		}
+		
+		abstract function orderData (array $order);
+		
+		function futuresOrderData (array $order) {
+			return $this->orderData ($order);
+		}
+		
+		function getAnnouncements () {
+			return [];
+		}
+		
+		function setPairsFuturesHedgeMode () {
+			
+			try {
+				$this->setFuturesHedgeMode ($this->hedgeMode);
+			} catch (\ExchangeException $e) {
+				// ignore
+			}
+			
+		}
+		
+		function setPairFuturesHedgeMode ($base, $quote) {
+			
+		}
 		
 	}
