@@ -838,6 +838,10 @@
 			return ['price' => $order['base_price']];
 		}
 		
+		function quantity () {
+			return ($this->quantity * $this->markPrice);
+		}
+		
 	}
 	
 	class BybitRequest {

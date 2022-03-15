@@ -413,4 +413,8 @@
 			
 		}
 		
+		function quantity () {
+			return $this->quantity;
+		}
+		
 	}
