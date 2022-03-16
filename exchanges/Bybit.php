@@ -864,7 +864,7 @@
 			$errorCodes = [404],
 			$func,
 			$order,
-			$recvWindow = 20000; // 5 seconds
+			$recvWindow = 60000; // 5 seconds
 		
 		const GET = 'GET', POST = 'POST', PUT = 'PUT', DELETE = 'DELETE';
 		const FUTURES = 'FUTURES';
