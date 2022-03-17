@@ -8,7 +8,7 @@
 	abstract class Exchange {
 		
 		public
-			$qtyPercent = 99,
+			$qtyPercent = 100,
 			$debug = 0,
 			$entryPrice = 0, // Только для расчета PNL
 			$market = true,
@@ -152,6 +152,9 @@
 			
 			if ($this->entryPrice == 0) // NULLED
 				$this->entryPrice = $this->getEntryPrice ();
+			
+			if ($this->entryPrice == 0)
+				$this->entryPrice = $this->markPrice;
 			
 			$this->pnl = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
 			$this->roe = $this->getROE ($this->pnl);
