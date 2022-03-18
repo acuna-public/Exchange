@@ -839,7 +839,7 @@
 		}
 		
 		function quantity () {
-			return ($this->quantity * $this->markPrice);
+			return $this->notional;
 		}
 		
 	}
