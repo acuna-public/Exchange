@@ -138,8 +138,8 @@
 			
 			$this->margin = $this->getMargin ($this->futuresBalance);
 			
-			if ($this->maxNotional > 0 and $this->margin > $this->maxNotional)
-				$this->margin = $this->maxNotional;
+			//if ($this->maxNotional > 0 and $this->margin > $this->maxNotional)
+			//	$this->margin = $this->maxNotional;
 			
 			$this->notional = ($this->margin * $this->leverage);
 			
