@@ -41,7 +41,20 @@
 			
 		];
 		
-		public $interval = '1m', $timeOffset;
+		public $intervalChanges = [
+			
+			'1M' => 'M',
+			'1d' => 'D',
+			
+		];
+		
+		public $intervalChangesTime = [
+			
+			'1M' => '1 month',
+			
+		];
+		
+		public $interval = '1', $timeOffset;
 		
 		protected $userKey, $futuresKey;
 		
@@ -85,11 +98,17 @@
 				
 			];
 			
-			if (isset ($data['start_time']))
-				$request->params['startTime'] = ($data['start_time'] * 1000);
+			if (isset ($this->intervalChanges[$request->params['interval']]))
+				$request->params['interval'] = $this->intervalChanges[$request->params['interval']];
 			
-			if (isset ($data['end_time']))
-				$request->params['endTime'] = ($data['end_time'] * 1000);
+			$date = new \DateTime ();
+			
+			if (isset ($this->intervalChangesTime[$data['interval']]))
+				$request->params['from'] = $this->intervalChangesTime[$data['interval']];
+			else
+				$request->params['from'] = '1 month';
+			
+			$request->params['from'] = $date->modify ('-'.$request->params['from'])->getTimestamp ();
 			
 			if (isset ($data['limit']))
 				$request->params['limit'] = $data['limit'];
@@ -99,15 +118,15 @@
 			
 			$summary = [];
 			
-			foreach ($request->connect ('api/v3/klines') as $value)
+			foreach ($request->connect ('public/linear/kline')['result'] as $value)
 				$summary[] = [
 					
-					'date' => ($value[0] / 1000),
-					'date_text' => self::date ($value[0] / 1000),
-					'low' => $value[3],
-					'high' => $value[2],
-					'open' => $value[1], // Покупка
-					'close' => $value[4], // Продажа
+					'date' => $value['start_at'],
+					'date_text' => self::date ($value['start_at']),
+					'low' => $value['low'],
+					'high' => $value['high'],
+					'open' => $value['open'], // Покупка
+					'close' => $value['close'], // Продажа
 					
 				];
 			

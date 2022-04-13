@@ -8,9 +8,8 @@
 	abstract class Exchange {
 		
 		public
-			$qtyPercent = 100,
+			$qtyPercent = 98,
 			$debug = 0,
-			$entryPrice = 0, // Только для расчета PNL
 			$market = true,
 			$amount = 3,
 			$precision = 2,
@@ -26,6 +25,7 @@
 			$change,
 			$positions = [],
 			$position = [],
+			$entryPrice = 0, // Только для расчета PNL
 			$markPrice = 0,
 			$cred = [],
 			$liquid = 0,
