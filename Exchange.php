@@ -13,7 +13,8 @@
 			$market = true,
 			$amount = 3,
 			$precision = 2,
-			$hedgeMode = true;
+			$hedgeMode = true,
+			$lastDate = '';
 		
 		public static $date = 'd.m.y H:i';
 		
@@ -92,7 +93,7 @@
 			
 		}
 		
-		abstract function getCharts (array $data);
+		abstract function getCharts ($base, $quote, array $data);
 		abstract function getBalances ();
 		
 		function getFuturesBalances () {
@@ -275,7 +276,8 @@
 			return false;
 		}
 		
-		abstract function orderId ($order);
+		function orderId ($order) {
+		}
 		
 		function orderName ($order) {
 			return $this->orderId ($order);
@@ -330,7 +332,7 @@
 			
 			$date = new \Date ();
 			
-			$charts = $this->getCharts (['base' => $base, 'quote' => $quote, 'interval' => $interval, 'start_time' => $date->add (-\Date::DAY * 1)->getTime ()]);
+			$charts = $this->getCharts ($base, $quote, ['interval' => $interval, 'start_time' => $date->add (-\Date::DAY * 1)->getTime ()]);
 			
 			$min = $charts[0]['close'];
 			$max = 0;
@@ -394,10 +396,6 @@
 		
 		abstract function orderData (array $order);
 		
-		function futuresOrderData (array $order) {
-			return $this->orderData ($order);
-		}
-		
 		function getAnnouncements () {
 			return [];
 		}
@@ -418,6 +416,36 @@
 		
 		function quantity () {
 			return $this->quantity;
+		}
+		
+		function getAllPrices ($base, $quote, $data, $callback, $date = 0) {
+			
+			if (!$date) $date = $data['start_time'];
+			
+			$prices = $this->getCharts ($base, $quote, [
+				
+				'interval' => '1m',
+				'start_time' => $date,
+				'limit' => $data['limit'],
+				
+			]);
+			
+			debug (111);
+			
+			$i = 0;
+			
+			while ($this->lastDate < $data['finish_time']) {
+				
+				$price = $prices[$i];
+				
+				$this->lastDate = $price['date'];
+				
+				$i++;
+				
+				if ($i == $data['limit']) break;
+				
+			}
+			
 		}
 		
 	}

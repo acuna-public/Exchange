@@ -4,7 +4,7 @@
 	
 	class Binance extends \Exchange {
 		
-		public $days = ['1m' => 1, '5m' => 2, '30m' => 10, '1h' => 20, '2h' => 499, '4h' => 120, '1d' => 1], $ratios = ['2h' => [1.2, 1.8]];
+		public $days = ['1m' => 1, '5m' => 2, '15m' => 10, '30m' => 20, '1h' => 30, '2h' => 499, '4h' => 120, '1d' => 1], $ratios = ['2h' => [1.2, 1.8]];
 		public $limit = 120;
 		
 		public $fees = [
@@ -66,16 +66,16 @@
 			
 		}
 		
-		function getCharts (array $data) {
+		function getCharts ($base, $quote, array $data) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
-			if (isset ($this->curChanges[$data['base']]))
-				$data['base'] = $this->curChanges[$data['base']];
+			if (isset ($this->curChanges[$base]))
+				$base = $this->curChanges[$base];
 			
 			$request->params = [
 				
-				'symbol' => $this->pair ($data['base'], $data['quote']),
+				'symbol' => $this->pair ($base, $quote),
 				'interval' => (isset ($data['interval']) ? $data['interval'] : $this->interval),
 				
 			];
@@ -401,7 +401,7 @@
 			
 		}
 		
-		function getSymbols ($type, $quote = '') {
+		/*function getSymbols ($type, $quote = '') {
 			
 			$symbols = [];
 			
@@ -420,7 +420,7 @@
 			
 			return $symbols;
 			
-		}
+		}*/
 		
 		function getSymbols ($quote = '') {
 			
@@ -896,8 +896,12 @@
 			return ['value' => $item['value'], 'trigger' => $item['triggerValue']];
 		}
 		
-		function futuresOrderData (array $order) {
-			return ['price' => $order['stopPrice']];
+		function getPositionInfo ($base, $quote) {
+			return $this->getFuturesOpenOrders ($base, $quote)[0];
+		}
+		
+		function getPositionData ($position) {
+			return ['stop_loss' => $position['stopPrice']];
 		}
 		
 	}

@@ -43,14 +43,18 @@
 		
 		public $intervalChanges = [
 			
+			'1m' => 1,
+			'1h' => 60,
 			'1M' => 'M',
 			'1d' => 'D',
+			'1w' => 'W',
 			
 		];
 		
 		public $intervalChangesTime = [
 			
 			'1M' => '1 month',
+			'1w' => '2 years',
 			
 		];
 		
@@ -84,16 +88,16 @@
 			
 		}
 		
-		function getCharts (array $data) {
+		function getCharts ($base, $quote, array $data) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
-			if (isset ($this->curChanges[$data['base']]))
-				$data['base'] = $this->curChanges[$data['base']];
+			if (isset ($this->curChanges[$base]))
+				$base = $this->curChanges[$base];
 			
 			$request->params = [
 				
-				'symbol' => $this->pair ($data['base'], $data['quote']),
+				'symbol' => $this->pair ($base, $quote),
 				'interval' => (isset ($data['interval']) ? $data['interval'] : $this->interval),
 				
 			];
@@ -101,14 +105,18 @@
 			if (isset ($this->intervalChanges[$request->params['interval']]))
 				$request->params['interval'] = $this->intervalChanges[$request->params['interval']];
 			
-			$date = new \DateTime ();
-			
-			if (isset ($this->intervalChangesTime[$data['interval']]))
-				$request->params['from'] = $this->intervalChangesTime[$data['interval']];
-			else
-				$request->params['from'] = '1 month';
-			
-			$request->params['from'] = $date->modify ('-'.$request->params['from'])->getTimestamp ();
+			if (!isset ($data['start_time'])) {
+				
+				$date = new \DateTime ();
+				
+				if (isset ($this->intervalChangesTime[$data['interval']]))
+					$request->params['from'] = $this->intervalChangesTime[$data['interval']];
+				else
+					$request->params['from'] = '1 month';
+				
+				$request->params['from'] = $date->modify ('-'.$request->params['from'])->getTimestamp ();
+				
+			} else $request->params['from'] = $data['start_time'];
 			
 			if (isset ($data['limit']))
 				$request->params['limit'] = $data['limit'];
@@ -663,10 +671,6 @@
 			return ($order['stop_order_type'] == 'TakeProfit');
 		}
 		
-		function orderId ($order) {
-			return $order['stop_order_id'];
-		}
-		
 		function orderName ($order) {
 			return $order['order_link_id'];
 		}
@@ -859,6 +863,14 @@
 		
 		function quantity () {
 			return $this->notional;
+		}
+		
+		function getPositionInfo ($base, $quote) {
+			return $this->position;
+		}
+		
+		function getPositionData ($position) {
+			return $position;
 		}
 		
 	}
