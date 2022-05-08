@@ -6,10 +6,16 @@
 		
 		public $period = 0, $factor = 2;
 		
+		protected $start = 0, $num = 0;
+		
 		function SMA () {
 			
 			$sma = 0;
-			foreach ($this->prices as $price) $sma += $price['close'];
+			
+			$this->num = count ($this->prices);
+			$this->start = ($this->num - $this->period);
+			
+			for ($i = $this->start; $i < $this->num; $i++) $sma += $this->prices[$i]['close'];
 			
 			$sma /= $this->period;
 			
@@ -23,7 +29,7 @@
 			
 			$ema = $this->SMA ();
 			
-			for ($i = 0; $i < count ($this->prices); $i++) {
+			for ($i = $this->start; $i < $this->num; $i++) {
 				
 				$price = $this->prices[$i];
 				
