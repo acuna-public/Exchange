@@ -31,6 +31,7 @@
 			$cred = [],
 			$liquid = 0,
 			$queryNum = 0,
+			$fees = [],
 			$testQuantity = 0,
 			$multiplierUp = 0,
 			$multiplierDown = 0,
