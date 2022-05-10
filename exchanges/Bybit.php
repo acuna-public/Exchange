@@ -11,10 +11,10 @@
 			
 			'USDT' => [
 				
-				[0.0200, 0.0400],
-				[0.0160, 0.0400],
-				[0.0140, 0.0350],
-				[0.0120, 0.0320],
+				[0.010, 0.06],
+				[0.006, 0.05],
+				[0.004, 0.045],
+				[0.002, 0.0425],
 				
 			],
 			
@@ -251,7 +251,7 @@
 			$request->market = BybitRequest::FUTURES;
 			
 			foreach ($request->connect ('v2/private/wallet/balance')['result'] as $asset => $data)
-				$this->futuresBalances[$asset] = $data['wallet_balance'];
+				$this->futuresBalances[$asset] = $data['available_balance'];
 			
 			return $this->futuresBalances;
 			
