@@ -4,7 +4,7 @@
 		
 		public $prices = [];
 		
-		public $period = 0, $factor = 20;
+		public $period = 0, $factor = 18;
 		
 		protected $start = 0, $num = 0;
 		
