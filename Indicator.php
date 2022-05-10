@@ -4,7 +4,7 @@
 		
 		public $prices = [];
 		
-		public $period = 0, $factor = 2;
+		public $period = 0, $factor = 20;
 		
 		protected $start = 0, $num = 0;
 		
@@ -29,7 +29,7 @@
 			
 			$ema = $this->SMA ();
 			
-			for ($i = $this->start; $i < $this->num; $i++) {
+			for ($i = $this->start; $i < $this->num - 1; $i++) {
 				
 				$price = $this->prices[$i];
 				
