@@ -55,6 +55,7 @@
 		
 		public $intervalChangesTime = [
 			
+			'1m' => '1 hours',
 			'1M' => '1 month',
 			'1w' => '2 years',
 			
