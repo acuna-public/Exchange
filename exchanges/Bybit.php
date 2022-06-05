@@ -145,16 +145,6 @@
 			
 		}
 		
-		function getBalances () {
-			
-			if (!$this->balances)
-				foreach ($this->request ('api/v3/account')['balances'] as $data)
-					$this->balances[$data['asset']] = $data['free'];
-			
-			return $this->balances;
-			
-		}
-		
 		function createOrder ($type, $base, $quote, $amount, $price) {
 			
 			$request = $this->getRequest (__FUNCTION__);
@@ -243,20 +233,35 @@
 			
 		}
 		
-		function getHolds ($id) {
-			return $this->request ('api/v3/balances/'.$id.'/holds');
-		}
-		
-		function getFuturesBalances () {
+		function getBalance ($type, $quote = '') {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
-			$request->market = BybitRequest::FUTURES;
+			$request->params = [];
 			
-			foreach ($request->connect ('v2/private/wallet/balance')['result'] as $asset => $data)
-				$this->futuresBalances[$asset] = $data['available_balance'];
+			if ($quote) $request->params['coin'] = $quote;
 			
-			return $this->futuresBalances;
+			$types = [
+				
+				self::BALANCE_AVAILABLE => 'available_balance',
+				self::BALANCE_TOTAL => 'wallet_balance',
+				
+			];
+			
+			foreach ($request->connect ('v2/private/wallet/balance')['result'] as $data) {
+				
+				if (!$quote) {
+					
+					$balance = [];
+					
+					foreach ($data as $data)
+						$balance[$data['asset']] = $data[$types[$type]];
+					
+					return $balance;
+					
+				} else return $data[$types[$type]];
+				
+			}
 			
 		}
 		
@@ -324,7 +329,7 @@
 			$data = [];
 			
 			foreach ($request->connect ('private/linear/position/list')['result'] as $pos)
-				$data[$pos['side'] == 'Buy' ? self::SHORT : self::LONG] = $pos;
+				$data[$pos['side'] == 'Buy' ? self::LONG : self::SHORT] = $pos;
 			
 			return $data;
 			
@@ -429,11 +434,11 @@
 			
 		}
 		
-		function getSymbols ($quote = '') {
+		protected function getSymbolsList ($list, $quote) {
 			
 			$symbols = [];
 			
-			foreach ($this->getSymbolsInfo () as $symbol) {
+			foreach ($list as $symbol) {
 				
 				$pair = $this->pair ($symbol['base_currency'], $symbol['quote_currency']);
 				
@@ -448,17 +453,28 @@
 		
 		protected function prepSymbol ($symbol) {
 			
+			$parts = explode ('.', $symbol['lot_size_filter']['min_trading_qty']);
+			
 			return [
 				
 				'base' => $symbol['base_currency'],
 				'quote' => $symbol['quote_currency'],
 				'leverage' => $symbol['leverage_filter']['max_leverage'],
 				'price_precision' => $symbol['price_scale'],
-				'amount_precision' => 0,
+				//'amount_precision' => (count ($parts) > 1 ? strlen ($parts[1]) : 0),
 				'min_notional' => $symbol['lot_size_filter']['min_trading_qty'],
 				'max_notional' => $symbol['lot_size_filter']['max_trading_qty'],
 				
 			];
+			
+		}
+		
+		function getSymbols ($quote = '') {
+			return $this->getSymbolsList ($this->getSymbolsInfo (), $quote);
+		}
+		
+		function getFuturesSymbols ($quote = '') {
+			return $this->getSymbolsList ($this->getFuturesSymbolsInfo (), $quote);
 		}
 		
 		function getFuturesOpenOrders ($base, $quote) {
@@ -478,47 +494,86 @@
 			
 		}
 		
-		function openFuturesMarketPosition ($order) {
+		function openFuturesMarketPosition ($base, $quote, $side, $data) {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$data['base'] = $base;
+			$data['quote'] = $quote;
 			
-			$request->params = [
-				
-				'symbol' => $this->pair ($order['base'], $order['quote']),
-				'side' => ($order['side'] == self::LONG ? 'Buy' : 'Sell'),
-				'type' => 'Market',
-				'qty' => $this->amount ($order['quantity']),
-				'time_in_force' => 'GoodTillCancel',
-				'reduce_only' => 'true',
-				
-			];
-			
-			if (isset ($order['price']))
-				$request->params['activationPrice'] = $this->price ($order['price']);
-			
-			if (isset ($order['name']))
-				$request->params['order_link_id'] = $order['name'];
-			
-			$request->market = BybitRequest::FUTURES;
-			$request->method = BybitRequest::POST;
-			
-			return $request->connect ('private/linear/stop-order/create')['result'];
+			return $this->createFuturesTypeOrder ([$data], 'Limit', 'Market', __FUNCTION__);
 			
 		}
 		
 		function createFuturesMarketTakeProfitOrder ($orders) {
-			
-			foreach ($orders as $i => $order)
-				$orders[$i]['side'] = ($this->isLong () ? 'Sell' : 'Buy');
-			
 			return $this->createFuturesTypeOrder ($orders, 'Limit', 'Market', __FUNCTION__);
+		}
+		
+		function editFuturesOrder ($base, $quote, $id, $data) {
+			
+			$request = $this->getRequest (__FUNCTION__);
+			
+			$request->market = BybitRequest::FUTURES;
+			$request->method = BybitRequest::POST;
+			
+			$request->params = [
+				
+				'symbol' => $this->pair ($base, $quote),
+				'order_id' => $id,
+				
+			];
+			
+			foreach ($data as $key => $value)
+				$request->params[$key] = $value;
+			
+			return $request->connect ('private/linear/order/replace')['result'];
+			
+		}
+		
+		function editFuturesOrderName ($base, $quote, $name, $data) {
+			
+			$request = $this->getRequest (__FUNCTION__);
+			
+			$request->market = BybitRequest::FUTURES;
+			$request->method = BybitRequest::POST;
+			
+			$request->params = [
+				
+				'symbol' => $this->pair ($base, $quote),
+				'order_link_id' => $name,
+				
+			];
+			
+			foreach ($data as $key => $value)
+				$request->params[$key] = $value;
+			
+			return $request->connect ('private/linear/order/replace')['result'];
+			
+		}
+		
+		function editFuturesPosition ($base, $quote, $side, $data) {
+			
+			$request = $this->getRequest (__FUNCTION__);
+			
+			$request->market = BybitRequest::FUTURES;
+			$request->method = BybitRequest::POST;
+			
+			$request->params = [
+				
+				'symbol' => $this->pair ($base, $quote),
+				'side' => ($this->isLong () ? 'Buy' : 'Sell'),
+				
+			];
+			
+			foreach ($data as $key => $value)
+				$request->params[$key] = $value;
+			
+			return $request->connect ('private/linear/position/trading-stop')['result'];
 			
 		}
 		
 		function createFuturesMarketStopOrder ($orders) {
 			
-			foreach ($orders as $i => $order)
-				$orders[$i]['side'] = ($this->isLong () ? 'Sell' : 'Buy');
+			//foreach ($orders as $i => $order)
+			//	$orders[$i]['close'] = true;
 			
 			return $this->createFuturesTypeOrder ($orders, 'Limit', 'Market', __FUNCTION__);
 			
@@ -534,19 +589,22 @@
 					
 					'symbol' => $this->pair ($order['base'], $order['quote']),
 					'order_type' => (isset ($order['price']) ? $type1 : $type2),
-					'side' => $order['side'],
-					'stop_px' => $this->price ($order['trigger_price']),
-					'base_price' => $this->price ($order['trigger_price']),
+					'side' => ($this->isLong () ? 'Buy' : 'Sell'),
+					'qty' => $order['quantity'],
 					'time_in_force' => 'GoodTillCancel',
-					'reduce_only' => 'false',
+					'reduce_only' => (isset ($order['close']) ? 'true' : 'false'),
+					'close_on_trigger' => 'false',
 					'trigger_by' => 'MarkPrice',
+					'tp_trigger_by' => 'MarkPrice',
+					'sl_trigger_by' => 'MarkPrice',
 					
 				];
 				
-				//if (isset ($order['quantity']))
-				$data['qty'] = 1;
+				if (isset ($order['take_profit']))
+					$data['take_profit'] = $this->price ($order['take_profit']);
 				
-				$data['close_on_trigger'] = 'true';
+				if (isset ($order['stop_loss']))
+					$data['stop_loss'] = $this->price ($order['stop_loss']);
 				
 				if (isset ($order['price']))
 					$data['price'] = $this->price ($order['price']);
@@ -575,42 +633,11 @@
 				$request->market = BybitRequest::FUTURES;
 				$request->method = BybitRequest::POST;
 				
-				$output[] = $request->connect ('private/linear/stop-order/create')['result'];
+				$output[] = $request->connect ('private/linear/order/create')['result'];
 				
 			}
 			
 			return $output;
-			
-		}
-		
-		function createFuturesTrailingStopOrder ($order) {
-			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			$request->params = [
-				
-				'symbol' => $this->pair ($order['base'], $order['quote']),
-				'type' => 'TRAILING_STOP_MARKET',
-				'side' => $order['side'],
-				'quantity' => $this->amount ($order['quantity']),
-				'callbackRate' => $order['rate'],
-				'priceProtect' => 'TRUE',
-				'workingType' => 'MARK_PRICE',
-				'side' => ($this->isLong () ? self::SELL : self::BUY),
-				'reduceOnly' => 'true',
-				
-			];
-			
-			if (isset ($order['price']))
-				$request->params['activationPrice'] = $this->price ($order['price']);
-			
-			if (isset ($order['name']))
-				$request->params['newClientOrderId'] = $order['name'];
-			
-			$request->market = BybitRequest::FUTURES;
-			$request->method = BybitRequest::POST;
-			
-			return $request->connect ('fapi/v1/order');
 			
 		}
 		
@@ -627,7 +654,25 @@
 			$request->market = BybitRequest::FUTURES;
 			$request->method = BybitRequest::POST;
 			
-			return $request->connect ('private/linear/stop-order/cancel-all')['result'];
+			return $request->connect ('private/linear/order/cancel-all')['result'];
+			
+		}
+		
+		function cancelFuturesOrderName ($base, $quote, $name) {
+			
+			$request = $this->getRequest (__FUNCTION__);
+			
+			$request->params = [
+				
+				'symbol' => $this->pair ($base, $quote),
+				'order_link_id' => $name,
+				
+			];
+			
+			$request->market = BybitRequest::FUTURES;
+			$request->method = BybitRequest::POST;
+			
+			$request->connect ('private/linear/order/cancel')['result'];
 			
 		}
 		
@@ -746,28 +791,6 @@
 			
 		}
 		
-		function getFuturesBrackets ($base = '', $quote = '') {
-			
-			$symbols = [];
-			
-			foreach ($this->getSymbolsInfo () as $symbol) {
-				
-				$pair = $this->pair ($symbol['base_currency'], $symbol['quote_currency']);
-				
-				if (
-						((!$base and !$quote)
-						or
-						($symbol['base_currency'] == $base and $symbol['quote_currency'] == $quote)
-						) and $symbol['status'] == 'Trading'
-					)
-					$symbols[$pair] = $this->prepSymbol ($symbol);
-				
-			}
-			
-			return $symbols;
-			
-		}
-		
 		function ticker ($base = '', $quote = '') {
 			
 			$request = $this->getRequest (__FUNCTION__);
@@ -796,6 +819,10 @@
 			return ['mark_price' => $item['mark_price'], 'index_price' => $item['index_price'], 'prev' => $item['prev_price_24h'], 'change_percent' => $item['price_24h_pcnt'], 'close' => $item['last_price']];
 		}
 		
+		function setPairsFuturesHedgeMode () {
+			
+		}
+		
 		function setFuturesHedgeMode (bool $hedge, $base = '', $quote = '') {
 			
 			$request = $this->getRequest (__FUNCTION__);
@@ -811,16 +838,6 @@
 			$request->method = BybitRequest::POST;
 			
 			return $request->connect ('private/linear/position/switch-mod')['result'];
-			
-		}
-		
-		function setPairFuturesHedgeMode ($base, $quote) {
-			
-			try {
-				$this->setFuturesHedgeMode ($this->hedgeMode, $base, $quote);
-			} catch (\ExchangeException $e) {
-				// ignore
-			}
 			
 		}
 		
@@ -862,10 +879,6 @@
 		
 		function futuresOrderData (array $order) {
 			return ['price' => $order['base_price']];
-		}
-		
-		function quantity () {
-			return $this->notional;
 		}
 		
 		function getPositionInfo ($base, $quote) {

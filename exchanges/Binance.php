@@ -110,16 +110,6 @@
 			
 		}
 		
-		function getBalances () {
-			
-			if (!$this->balances)
-				foreach ($this->request ('api/v3/account')['balances'] as $data)
-					$this->balances[$data['asset']] = $data['free'];
-			
-			return $this->balances;
-			
-		}
-		
 		function createOrder ($type, $base, $quote, $amount, $price) {
 			
 			$request = $this->getRequest (__FUNCTION__);
@@ -208,20 +198,55 @@
 			
 		}
 		
-		function getHolds ($id) {
-			return $this->request ('api/v3/balances/'.$id.'/holds');
+		function getBalance ($type, $quote = '') {
+			
+			$balances = [];
+			
+			$types = [
+				
+				self::BALANCE_AVAILABLE => 'free',
+				self::BALANCE_TOTAL => 'total',
+				
+			];
+			
+			foreach ($this->request ('api/v3/account')['balances'] as $data)
+				$balances[$data['asset']] = $data[$types[$type]];
+			
+			return $balances;
+			
 		}
 		
-		function getFuturesBalances () {
+		function getFuturesBalance ($type, $quote = '') {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
 			$request->market = Request::FUTURES;
 			
-			foreach ($request->connect ('fapi/v2/balance') as $data)
-				$this->futuresBalances[$data['asset']] = $data['availableBalance'];
+			$request->params = [];
 			
-			return $this->futuresBalances;
+			if ($quote) $request->params['cur'] = $quote;
+			
+			$types = [
+				
+				self::BALANCE_AVAILABLE => 'free',
+				self::BALANCE_TOTAL => 'total',
+				
+			];
+			
+			foreach ($request->connect ('fapi/v2/balance') as $data) {
+				
+				if (!$quote) {
+					
+					$balance = [];
+					
+					foreach ($data as $data)
+						$balance[$data['asset']] = $data[$types[$type]];
+					
+					return $balance;
+					
+				} else return $data[$types[$type]];
+				
+			}
 			
 		}
 		
@@ -401,48 +426,6 @@
 			
 		}
 		
-		/*function getSymbols ($type, $quote = '') {
-			
-			$symbols = [];
-			
-			foreach ($this->getSymbolsInfo ()['symbols'] as $symbol) {
-				
-				if ((!$quote or $symbol['quoteAsset'] == $quote) and $symbol['status'] == 'TRADING' and in_array ($type, $symbol['permissions'])) {
-					
-					$symbol['base'] = $symbol['baseAsset'];
-					$symbol['quote'] = $symbol['quoteAsset'];
-					
-					$symbols[$this->pair ($symbol['base'], $symbol['quote'])] = $symbol;
-					
-				}
-				
-			}
-			
-			return $symbols;
-			
-		}*/
-		
-		function getSymbols ($quote = '') {
-			
-			$symbols = [];
-			
-			foreach ($this->getFuturesSymbolsInfo ()['symbols'] as $symbol) {
-				
-				if ((!$quote or $symbol['marginAsset'] == $quote) and $symbol['underlyingType'] == 'COIN') {
-					
-					$symbol['base'] = $symbol['baseAsset'];
-					$symbol['quote'] = $symbol['marginAsset'];
-					
-					$symbols[$symbol['symbol']] = $symbol;
-					
-				}
-				
-			}
-			
-			return $symbols;
-			
-		}
-		
 		function getFuturesOpenOrders ($base, $quote) {
 			
 			$request = $this->getRequest (__FUNCTION__);
@@ -459,21 +442,21 @@
 			
 		}
 		
-		function openFuturesMarketPosition ($order) {
+		function openFuturesMarketPosition ($base, $quote, $side, $order) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
 			$request->params = [
 				
-				'symbol' => $this->pair ($order['base'], $order['quote']),
-				'side' => ($order['side'] == self::LONG ? 'BUY' : 'SELL'),
+				'symbol' => $this->pair ($base, $quote),
+				'side' => ($side == self::LONG ? 'BUY' : 'SELL'),
 				'type' => 'MARKET',
 				'quantity' => $this->amount ($order['quantity']),
 				
 			];
 			
 			if ($this->hedgeMode)
-				$request->params['positionSide'] = $order['side'];
+				$request->params['positionSide'] = $side;
 			
 			$request->market = Request::FUTURES;
 			$request->method = Request::POST;
@@ -738,45 +721,70 @@
 			
 		}
 		
-		function getFuturesBrackets ($base = '', $quote = '') {
+		protected function getSymbolsList ($func, $list, $quote) {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$symbols = [];
 			
-			if ($base and $quote)
-				$request->params['symbol'] = $this->pair ($base, $quote);
+			foreach ($list as $symbol) {
+				
+				if ((!$quote or $symbol['marginAsset'] == $quote) and $symbol['underlyingType'] == 'COIN') {
+					
+					$symbol['base'] = $symbol['baseAsset'];
+					$symbol['quote'] = $symbol['marginAsset'];
+					
+					$symbols[$symbol['symbol']] = $symbol;
+					
+				}
+				
+			}
+			
+			$request = $this->getRequest ($func);
 			
 			$request->market = Request::FUTURES;
 			
 			$data = $request->connect ('fapi/v1/leverageBracket');
 			
-			if (!$base and !$quote) {
-				
-				$output = [];
-				
-				foreach ($data as $pair)
-					$output[$pair['symbol']] = $this->prepBracket ($pair['brackets']);
-				
-			} else $output = $this->prepBracket ($data[0]['brackets']);
+			$output = [];
+			
+			foreach ($data as $pair)
+				if (isset ($symbols[$pair['symbol']]))
+				$output[$pair['symbol']] = $this->prepBracket ($pair['brackets'][0], $symbols[$pair['symbol']]);
 			
 			return $output;
 			
 		}
 		
-		protected function prepBracket ($brackets) {
+		function getSymbols ($quote = '') {
+			return $this->getSymbolsList (__FUNCTION__, $this->getSymbolsInfo ()['symbols'], $quote);
+		}
+		
+		function getFuturesSymbols ($quote = '') {
+			return $this->getSymbolsList (__FUNCTION__, $this->getFuturesSymbolsInfo ()['symbols'], $quote);
+		}
+		
+		protected function prepBracket ($bracket, $pair) {
 			
-			$output = [];
-			$count = count ($brackets) - 1;
-			
-			$i2 = 0;
-			
-			for ($i = $count; $i >= 0; $i--) {
+			$data = [
 				
-				$output[$i2] = ['leverage' => $brackets[$i]['initialLeverage'], 'notional' => $brackets[$i]['notionalCap']];
-				$i2++;
+				'leverage' => $bracket['initialLeverage'],
+				'notional' => $bracket['notionalCap'],
+				'price_precision' => $pair['pricePrecision'],
+				'amount_precision' => $pair['quantityPrecision'],
+				
+			];
+			
+			foreach ($pair['filters'] as $filter) {
+				
+				if ($filter['filterType'] == 'LOT_SIZE') {
+					
+					$data['min_notional'] = $filter['minQty'];
+					$data['max_notional'] = $filter['maxQty'];
+					
+				}
 				
 			}
 			
-			return $output;
+			return $data;
 			
 		}
 		
@@ -902,6 +910,14 @@
 		
 		function getPositionData ($position) {
 			return ['stop_loss' => $position['stopPrice']];
+		}
+		
+		function minQuantity () {
+			return ($this->minQuantity / $this->markPrice);
+		}
+		
+		function maxQuantity () {
+			return ($this->maxQuantity / $this->markPrice);
 		}
 		
 	}
