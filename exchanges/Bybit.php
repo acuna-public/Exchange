@@ -55,7 +55,7 @@
 		
 		public $intervalChangesTime = [
 			
-			'1m' => '1 hours',
+			'1m' => '3 hours',
 			'1M' => '1 month',
 			'1w' => '2 years',
 			
@@ -564,6 +564,7 @@
 			];
 			
 			foreach ($data as $key => $value)
+				if ($key != 'name')
 				$request->params[$key] = $value;
 			
 			return $request->connect ('private/linear/position/trading-stop')['result'];

@@ -20,7 +20,7 @@
 			$hedgeMode = true,
 			$lastDate = '',
 			$notional = 0,
-			$quantity,
+			$quantity = 0,
 			$pnl = 0, $roe,
 			$change,
 			$positions = [],
