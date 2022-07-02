@@ -32,6 +32,7 @@
 		public $curChanges = [
 			
 			'1000SHIB' => 'SHIB',
+			'SHIB1000' => 'SHIB',
 			
 		];
 		

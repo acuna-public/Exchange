@@ -801,18 +801,24 @@
 			
 			$request->signed = false;
 			
-			$pairs = $request->connect ('v2/public/tickers')['result'];
+			if ($pairs = $request->connect ('v2/public/tickers')) {
+				
+				$pairs = $pairs['result'];
+				
+				if (!$base and !$quote) {
+					
+					$output = [];
+					
+					foreach ($pairs as $pair)
+						$output[$pair['symbol']] = $this->prepTicker ($pair);
+					
+					return $output;
+					
+				} else return $this->prepTicker ($pairs[0]);
+				
+			}
 			
-			if (!$base and !$quote) {
-				
-				$output = [];
-				
-				foreach ($pairs as $pair)
-					$output[$pair['symbol']] = $this->prepTicker ($pair);
-				
-			} else $output = $this->prepTicker ($pairs[0]);
-			
-			return $output;
+			return ['index_price' => 0];
 			
 		}
 		
