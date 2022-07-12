@@ -129,7 +129,8 @@
 			
 			$summary = [];
 			
-			foreach ($request->connect ('public/linear/kline')['result'] as $value)
+			if ($prices = $request->connect ('public/linear/kline')['result'])
+			foreach ($prices as $value)
 				$summary[] = [
 					
 					'date' => $value['start_at'],
