@@ -973,7 +973,7 @@
 				CURLOPT_URL => $url.'/'.$path,
 				CURLOPT_RETURNTRANSFER => true,
 				CURLOPT_FOLLOWLOCATION => true,
-				CURLOPT_USERAGENT => 'User-Agent: Mozilla/4.0 (compatible; PHP Bybit API)',
+				CURLOPT_USERAGENT => 'User-Agent: Mozilla/4.0 (compatible; PHP '.$this->exchange->getTitle ().' API)',
 				CURLOPT_SSL_VERIFYPEER => false,
 				CURLOPT_SSL_VERIFYHOST => false,
 				

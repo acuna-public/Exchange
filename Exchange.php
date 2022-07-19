@@ -45,10 +45,6 @@
 		
 		static $PERPETUAL = 'PERPETUAL', $LEVERAGED = 'LEVERAGED';
 		
-		function __construct ($cred = []) {
-			$this->setCredentials ($cred);
-		}
-		
 		abstract function getName ();
 		abstract function getTitle ();
 		
