@@ -61,8 +61,6 @@
 			
 		];
 		
-		public $interval = '1', $timeOffset;
-		
 		protected $userKey, $futuresKey;
 		
 		function getName () {
@@ -101,7 +99,7 @@
 			$request->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
-				'interval' => (isset ($data['interval']) ? $data['interval'] : $this->interval),
+				'interval' => $data['interval'],
 				
 			];
 			
@@ -120,6 +118,9 @@
 				$request->params['from'] = $date->modify ('-'.$request->params['from'])->getTimestamp ();
 				
 			} else $request->params['from'] = $data['start_time'];
+			
+			if (isset ($data['end_time']))
+				$request->params['to'] = $data['end_time'];
 			
 			if (isset ($data['limit']))
 				$request->params['limit'] = $data['limit'];

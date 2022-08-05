@@ -2,42 +2,35 @@
 	
 	class Indicator {
 		
-		public $prices = [];
+		public $prices = [], $start = 0, $period = 0, $factor = 0;
 		
-		public $period = 0, $factor = 0;
-		
-		protected $start = 0, $num = 0;
+		protected $num = 0;
 		
 		function SMA () {
 			
-			$sma = 0;
-			
 			$this->num = count ($this->prices);
-			$this->start = ($this->num - $this->period);
 			
-			for ($i = $this->start; $i < $this->num; $i++) $sma += $this->prices[$i]['close'];
+			$value = 0;
 			
-			$sma /= $this->period;
+			for ($i = $this->start; $i < $this->num; $i++)
+				$value += $this->prices[$i]['close'];
 			
-			return $sma;
+			$value /= $this->period;
+			
+			return $value;
 			
 		}
 		
 		function EMA () {
 			
+			$value = $this->SMA ();
+			
 			$multiplier = ($this->factor / ($this->period + 1));
 			
-			$ema = $this->SMA ();
+			for ($i = $this->start; $i < $this->num; $i++)
+				$value = ((($this->prices[$i]['close'] - $value) * $multiplier) + $value);
 			
-			for ($i = $this->start; $i < $this->num; $i++) {
-				
-				$price = $this->prices[$i];
-				
-				$ema = ((($price['close'] - $ema) * $multiplier) + $ema);
-				
-			}
-			
-			return $ema;
+			return $value;
 			
 		}
 		

@@ -36,7 +36,7 @@
 			
 		];
 		
-		public $interval = '1m', $timeOffset;
+		public $timeOffset;
 		
 		protected $userKey, $futuresKey;
 		
@@ -77,7 +77,7 @@
 			$request->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
-				'interval' => (isset ($data['interval']) ? $data['interval'] : $this->interval),
+				'interval' => $data['interval'],
 				
 			];
 			

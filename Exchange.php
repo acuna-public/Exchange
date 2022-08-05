@@ -23,6 +23,7 @@
 			$quantity = 0,
 			$pnl = 0, $roe,
 			$change,
+			$timeOffset,
 			$positions = [],
 			$position = [],
 			$entryPrice = 0, // Только для расчета PNL
