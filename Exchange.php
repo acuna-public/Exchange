@@ -160,8 +160,10 @@
 		
 		function getFuturesFee () {
 			
-			$fee	= ($this->entryPrice * $this->quantity * $this->getFeeRate ());
-			$fee += ($this->markPrice * $this->quantity * $this->getFeeRate ());
+			$quantity = $this->getQuantity ($this->entryPrice);
+			
+			$fee	= ($this->entryPrice * $quantity * $this->getFeeRate ());
+			$fee += ($this->markPrice * $quantity * $this->getFeeRate ());
 			
 			return $fee;
 			
