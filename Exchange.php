@@ -149,7 +149,7 @@
 			return (($balance * $percent) / 100);
 		}
 		
-		function getFee () {
+		function getFeeRate () {
 			
 			$fee  = $this->fees[$this->ftype][$this->flevel][($this->type == self::MAKER ? 0 : 1)];
 			$fee -= $this->getMargin ($fee, $this->rebate);
@@ -158,24 +158,10 @@
 			
 		}
 		
-		function openFee ($entryPrice, $quantity) {
-			
-			$fee = ($entryPrice * $quantity);
-			return (($fee * $this->getFee ()) / 100);
-			
-		}
-		
-		function closeFee ($exitPrice, $quantity) {
-			
-			$fee = ($exitPrice * $quantity);
-			return (($fee * $this->getFee ()) / 100);
-			
-		}
-		
 		function getFuturesFee () {
 			
-			$fee	= $this->openFee ($this->entryPrice, $this->quantity);
-			$fee += $this->closeFee ($this->markPrice, $this->quantity);
+			$fee	= ($this->entryPrice * $this->quantity * $this->getFeeRate ());
+			$fee += ($this->markPrice * $this->quantity * $this->getFeeRate ());
 			
 			return $fee;
 			
