@@ -160,7 +160,7 @@
 		
 		function getFuturesFee () {
 			
-			$quantity = $this->getQuantity ($this->entryPrice);
+			$quantity = ($this->margin / $this->entryPrice);
 			
 			$fee	= ($this->entryPrice * $quantity * $this->getFeeRate ());
 			$fee += ($this->markPrice * $quantity * $this->getFeeRate ());
