@@ -112,7 +112,7 @@
 				$this->markPrice = $this->getMarkPrice ();
 			
 			if ($this->markPrice == 0)
-				$this->markPrice = $this->futuresTicker ($base, $quote)['index_price'];
+				$this->markPrice = $this->futuresTicker ($base, $quote)['mark_price'];
 			
 			if ($this->leverage == 0) // NULLED
 				$this->leverage = $this->getLeverage ();

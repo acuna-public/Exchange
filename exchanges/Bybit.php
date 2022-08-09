@@ -820,7 +820,7 @@
 				
 			}
 			
-			return ['index_price' => 0];
+			return ['index_price' => 0, 'mark_price' => 0];
 			
 		}
 		
