@@ -117,6 +117,8 @@
 			if ($this->leverage == 0) // NULLED
 				$this->leverage = $this->getLeverage ();
 			
+			$this->leverage = 10;
+			
 			$this->liquid = (100 / $this->leverage);
 			
 			$this->notional = ($this->margin * $this->leverage);
