@@ -1,6 +1,6 @@
 <?php
 	
-	class ExchangeException extends Exception {
+	class ExchangeException extends \Exception {
 		
 		public $func, $proxy, $order;
 		
