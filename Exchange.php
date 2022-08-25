@@ -18,7 +18,6 @@
 			$amount = 3,
 			$precision = 2,
 			$hedgeMode = true,
-			$lastDate = '',
 			$notional = 0,
 			$quantity = 0,
 			$pnl = 0, $roe,
@@ -37,6 +36,9 @@
 			$proxies = [],
 			$minQuantity = 0,
 			$maxQuantity = 0;
+		
+		protected
+			$lastDate = 0;
 		
 		public $flevel = 0, $rebate = 0, $ftype = 'USDT';
 		
@@ -91,6 +93,10 @@
 		abstract function getCharts ($base, $quote, array $data);
 		abstract function getBalance ($type, $quote = '');
 		
+		function getFuturesCharts ($base, $quote, array $data) {
+			return $this->getCharts ($base, $quote, $data);
+		}
+		
 		function getFuturesBalance ($type, $quote = '') {
 			return $this->getBalance ($type, $quote);
 		}
@@ -117,7 +123,7 @@
 			if ($this->leverage == 0) // NULLED
 				$this->leverage = $this->getLeverage ();
 			
-			$this->leverage = 10;
+			//$this->leverage = 10;
 			
 			$this->liquid = (100 / $this->leverage);
 			
@@ -382,33 +388,36 @@
 			return $this->amount ($this->quantity);
 		}
 		
-		function getAllPrices ($base, $quote, $data, $callback, $date = 0) {
+		function getAllPrices ($base, $quote, $data, $callback = null) {
 			
-			if (!$date) $date = $data['start_time'];
+			$prices = [];
 			
-			$prices = $this->getCharts ($base, $quote, [
+			while ($data['start_time'] < $data['end_time']) {
 				
-				'interval' => '1m',
-				'start_time' => $date,
-				'limit' => $data['limit'],
+				$prices2 = $this->getCharts ($base, $quote, $data);
 				
-			]);
-			
-			debug (111);
-			
-			$i = 0;
-			
-			while ($this->lastDate < $data['finish_time']) {
+				$prices3 = [];
 				
-				$price = $prices[$i];
+				for ($i = 0; $i < count ($prices2); $i++) {
+					
+					$price = $prices2[$i];
+					
+					if (!$prices or $i > 0) {
+						
+						$prices[] = $price;
+						$prices3[] = $price;
+						
+					}
+					
+					$data['start_time'] = $price['date'];
+					
+				}
 				
-				$this->lastDate = $price['date'];
-				
-				$i++;
-				
-				if ($i == $data['limit']) break;
+				if ($callback) $callback ($prices3);
 				
 			}
+			
+			return $prices;
 			
 		}
 		

@@ -84,7 +84,7 @@
 			if (isset ($data['start_time']))
 				$request->params['startTime'] = ($data['start_time'] * 1000);
 			
-			if (isset ($data['end_time']))
+			if (isset ($data['end_time']) and $data['end_time'])
 				$request->params['endTime'] = ($data['end_time'] * 1000);
 			
 			if (isset ($data['limit']))
