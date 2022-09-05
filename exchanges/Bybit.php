@@ -4,23 +4,21 @@
 	
 	class Bybit extends \Exchange {
 		
-		public $days = ['1m' => 1, '5m' => 2, '30m' => 10, '1h' => 20, '2h' => 499, '4h' => 120, '1d' => 1], $ratios = ['2h' => [1.2, 1.8]];
-		public $limit = 120;
-		
-		public $rebate = 0;
-		
 		public $fees = [
 			
-			'USDT' => [
+			self::FTYPE_USD => [
 				
 				[0.010, 0.06],
 				[0.006, 0.05],
 				[0.004, 0.045],
 				[0.002, 0.0425],
+				[0, 0.04],
+				[0, 0.035],
+				[0, 0.03],
 				
 			],
 			
-			'COIN' => [
+			self::FTYPE_COIN => [
 				
 				[0.0100, 0.0500], // 30d BTC Volume Maker / Taker %
 				[0.0080, 0.0450],
@@ -45,20 +43,20 @@
 		
 		public $intervalChanges = [
 			
-			'1m' => 1,
-			'1h' => 60,
-			'1M' => 'M',
+			'1m' => '1',
+			'3m' => '3',
+			'5m' => '5',
+			'15m' => '15',
+			'30m' => '30',
+			'1h' => '60',
+			'2h' => '120',
+			'4h' => '240',
+			'6h' => '360',
+			'12h' => '720',
 			'1d' => 'D',
 			'1w' => 'W',
-			
-		];
-		
-		public $intervalChangesTime = [
-			
-			'1m' => '3 hours',
-			'1h' => '1 week',
-			'1M' => '1 month',
-			'1w' => '2 years',
+			'1M' => 'M',
+			'1y' => 'Y',
 			
 		];
 		
@@ -100,31 +98,24 @@
 			$request->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
-				'interval' => $data['interval'],
+				'interval' => $this->intervalChanges[$data['interval']],
 				
 			];
 			
-			if (isset ($this->intervalChanges[$request->params['interval']]))
-				$request->params['interval'] = $this->intervalChanges[$request->params['interval']];
+			if (!isset ($data['limit']))
+				$data['limit'] = 200;
 			
-			if (!isset ($data['start_time'])) {
-				
-				$date = new \DateTime ();
-				
-				if (isset ($this->intervalChangesTime[$data['interval']]))
-					$request->params['from'] = $this->intervalChangesTime[$data['interval']];
-				else
-					$request->params['from'] = '1 month';
-				
-				$request->params['from'] = $date->modify ('-'.$request->params['from'])->getTimestamp ();
-				
-			} else $request->params['from'] = $data['start_time'];
+			$request->params['limit'] = $data['limit'];
 			
-			if (isset ($data['end_time']))
-				$request->params['to'] = $data['end_time'];
+			if (!isset ($data['end_time']))
+				$data['end_time'] = time ();
 			
-			if (isset ($data['limit']))
-				$request->params['limit'] = $data['limit'];
+			$request->params['to'] = $data['end_time'];
+			
+			if (!isset ($data['start_time']))
+				$data['start_time'] = ($data['end_time'] - ($data['limit'] * $this->timeframe ($data['interval'])));
+			
+			$request->params['from'] = $data['start_time'];
 			
 			$request->signed = false;
 			$request->debug = 0;
@@ -136,11 +127,12 @@
 				$summary[] = [
 					
 					'date' => $value['start_at'],
-					'date_text' => self::date ($value['start_at']),
+					'date_text' => $this->date ($value['start_at']),
 					'low' => $value['low'],
 					'high' => $value['high'],
 					'open' => $value['open'], // Покупка
 					'close' => $value['close'], // Продажа
+					'volume' => $value['volume'],
 					
 				];
 			

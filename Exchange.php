@@ -10,24 +10,21 @@
 		public
 			$cred = [];
 		
-		public static $date = 'd.m.y H:i';
-		
 		public
 			$debug = 0,
-			$type = self::TAKER,
 			$amount = 3,
 			$precision = 2,
 			$hedgeMode = true,
 			$notional = 0,
 			$quantity = 0,
 			$pnl = 0, $roe,
-			$change,
 			$timeOffset,
 			$positions = [],
 			$position = [],
 			$entryPrice = 0, // Только для расчета PNL
 			$markPrice = 0,
 			$liquid = 0,
+			$date = 'd.m.y H:i',
 			$queryNum = 0,
 			$fees = [],
 			$testQuantity = 0,
@@ -40,11 +37,13 @@
 		protected
 			$lastDate = 0;
 		
-		public $flevel = 0, $rebate = 0, $ftype = 'USDT';
+		public $days = ['1m' => 1, '5m' => 2, '30m' => 10, '1h' => 20, '2h' => 499, '4h' => 120, '1d' => 1], $ratios = ['2h' => [1.2, 1.8]];
+		
+		public $flevel = 0, $rebate = 10, $ftype = self::FTYPE_USD;
 		
 		public $side = self::LONG, $marginType = self::ISOLATED, $leverage = 0, $margin = 0;
 		
-		const LONG = 'LONG', SHORT = 'SHORT', ISOLATED = 'ISOLATED', CROSS = 'CROSSED', BUY = 'BUY', SELL = 'SELL', MAKER = 'MAKER', TAKER = 'TAKER', BALANCE_AVAILABLE = 'available', BALANCE_TOTAL = 'total';
+		const LONG = 'LONG', SHORT = 'SHORT', ISOLATED = 'ISOLATED', CROSS = 'CROSSED', BUY = 'BUY', SELL = 'SELL', MAKER = 'MAKER', TAKER = 'TAKER', BALANCE_AVAILABLE = 'available', BALANCE_TOTAL = 'total', FTYPE_USD = 'USD', FTYPE_COIN = 'COIN';
 		
 		static $PERPETUAL = 'PERPETUAL', $LEVERAGED = 'LEVERAGED';
 		
@@ -143,38 +142,26 @@
 				$this->entryPrice = $this->markPrice;
 			
 			$this->pnl = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
+			
 			$this->roe = $this->getROE ($this->pnl);
 			
-			$this->change = $this->getLevel ($this->roe);
-			
-		}
-		
-		function getLevel ($roe) {
-			return ($roe / 100);
 		}
 		
 		function getMargin ($balance, $percent) {
 			return (($balance * $percent) / 100);
 		}
 		
-		function getFeeRate () {
+		function getFeeRate ($type) {
 			
-			$fee  = $this->fees[$this->ftype][$this->flevel][($this->type == self::MAKER ? 0 : 1)];
+			$fee  = $this->fees[$this->ftype][$this->flevel][($type == self::MAKER ? 0 : 1)];
 			$fee -= $this->getMargin ($fee, $this->rebate);
 			
 			return $fee;
 			
 		}
 		
-		function getFuturesFee () {
-			
-			$quantity = ($this->margin / $this->entryPrice);
-			
-			$fee	= ($this->entryPrice * $quantity * $this->getFeeRate ());
-			$fee += ($this->markPrice * $quantity * $this->getFeeRate ());
-			
-			return $fee;
-			
+		function getFuturesFees ($price, $type) {
+			return $this->getMargin (($price * $this->quantity), $this->getFeeRate ($type));
 		}
 		
 		function getQuantity ($price) {
@@ -341,8 +328,8 @@
 			return mash_number_format ($amount, $this->precision, '.', '');
 		}
 		
-		static function date ($date) {
-			return date (self::$date, $date);
+		protected function date ($date) {
+			return date ($this->date, $date);
 		}
 		
 		function getPrice ($price) {
@@ -392,7 +379,7 @@
 			
 			$prices = [];
 			
-			while ($data['start_time'] < $data['end_time']) {
+			do {
 				
 				$prices2 = $this->getCharts ($base, $quote, $data);
 				
@@ -415,7 +402,7 @@
 				
 				if ($callback) $callback ($prices3);
 				
-			}
+			} while ($prices2 and $data['start_time'] < $data['end_time']);
 			
 			return $prices;
 			
@@ -432,5 +419,24 @@
 		function editFuturesOrder ($base, $quote, $id, $data) {}
 		function editFuturesOrderName ($base, $quote, $name, $data) {}
 		function cancelFuturesOrderName ($base, $quote, $name) {}
+		
+		protected function timeframe ($timeframe) {
+			
+			$scales = [];
+			
+			$scales['s'] = 1;
+			$scales['m'] = $scales['s'] * 60;
+			$scales['h'] = $scales['m'] * 60;
+			$scales['d'] = $scales['h'] * 24;
+			$scales['w'] = $scales['d'] * 7;
+			$scales['M'] = $scales['w'] * 30;
+			$scales['y'] = $scales['M'] * 365;
+			
+			$amount = substr ($timeframe, 0, -1);
+			$unit = substr ($timeframe, -1);
+			
+			return ($amount * $scales[$unit]);
+			
+    }
 		
 	}

@@ -4,12 +4,9 @@
 	
 	class Binance extends \Exchange {
 		
-		public $days = ['1m' => 1, '5m' => 2, '15m' => 10, '30m' => 20, '1h' => 30, '2h' => 499, '4h' => 120, '1d' => 1], $ratios = ['2h' => [1.2, 1.8]];
-		public $limit = 120;
-		
 		public $fees = [
 			
-			'USDT' => [
+			self::FTYPE_USD => [
 				
 				[0.0200, 0.0400],
 				[0.0160, 0.0400],
@@ -18,7 +15,7 @@
 				
 			],
 			
-			'COIN' => [
+			self::FTYPE_COIN => [
 				
 				[0.0100, 0.0500], // 30d BTC Volume Maker / Taker %
 				[0.0080, 0.0450],
@@ -99,7 +96,7 @@
 				$summary[] = [
 					
 					'date' => ($value[0] / 1000),
-					'date_text' => self::date ($value[0] / 1000),
+					'date_text' => $this->date ($value[0] / 1000),
 					'low' => $value[3],
 					'high' => $value[2],
 					'open' => $value[1], // Покупка
