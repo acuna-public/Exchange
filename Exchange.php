@@ -135,9 +135,6 @@
 		
 		function futuresUpdate () {
 			
-			if ($this->entryPrice == 0) // NULLED
-				$this->entryPrice = $this->getEntryPrice ();
-			
 			if ($this->entryPrice == 0)
 				$this->entryPrice = $this->markPrice;
 			
