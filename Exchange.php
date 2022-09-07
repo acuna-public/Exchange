@@ -135,6 +135,9 @@
 		
 		function futuresUpdate () {
 			
+			//if ($this->entryPrice == 0) // NULLED
+			//	$this->entryPrice = $this->getEntryPrice ();
+			
 			if ($this->entryPrice == 0)
 				$this->entryPrice = $this->markPrice;
 			
@@ -159,6 +162,14 @@
 		
 		function getFuturesFees ($price, $type) {
 			return $this->getMargin (($price * $this->quantity), $this->getFeeRate ($type));
+		}
+		
+		function getFuturesMakerFees ($price) {
+			return $this->getFuturesFees ($price, self::MAKER);
+		}
+		
+		function getFuturesTakerFees ($price) {
+			return $this->getFuturesFees ($price, self::TAKER);
 		}
 		
 		function getQuantity ($price) {
@@ -416,6 +427,7 @@
 		function editFuturesOrder ($base, $quote, $id, $data) {}
 		function editFuturesOrderName ($base, $quote, $name, $data) {}
 		function cancelFuturesOrderName ($base, $quote, $name) {}
+		function closeFuturesMarketPosition ($base, $quote, $side, $data) {}
 		
 		protected function timeframe ($timeframe) {
 			

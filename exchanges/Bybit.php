@@ -494,12 +494,21 @@
 			$data['base'] = $base;
 			$data['quote'] = $quote;
 			
-			return $this->createFuturesTypeOrder ([$data], 'Limit', 'Market', __FUNCTION__);
+			return $this->createFuturesTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), 'Limit', 'Market', __FUNCTION__);
+			
+		}
+		
+		function closeFuturesMarketPosition ($base, $quote, $side, $data) {
+			
+			$data['base'] = $base;
+			$data['quote'] = $quote;
+			
+			return $this->createFuturesTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), 'Limit', 'Market', __FUNCTION__);
 			
 		}
 		
 		function createFuturesMarketTakeProfitOrder ($orders) {
-			return $this->createFuturesTypeOrder ($orders, 'Limit', 'Market', __FUNCTION__);
+			return $this->createFuturesTypeOrder ($orders, ($this->isLong () ? 'Buy' : 'Sell'), 'Limit', 'Market', __FUNCTION__);
 		}
 		
 		function editFuturesOrder ($base, $quote, $id, $data) {
@@ -571,11 +580,11 @@
 			//foreach ($orders as $i => $order)
 			//	$orders[$i]['close'] = true;
 			
-			return $this->createFuturesTypeOrder ($orders, 'Limit', 'Market', __FUNCTION__);
+			return $this->createFuturesTypeOrder ($orders, ($this->isLong () ? 'Buy' : 'Sell'), 'Limit', 'Market', __FUNCTION__);
 			
 		}
 		
-		function createFuturesTypeOrder ($orders, $type1, $type2, $func) {
+		function createFuturesTypeOrder ($orders, $side, $type1, $type2, $func) {
 			
 			$list = [];
 			
@@ -585,7 +594,7 @@
 					
 					'symbol' => $this->pair ($order['base'], $order['quote']),
 					'order_type' => (isset ($order['price']) ? $type1 : $type2),
-					'side' => ($this->isLong () ? 'Buy' : 'Sell'),
+					'side' => $side,
 					'qty' => $order['quantity'],
 					'time_in_force' => 'GoodTillCancel',
 					'reduce_only' => (isset ($order['close']) ? 'true' : 'false'),
