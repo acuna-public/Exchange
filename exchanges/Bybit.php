@@ -489,7 +489,7 @@
 			
 		}
 		
-		function openFuturesMarketPosition ($base, $quote, $side, $data) {
+		function openFuturesMarketPosition ($base, $quote, $data) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
@@ -498,7 +498,7 @@
 			
 		}
 		
-		function closeFuturesMarketPosition ($base, $quote, $side, $data) {
+		function closeFuturesMarketPosition ($base, $quote, $data) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;

@@ -265,7 +265,7 @@
 		}
 		
 		function getFuturesOpenOrders ($base, $quote) {}
-		function openFuturesMarketPosition ($base, $quote, $side, $order) {}
+		function openFuturesMarketPosition ($base, $quote, $order) {}
 		function createFuturesMarketTakeProfitOrder ($orders) {}
 		function createFuturesMarketStopOrder ($orders) {}
 		function createFuturesTrailingStopOrder ($order) {}
@@ -427,7 +427,7 @@
 		function editFuturesOrder ($base, $quote, $id, $data) {}
 		function editFuturesOrderName ($base, $quote, $name, $data) {}
 		function cancelFuturesOrderName ($base, $quote, $name) {}
-		function closeFuturesMarketPosition ($base, $quote, $side, $data) {}
+		function closeFuturesMarketPosition ($base, $quote, $data) {}
 		
 		protected function timeframe ($timeframe) {
 			
