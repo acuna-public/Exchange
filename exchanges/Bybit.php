@@ -503,6 +503,8 @@
 			$data['base'] = $base;
 			$data['quote'] = $quote;
 			
+			$data['close'] = true;
+			
 			return $this->createFuturesTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), 'Limit', 'Market', __FUNCTION__);
 			
 		}
