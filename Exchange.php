@@ -252,13 +252,8 @@
 		
 		abstract function getTrades ($base, $quote);
 		abstract function getSymbols ($quote = '');
-		abstract function getSymbolsInfo ();
 		abstract function isOrderTakeProfit ($order);
 		abstract function orderCreateDate ($order);
-		
-		function getFuturesSymbolsInfo () {
-			return $this->getSymbolsInfo ();
-		}
 		
 		function getFuturesSymbols ($quote = '') {
 			return $this->getSymbols ($quote);

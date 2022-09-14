@@ -402,7 +402,7 @@
 			
 		}
 		
-		function getSymbolsInfo () {
+		protected function getSymbolsInfo () {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -412,7 +412,7 @@
 			
 		}
 		
-		function getFuturesSymbolsInfo () {
+		protected function getFuturesSymbolsInfo () {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			

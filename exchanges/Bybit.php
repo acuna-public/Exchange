@@ -419,57 +419,73 @@
 			
 		}
 		
-		function getSymbolsInfo () {
-			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			$request->signed = false;
-			
-			return $request->connect ('v2/public/symbols')['result'];
-			
-		}
-		
-		protected function getSymbolsList ($list, $quote) {
-			
-			$symbols = [];
-			
-			foreach ($list as $symbol) {
-				
-				$pair = $this->pair ($symbol['base_currency'], $symbol['quote_currency']);
-				
-				if ((!$quote or $symbol['quote_currency'] == $quote) and $symbol['status'] == 'Trading')
-					$symbols[$pair] = $this->prepSymbol ($symbol);
-				
-			}
-			
-			return $symbols;
-			
-		}
-		
-		protected function prepSymbol ($symbol) {
-			
-			$parts = explode ('.', $symbol['lot_size_filter']['min_trading_qty']);
+		protected function prepSymbol ($symbol, $symbol2) {
 			
 			return [
 				
 				'base' => $symbol['base_currency'],
 				'quote' => $symbol['quote_currency'],
 				'leverage' => $symbol['leverage_filter']['max_leverage'],
-				'price_precision' => $symbol['price_scale'],
-				//'amount_precision' => (count ($parts) > 1 ? strlen ($parts[1]) : 0),
-				'min_notional' => $symbol['lot_size_filter']['min_trading_qty'],
-				'max_notional' => $symbol['lot_size_filter']['max_trading_qty'],
+				'price_precision' => $symbol2['priceFraction'],
+				'amount_precision' => $symbol2['lotFraction'],
+				'min_quantity' => $symbol2['minQty'],
+				'max_quantity' => $symbol2['maxNewOrderQty'],
 				
 			];
 			
 		}
 		
 		function getSymbols ($quote = '') {
-			return $this->getSymbolsList ($this->getSymbolsInfo (), $quote);
-		}
-		
-		function getFuturesSymbols ($quote = '') {
-			return $this->getSymbolsList ($this->getFuturesSymbolsInfo (), $quote);
+			
+			$request = $this->getRequest (__FUNCTION__);
+			
+			$data = $request->connect2 ('https://api2.bybit.com/contract/v5/product/dynamic-symbol-list?filter=all');
+			
+			$request->signed = false;
+			
+			$symbols2 = [];
+			
+			foreach ($data['result'] as $type => $symbols) {
+				
+				if ($type == 'LinearPerpetual' or $type == 'UsdcPerpetual') {
+					
+					foreach ($symbols as $symbol) {
+						
+						$pair = $this->pair ($symbol['baseCurrency'], $symbol['coinName']);
+						
+						if ((!$quote or $symbol['coinName'] == $quote) and $symbol['contractStatus'] == 'Trading')
+							$symbols2[$pair] = $symbol;
+						
+					}
+					
+				} elseif ($type == 'InversePerpetual') {
+					
+					foreach ($symbols as $symbol) {
+						
+						$pair = $this->pair ($symbol['baseCurrency'], $symbol['quoteCurrency']);
+						
+						if ((!$quote or $symbol['quoteCurrency'] == $quote) and $symbol['contractStatus'] == 'Trading')
+							$symbols2[$pair] = $symbol;
+						
+					}
+					
+				}
+				
+			}
+			
+			$symbols = [];
+			
+			foreach ($request->connect ('v2/public/symbols')['result'] as $symbol) {
+				
+				$pair = $this->pair ($symbol['base_currency'], $symbol['quote_currency']);
+				
+				if ((!$quote or $symbol['quote_currency'] == $quote) and $symbol['status'] == 'Trading')
+					$symbols[$pair] = $this->prepSymbol ($symbol, $symbols2[$pair]);
+				
+			}
+			
+			return $symbols;
+			
 		}
 		
 		function getFuturesOpenOrders ($base, $quote) {
@@ -1038,6 +1054,25 @@
 				throw new \ExchangeException ($data['ret_msg'], $data['ret_code'], $this->func, $proxy, $this->order); // Типа ошибка
 			
 			return $data;
+			
+		}
+		
+		function connect2 ($url) {
+			
+			$ch = curl_init ();
+			
+			curl_setopt ($ch, CURLOPT_URL, $url);
+			curl_setopt ($ch, CURLOPT_RETURNTRANSFER, true);
+			//curl_setopt ($ch, CURLOPT_USERAGENT, '');
+			
+			$data = curl_exec ($ch);
+			
+			if ($error = curl_error ($ch))
+				throw new \ExchangeException ($error, curl_errno ($ch), $this->func, $proxy, $this->order);
+			
+			curl_close ($ch);
+			
+			return json_decode ($data, true);
 			
 		}
 		
