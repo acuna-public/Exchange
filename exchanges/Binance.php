@@ -305,7 +305,7 @@
 			
 		}
 		
-		function getMarkPrice () {
+		function getMarkPrice ($base, $quote) {
 			return $this->position['markPrice'];
 		}
 		

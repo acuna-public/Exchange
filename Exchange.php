@@ -27,6 +27,7 @@
 			$date = 'd.m.y H:i',
 			$queryNum = 0,
 			$fees = [],
+			$prices = [],
 			$testQuantity = 0,
 			$multiplierUp = 0,
 			$multiplierDown = 0,
@@ -114,10 +115,7 @@
 		function futuresInit ($base, $quote) {
 			
 			if ($this->markPrice == 0) // NULLED
-				$this->markPrice = $this->getMarkPrice ();
-			
-			if ($this->markPrice == 0)
-				$this->markPrice = $this->futuresTicker ($base, $quote)['mark_price'];
+				$this->markPrice = $this->getMarkPrice ($base, $quote);
 			
 			if ($this->leverage == 0) // NULLED
 				$this->leverage = $this->getLeverage ();
@@ -210,16 +208,20 @@
 			
 		}
 		
-		function getMarkPrice () {
-			return 0;
-		}
-		
 		function getEntryPrice () {
 			return $this->position['entry_price'];
 		}
 		
 		function pair ($base, $quote) {
 			return $base.$quote;
+		}
+		
+		function getMarkPrice ($base, $quote) {
+			
+			if (!$this->prices) $this->prices = $this->futuresTicker ();
+			
+			return $this->prices[$this->pair ($base, $quote)]['mark_price'];
+			
 		}
 		
 		abstract function createOrder ($type, $base, $quote, $amount, $price);
