@@ -19,7 +19,6 @@
 			$quantity = 0,
 			$pnl = 0, $roe,
 			$timeOffset,
-			$positions = [],
 			$position = [],
 			$entryPrice = 0, // Только для расчета PNL
 			$markPrice = 0,
@@ -27,7 +26,6 @@
 			$date = 'd.m.y H:i',
 			$queryNum = 0,
 			$fees = [],
-			$prices = [],
 			$testQuantity = 0,
 			$multiplierUp = 0,
 			$multiplierDown = 0,
@@ -37,6 +35,11 @@
 		
 		protected
 			$lastDate = 0;
+			
+		public
+			$prices = [],
+			$positions = [],
+			$orders = [];
 		
 		public $days = ['1m' => 1, '5m' => 2, '30m' => 10, '1h' => 20, '2h' => 499, '4h' => 120, '1d' => 1], $ratios = ['2h' => [1.2, 1.8]];
 		
@@ -44,7 +47,7 @@
 		
 		public $side = self::LONG, $marginType = self::ISOLATED, $leverage = 0, $margin = 0;
 		
-		const LONG = 'LONG', SHORT = 'SHORT', ISOLATED = 'ISOLATED', CROSS = 'CROSSED', BUY = 'BUY', SELL = 'SELL', MAKER = 'MAKER', TAKER = 'TAKER', BALANCE_AVAILABLE = 'available', BALANCE_TOTAL = 'total', FTYPE_USD = 'USD', FTYPE_COIN = 'COIN';
+		const LONG = 'LONG', SHORT = 'SHORT', ISOLATED = 'ISOLATED', CROSS = 'CROSSED', BUY = 'BUY', SELL = 'SELL', MAKER = 'MAKER', TAKER = 'TAKER', BALANCE_AVAILABLE = 'available', BALANCE_TOTAL = 'total', FTYPE_USD = 'USD', FTYPE_COIN = 'COIN', BOTH = 'BOTH';
 		
 		static $PERPETUAL = 'PERPETUAL', $LEVERAGED = 'LEVERAGED';
 		
@@ -103,12 +106,12 @@
 		
 		function getPosition ($base, $quote) {
 			
-			$this->positions = $this->getFuturesPositions ($base, $quote);
+			if (!$this->positions) $this->positions = $this->getFuturesPositions ();
 			
-			if (isset ($this->positions[$this->side]))
-				$this->position = $this->positions[$this->side];
+			if (isset ($this->positions[$this->pair ($base, $quote)][$this->side]))
+				$this->position = $this->positions[$this->pair ($base, $quote)][$this->side];
 			else
-				$this->position = $this->positions['BOTH'];
+				$this->position = $this->positions[$this->pair ($base, $quote)][self::BOTH];
 			
 		}
 		
@@ -239,7 +242,7 @@
 		function setFuturesLeverage ($base, $quote, $leverage) {}
 		function setFuturesMarginType ($base, $quote, $type, $longLeverage = 10, $shortLeverage = 10) {}
 		
-		function getFuturesPositions ($base, $quote) {}
+		function getFuturesPositions ($base = '', $quote = '') {}
 		
 		function isOrderStopLoss ($order) {
 			return false;
@@ -262,6 +265,7 @@
 		}
 		
 		function getFuturesOpenOrders ($base, $quote) {}
+		function getFuturesFilledOrders ($base, $quote) {}
 		function openFuturesMarketPosition ($base, $quote, $order) {}
 		function createFuturesMarketTakeProfitOrder ($orders) {}
 		function createFuturesMarketStopOrder ($orders) {}
@@ -444,5 +448,13 @@
 			return ($amount * $scales[$unit]);
 			
     }
+		
+		function clean () {
+			
+			$this->prices = [];
+			$this->positions = [];
+			$this->orders = [];
+			
+		}
 		
 	}

@@ -232,8 +232,6 @@
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
-			$request->params = [];
-			
 			if ($quote) $request->params['coin'] = $quote;
 			
 			$types = [
@@ -309,22 +307,25 @@
 			
 		}
 		
-		function getFuturesPositions ($base, $quote) {
+		function getFuturesPositions ($base = '', $quote = '') {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
-			$request->params = [
-				
-				'symbol' => $this->pair ($base, $quote),
-				
-			];
+			if ($base and $quote)
+				$request->params['symbol'] = $this->pair ($base, $quote);
 			
 			$request->market = BybitRequest::FUTURES;
 			
 			$data = [];
 			
-			foreach ($request->connect ('private/linear/position/list')['result'] as $pos)
-				$data[$pos['side'] == 'Buy' ? self::LONG : self::SHORT] = $pos;
+			foreach ($request->connect ('private/linear/position/list')['result'] as $pos) {
+				
+				if ($base and $quote)
+					$data[$this->pair ($base, $quote)][($pos['side'] == 'Buy' ? self::LONG : self::SHORT)] = $pos;
+				else 
+					$data[$pos['data']['symbol']][($pos['data']['side'] == 'Buy' ? self::LONG : self::SHORT)] = $pos['data'];
+				
+			}
 			
 			return $data;
 			
@@ -488,20 +489,29 @@
 			
 		}
 		
-		function getFuturesOpenOrders ($base, $quote) {
+		function getFuturesFilledOrders ($base, $quote) {
+			return $this->getFuturesOrders ($base, $quote, 'Filled');
+		}
+		
+		protected function getFuturesOrders ($base, $quote, $status) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
 			$request->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
-				//'stop_order_status' => 'Active',
+				'stop_order_status' => $status,
 				
 			];
 			
 			$request->market = BybitRequest::FUTURES;
 			
-			return $request->connect ('private/linear/stop-order/list')['result'];
+			$output = [];
+			
+			foreach ($request->connect ('private/linear/order/list')['result']['data'] as $order)
+				$output[] = ['trigger_price' => $order['last_exec_price']];
+			
+			return $output;
 			
 		}
 		

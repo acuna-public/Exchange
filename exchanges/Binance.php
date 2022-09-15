@@ -220,8 +220,6 @@
 			
 			$request->market = Request::FUTURES;
 			
-			$request->params = [];
-			
 			if ($quote) $request->params['cur'] = $quote;
 			
 			$types = [
@@ -284,15 +282,12 @@
 			
 		}
 		
-		function getFuturesPositions ($base, $quote) {
+		function getFuturesPositions ($base = '', $quote = '') {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
-			$request->params = [
-				
-				'symbol' => $this->pair ($base, $quote),
-				
-			];
+			if ($base and $quote)
+				$request->params['symbol'] = $this->pair ($base, $quote);
 			
 			$request->market = Request::FUTURES;
 			
@@ -540,7 +535,7 @@
 				if ($this->hedgeMode)
 					$data['positionSide'] = $order['pside'];
 				else
-					$data['positionSide'] = 'BOTH';
+					$data['positionSide'] = self::BOTH;
 				
 				$list[] = $data;
 				
