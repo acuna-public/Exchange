@@ -307,6 +307,18 @@
 			
 		}
 		
+		protected function prepPos ($data) {
+			
+			return [
+				
+				'take_profit' => $data['take_profit'],
+				'stop_loss' => $data['stop_loss'],
+				'trigger_price' => $data['bust_price'],
+				
+			];
+			
+		}
+		
 		function getFuturesPositions ($base = '', $quote = '') {
 			
 			$request = $this->getRequest (__FUNCTION__);

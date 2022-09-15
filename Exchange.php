@@ -108,10 +108,22 @@
 			
 			if (!$this->positions) $this->positions = $this->getFuturesPositions ();
 			
-			if (isset ($this->positions[$this->pair ($base, $quote)][$this->side]))
-				$this->position = $this->positions[$this->pair ($base, $quote)][$this->side];
-			else
-				$this->position = $this->positions[$this->pair ($base, $quote)][self::BOTH];
+			if (isset ($this->positions[$this->pair ($base, $quote)])) {
+				
+				if (isset ($this->positions[$this->pair ($base, $quote)][$this->side]))
+					$this->position = $this->positions[$this->pair ($base, $quote)][$this->side];
+				else
+					$this->position = $this->positions[$this->pair ($base, $quote)][self::BOTH];
+				
+			}
+			
+		}
+		
+		function optPosition ($base, $quote) {
+			
+			$this->getPosition ($base, $quote);
+			
+			return isset ($this->positions[$this->pair ($base, $quote)]);
 			
 		}
 		
