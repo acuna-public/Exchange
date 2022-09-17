@@ -202,7 +202,12 @@
 		}
 		
 		function getROE ($pnl) {
-			return ($this->margin > 0 ? (($pnl * 100) / $this->margin) : 0);
+			
+			$pnl *= 100;
+			$pnl /= (($this->quantity * $this->entryPrice) / $this->leverage);
+			
+			return $pnl;
+			
 		}
 		
 		function getProfit ($entry, $exit) {
