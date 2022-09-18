@@ -2,7 +2,7 @@
 	
 	class Indicator {
 		
-		public $prices = [], $start = 0, $period = 0, $factor = 0;
+		public $prices = [], $start = 0, $period = 0, $factor = 5;
 		
 		public $N;
 		
