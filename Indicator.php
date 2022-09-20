@@ -37,7 +37,7 @@
 			
 			for ($i = $this->start; $i < $this->num; $i++) {
 				
-				//debug_write ($this->prices[$i]['date_text'].' - '.$this->prices[$i]['close']);
+				//debug ($this->prices[$i]['date'].' - '.$this->prices[$i]['close']);
 				$value += $this->prices[$i]['close'];
 				
 			}

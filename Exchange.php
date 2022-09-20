@@ -51,6 +51,17 @@
 		
 		static $PERPETUAL = 'PERPETUAL', $LEVERAGED = 'LEVERAGED';
 		
+		public $timeframes = [
+			
+			'm' => 'minute',
+			'h' => 'hours',
+			'd' => 'days',
+			'w' => 'weeks',
+			'M' => 'months',
+			'y' => 'years',
+			
+		];
+		
 		abstract function getName ();
 		abstract function getTitle ();
 		
@@ -75,21 +86,18 @@
 			return ($this->side == self::SHORT);
 		}
 		
-		function getInverseLongPNL ($base, $quote, $open, $close) {
+		function getLiquidationPrice ($margin) {
 			
-			if (!$this->notional)
-				$this->update ($base, $quote);
+			$price = $this->entryPrice;
 			
-			return (((($this->notional) * 1) / $open) - (($this->notional) * 1) / $close);
+			if ($this->isLong ())
+				$price *= ((1 - (0.5 / 100) + (1 / $this->leverage / 100)) - $margin);
+			else
+				$price *= ((1 + (0.5 / 100) - (1 / $this->leverage / 100)) + $margin);
 			
-		}
-		
-		function getInverseShortPNL ($base, $quote, $open, $close) {
+			$price /= $this->quantity;
 			
-			if (!$this->notional)
-				$this->update ($base, $quote);
-			
-			return (((($this->margin) * 1) / $open) - (($this->margin) * 1) / $close);
+			return $price;
 			
 		}
 		
@@ -449,20 +457,14 @@
 		
 		protected function timeframe ($timeframe) {
 			
-			$scales = [];
-			
-			$scales['s'] = 1;
-			$scales['m'] = $scales['s'] * 60;
-			$scales['h'] = $scales['m'] * 60;
-			$scales['d'] = $scales['h'] * 24;
-			$scales['w'] = $scales['d'] * 7;
-			$scales['M'] = $scales['w'] * 30;
-			$scales['y'] = $scales['M'] * 365;
-			
 			$amount = substr ($timeframe, 0, -1);
 			$unit = substr ($timeframe, -1);
 			
-			return ($amount * $scales[$unit]);
+			$date = new \DateTime ();
+			
+			$date->modify ('+'.$amount.' '.$this->timeframes[$unit]);
+			
+			return $date->getTimestamp ();
 			
     }
 		
