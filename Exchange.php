@@ -455,6 +455,17 @@
 		function cancelFuturesOrderName ($base, $quote, $name) {}
 		function closeFuturesMarketPosition ($base, $quote, $data) {}
 		
+		/*public $timeframes = [
+			
+			'm' => 'minute',
+			'h' => 'hours',
+			'd' => 'days',
+			'w' => 'weeks',
+			'M' => 'months',
+			'y' => 'years',
+			
+		];
+		
 		protected function timeframe ($timeframe) {
 			
 			$amount = substr ($timeframe, 0, -1);
@@ -465,6 +476,25 @@
 			$date->modify ('+'.$amount.' '.$this->timeframes[$unit]);
 			
 			return $date->getTimestamp ();
+			
+    }*/
+		
+		protected function timeframe ($timeframe) {
+			
+			$scales = [];
+			
+			$scales['s'] = 1;
+			$scales['m'] = $scales['s'] * 60;
+			$scales['h'] = $scales['m'] * 60;
+			$scales['d'] = $scales['h'] * 24;
+			$scales['w'] = $scales['d'] * 7;
+			$scales['M'] = $scales['w'] * 30;
+			$scales['y'] = $scales['M'] * 365;
+			
+			$amount = substr ($timeframe, 0, -1);
+			$unit = substr ($timeframe, -1);
+			
+			return ($amount * $scales[$unit]);
 			
     }
 		
