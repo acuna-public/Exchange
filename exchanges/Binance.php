@@ -906,11 +906,11 @@
 		}
 		
 		function minQuantity () {
-			return ($this->markPrice / $this->minQuantity);
+			return ($this->markPrice * $this->minQuantity);
 		}
 		
 		function maxQuantity () {
-			return ($this->markPrice / $this->maxQuantity);
+			return ($this->markPrice * $this->maxQuantity);
 		}
 		
 	}

@@ -2,7 +2,10 @@
 	
 	class Indicator {
 		
-		public $prices = [], $start = 0, $period = 0, $factor = 5;
+		public $prices = [], $start = 0, $period = 0;
+		
+		public
+			$factor = 10;
 		
 		public $N;
 		
@@ -37,7 +40,7 @@
 			
 			for ($i = $this->start; $i < $this->num; $i++) {
 				
-				//debug ($this->prices[$i]['date'].' - '.$this->prices[$i]['close']);
+				//debug_write ($this->prices[$i]['date'].' - '.$this->prices[$i]['close']);
 				$value += $this->prices[$i]['close'];
 				
 			}

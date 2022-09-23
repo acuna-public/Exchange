@@ -22,6 +22,7 @@
 			$position = [],
 			$entryPrice = 0, // Только для расчета PNL
 			$markPrice = 0,
+			$maintenanceMarginRate = 0,
 			$liquid = 0,
 			$date = 'd.m.y H:i',
 			$queryNum = 0,
@@ -86,19 +87,35 @@
 			return ($this->side == self::SHORT);
 		}
 		
-		function getLiquidationPrice ($margin) {
+		function getInitialMargin2 () {
+			return (1 / $this->leverage);
+		}
+		
+		function getLiquidationPrice ($margin = 0) {
 			
-			$price = $this->entryPrice;
+			$price = ($this->quantity * $this->entryPrice);
 			
 			if ($this->isLong ())
-				$price *= ((1 - (0.5 / 100) + (1 / $this->leverage / 100)) - $margin);
+				$price *= ((1 - $this->getInitialMargin2 () + ($this->maintenanceMarginRate / 100)) - $margin);
 			else
-				$price *= ((1 + (0.5 / 100) - (1 / $this->leverage / 100)) + $margin);
+				$price *= ((1 + $this->getInitialMargin2 () - ($this->maintenanceMarginRate / 100)) + $margin);
 			
 			$price /= $this->quantity;
 			
 			return $price;
 			
+		}
+		
+		function getAdditionalMargin ($stopPrice) {
+			return abs (($stopPrice * $this->quantity) - ($this->getLiquidationPrice () * $this->quantity));
+		}
+		
+		function getInitialMargin () {
+			return $this->quantity / ($this->entryPrice * $this->leverage);
+		}
+		
+		function getMaintenanceMargin () {
+			return (($this->quantity / $this->entryPrice) * ($this->maintenanceMarginRate / 100));
 		}
 		
 		abstract function getCharts ($base, $quote, array $data);
@@ -366,15 +383,6 @@
 			return date ($this->date, $date);
 		}
 		
-		function getPrice ($price) {
-			
-			if ($this->isLong ())
-				return $this->markPrice * $this->multiplierUp;
-			else
-				return $this->markPrice * $this->multiplierDown;
-			
-		}
-		
 		abstract function setFuturesHedgeMode (bool $hedge, $base = '', $quote = '');
 		
 		function getFuturesHedgeMode () {
@@ -457,7 +465,7 @@
 		
 		/*public $timeframes = [
 			
-			'm' => 'minute',
+			'm' => 'minutes',
 			'h' => 'hours',
 			'd' => 'days',
 			'w' => 'weeks',
@@ -475,7 +483,7 @@
 			
 			$date->modify ('+'.$amount.' '.$this->timeframes[$unit]);
 			
-			return $date->getTimestamp ();
+			return $date->getOffset ();
 			
     }*/
 		
@@ -504,6 +512,10 @@
 			$this->positions = [];
 			$this->orders = [];
 			
+		}
+		
+		function getMinMargin () {
+			return ($this->markPrice * ($this->minQuantity / $this->leverage));
 		}
 		
 	}
