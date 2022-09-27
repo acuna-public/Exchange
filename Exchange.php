@@ -8,39 +8,39 @@
 	abstract class Exchange {
 		
 		public
-			$cred = [];
-		
-		public
 			$debug = 0,
 			$amount = 3,
 			$precision = 2,
+			$date = 'd.m.y H:i',
+			$entryPrice = 0, // Только для расчета PNL
+			$markPrice = 0,
+			$minQuantity = 0,
+			$maxQuantity = 0;
+		
+		public
 			$hedgeMode = true,
+			$initialMarginRate = 0,
+			$maintenanceMarginRate = 0;
+		
+		public
+			$liquid = 0,
 			$notional = 0,
 			$quantity = 0,
 			$pnl = 0, $roe,
 			$timeOffset,
-			$position = [],
-			$entryPrice = 0, // Только для расчета PNL
-			$markPrice = 0,
-			$maintenanceMarginRate = 0,
-			$liquid = 0,
-			$date = 'd.m.y H:i',
-			$queryNum = 0,
-			$fees = [],
-			$testQuantity = 0,
-			$multiplierUp = 0,
-			$multiplierDown = 0,
-			$proxies = [],
-			$minQuantity = 0,
-			$maxQuantity = 0;
+			$queryNum = 0;
 		
-		protected
-			$lastDate = 0;
-			
 		public
+			$cred = [],
+			$fees = [],
+			$proxies = [],
+			$position = [],
 			$prices = [],
 			$positions = [],
 			$orders = [];
+		
+		protected
+			$lastDate = 0;
 		
 		public $days = ['1m' => 1, '5m' => 2, '30m' => 10, '1h' => 20, '2h' => 499, '4h' => 120, '1d' => 1], $ratios = ['2h' => [1.2, 1.8]];
 		
@@ -91,9 +91,9 @@
 			return (1 / $this->leverage);
 		}
 		
-		function getLiquidationPrice ($margin = 0) {
+		function getLiquidationPrice ($entryPrice, $margin = 0) {
 			
-			$price = ($this->quantity * $this->entryPrice);
+			$price = ($this->quantity * $entryPrice);
 			
 			if ($this->isLong ())
 				$price *= ((1 - $this->getInitialMargin2 () + ($this->maintenanceMarginRate / 100)) - $margin);
@@ -106,16 +106,21 @@
 			
 		}
 		
-		function getAdditionalMargin ($stopPrice) {
-			return abs (($stopPrice * $this->quantity) - ($this->getLiquidationPrice () * $this->quantity));
-		}
-		
 		function getInitialMargin () {
 			return $this->quantity / ($this->entryPrice * $this->leverage);
 		}
 		
 		function getMaintenanceMargin () {
 			return (($this->quantity / $this->entryPrice) * ($this->maintenanceMarginRate / 100));
+		}
+		
+		function getAdditionalMargin ($entryPrice, $stopPrice) {
+			
+			if ($this->isLong ())
+				return ($this->getLiquidationPrice ($entryPrice) * $this->quantity) - ($stopPrice * $this->quantity);
+			else
+				return ($stopPrice * $this->quantity) - ($this->getLiquidationPrice ($entryPrice) * $this->quantity);
+			
 		}
 		
 		abstract function getCharts ($base, $quote, array $data);
@@ -442,9 +447,9 @@
 					
 				}
 				
-				if ($callback) $callback ($prices3);
+				if ($callback and $prices3) $callback ($prices3);
 				
-			} while ($prices2 and $data['start_time'] < $data['end_time']);
+			} while ($prices2 and $prices3 and $data['start_time'] < $data['end_time']);
 			
 			return $prices;
 			
@@ -463,18 +468,7 @@
 		function cancelFuturesOrderName ($base, $quote, $name) {}
 		function closeFuturesMarketPosition ($base, $quote, $data) {}
 		
-		/*public $timeframes = [
-			
-			'm' => 'minutes',
-			'h' => 'hours',
-			'd' => 'days',
-			'w' => 'weeks',
-			'M' => 'months',
-			'y' => 'years',
-			
-		];
-		
-		protected function timeframe ($timeframe) {
+		function timeframe2 ($timeframe) {
 			
 			$amount = substr ($timeframe, 0, -1);
 			$unit = substr ($timeframe, -1);
@@ -485,7 +479,7 @@
 			
 			return $date->getOffset ();
 			
-    }*/
+    }
 		
 		protected function timeframe ($timeframe) {
 			

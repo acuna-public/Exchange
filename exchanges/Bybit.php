@@ -443,6 +443,8 @@
 				'amount_precision' => $symbol2['lotFraction'],
 				'min_quantity' => $symbol2['minQty'],
 				'max_quantity' => $symbol2['maxNewOrderQty'],
+				'initial_margin_rate' => ($symbol2['baseInitialMarginRateE4'] / 100),
+				'maintenance_margin_rate' => ($symbol2['baseMaintenanceMarginRateE4'] / 100),
 				
 			];
 			
@@ -938,6 +940,10 @@
 		
 		function getPositionData ($position) {
 			return $position;
+		}
+		
+		function getAdditionalMargin ($entryPrice, $stopPrice) {
+			return round (parent::getAdditionalMargin ($entryPrice, $stopPrice), 4);
 		}
 		
 	}
