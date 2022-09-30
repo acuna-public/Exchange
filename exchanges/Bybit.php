@@ -640,7 +640,7 @@
 					'qty' => $order['quantity'],
 					'time_in_force' => 'GoodTillCancel',
 					'reduce_only' => (isset ($order['close']) ? 'true' : 'false'),
-					'close_on_trigger' => 'true',
+					'close_on_trigger' => 'false',
 					'tp_trigger_by' => 'MarkPrice',
 					'sl_trigger_by' => 'MarkPrice',
 					
@@ -868,7 +868,17 @@
 		}
 		
 		protected function prepTicker ($item) {
-			return ['mark_price' => $item['mark_price'], 'index_price' => $item['index_price'], 'last_price' => $item['last_price'], 'prev' => $item['prev_price_24h'], 'change_percent' => $item['price_24h_pcnt'], 'close' => $item['last_price']];
+			
+			return [
+				
+				'mark_price' => $item['mark_price'],
+				'index_price' => $item['index_price'],
+				'last_price' => $item['last_price'],
+				'prev' => $item['prev_price_24h'],
+				'change_percent' => $item['price_24h_pcnt'],
+				
+			];
+			
 		}
 		
 		function setPairsFuturesHedgeMode () {
