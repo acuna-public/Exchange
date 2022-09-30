@@ -270,7 +270,7 @@
 			
 			if (!$this->prices) $this->prices = $this->ticker ();
 			
-			return $this->prices[$this->pair ($base, $quote)]['last_price'];
+			return $this->prices[$this->pair ($base, $quote)]['mark_price'];
 			
 		}
 		
