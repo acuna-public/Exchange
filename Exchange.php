@@ -91,9 +91,9 @@
 			return (1 / $this->leverage);
 		}
 		
-		function getLiquidationPrice ($entryPrice, $margin = 0) {
+		function getLiquidationPrice ($price, $margin = 0) {
 			
-			$price = ($this->quantity * $entryPrice);
+			$price *= $this->quantity;
 			
 			if ($this->isLong ())
 				$price *= ((1 - $this->getInitialMargin2 () + ($this->maintenanceMarginRate / 100)) - $margin);
