@@ -268,7 +268,7 @@
 		
 		function getMarkPrice ($base, $quote) {
 			
-			if (!$this->prices) $this->prices = $this->futuresTicker ();
+			if (!$this->prices) $this->prices = $this->ticker ();
 			
 			return $this->prices[$this->pair ($base, $quote)]['last_price'];
 			

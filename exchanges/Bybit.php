@@ -130,8 +130,8 @@
 					'date_text' => $this->date ($value['start_at']),
 					'low' => $value['low'],
 					'high' => $value['high'],
-					'open' => $value['open'], // Покупка
-					'close' => $value['close'], // Продажа
+					'open' => $value['open'],
+					'close' => $value['close'],
 					'volume' => $value['volume'],
 					
 				];
@@ -868,7 +868,7 @@
 		}
 		
 		protected function prepTicker ($item) {
-			return ['mark_price' => $item['mark_price'], 'index_price' => $item['index_price'], 'prev' => $item['prev_price_24h'], 'change_percent' => $item['price_24h_pcnt'], 'close' => $item['last_price']];
+			return ['mark_price' => $item['mark_price'], 'index_price' => $item['index_price'], 'last_price' => $item['last_price'], 'prev' => $item['prev_price_24h'], 'change_percent' => $item['price_24h_pcnt'], 'close' => $item['last_price']];
 		}
 		
 		function setPairsFuturesHedgeMode () {
