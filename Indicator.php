@@ -5,7 +5,7 @@
 		public $prices = [], $start = 0, $period = 0;
 		
 		public
-			$factor = 10;
+			$factor = 0;
 		
 		public $N;
 		
