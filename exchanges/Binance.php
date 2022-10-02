@@ -294,7 +294,10 @@
 			$data = [];
 			
 			foreach ($request->connect ('fapi/v2/positionRisk') as $pos)
+			if ($this->hedgeMode)
 				$data[$pos['positionSide']] = $pos;
+			else
+				$data = $pos;
 			
 			return $data;
 			
@@ -535,7 +538,7 @@
 				if ($this->hedgeMode)
 					$data['positionSide'] = $order['pside'];
 				else
-					$data['positionSide'] = self::BOTH;
+					$data['positionSide'] = self::$BOTH;
 				
 				$list[] = $data;
 				

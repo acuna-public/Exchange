@@ -48,9 +48,9 @@
 		
 		public $side = self::LONG, $marginType = self::ISOLATED, $leverage = 0, $margin = 0;
 		
-		const LONG = 'LONG', SHORT = 'SHORT', ISOLATED = 'ISOLATED', CROSS = 'CROSSED', BUY = 'BUY', SELL = 'SELL', MAKER = 'MAKER', TAKER = 'TAKER', BALANCE_AVAILABLE = 'available', BALANCE_TOTAL = 'total', FTYPE_USD = 'USD', FTYPE_COIN = 'COIN', BOTH = 'BOTH';
+		const LONG = 'LONG', SHORT = 'SHORT', ISOLATED = 'ISOLATED', CROSS = 'CROSSED', BUY = 'BUY', SELL = 'SELL', MAKER = 'MAKER', TAKER = 'TAKER', BALANCE_AVAILABLE = 'available', BALANCE_TOTAL = 'total', FTYPE_USD = 'USD', FTYPE_COIN = 'COIN';
 		
-		static $PERPETUAL = 'PERPETUAL', $LEVERAGED = 'LEVERAGED';
+		static $PERPETUAL = 'PERPETUAL', $LEVERAGED = 'LEVERAGED', $BOTH = 'BOTH';
 		
 		public $timeframes = [
 			
@@ -140,10 +140,10 @@
 			
 			if (isset ($this->positions[$this->pair ($base, $quote)])) {
 				
-				if (isset ($this->positions[$this->pair ($base, $quote)][$this->side]))
+				if ($this->hedgeMode)
 					$this->position = $this->positions[$this->pair ($base, $quote)][$this->side];
 				else
-					$this->position = $this->positions[$this->pair ($base, $quote)][self::BOTH];
+					$this->position = $this->positions[$this->pair ($base, $quote)];
 				
 			}
 			
@@ -270,7 +270,7 @@
 			
 			if (!$this->prices) $this->prices = $this->ticker ();
 			
-			return $this->prices[$this->pair ($base, $quote)]['last_price'];
+			return $this->prices[$this->pair ($base, $quote)]['mark_price'];
 			
 		}
 		
@@ -465,8 +465,7 @@
 			return $this->maxQuantity;
 		}
 		
-		function editFuturesOrder ($base, $quote, $id, $data) {}
-		function editFuturesOrderName ($base, $quote, $name, $data) {}
+		function setFuturesMode ($quote) {}
 		function cancelFuturesOrderName ($base, $quote, $name) {}
 		function closeFuturesMarketPosition ($base, $quote, $data) {}
 		

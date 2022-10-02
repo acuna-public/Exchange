@@ -287,6 +287,24 @@
 			
 		}
 		
+		function setFuturesMode ($quote) {
+			
+			$request = $this->getRequest (__FUNCTION__);
+			
+			$request->params = [
+				
+				'coin' => $quote,
+				'mode' => ($this->hedgeMode ? 'BothSide' : 'MergedSingle'),
+				
+			];
+			
+			$request->method = BybitRequest::POST;
+			$request->market = BybitRequest::FUTURES;
+			
+			return $request->connect ('private/linear/position/switch-mode')['result'];
+			
+		}
+		
 		function setFuturesMarginType ($base, $quote, $type, $longLeverage = 10, $shortLeverage = 10) {
 			
 			$request = $this->getRequest (__FUNCTION__);
@@ -332,10 +350,21 @@
 			
 			foreach ($request->connect ('private/linear/position/list')['result'] as $pos) {
 				
-				if ($base and $quote)
-					$data[$this->pair ($base, $quote)][($pos['side'] == 'Buy' ? self::LONG : self::SHORT)] = $pos;
-				else 
-					$data[$pos['data']['symbol']][($pos['data']['side'] == 'Buy' ? self::LONG : self::SHORT)] = $pos['data'];
+				if ($this->hedgeMode) {
+					
+					if ($base and $quote)
+						$data[$this->pair ($base, $quote)][($pos['side'] == 'Buy' ? self::LONG : self::SHORT)] = $pos;
+					else 
+						$data[$pos['data']['symbol']][($pos['data']['side'] == 'Buy' ? self::LONG : self::SHORT)] = $pos['data'];
+					
+				} else {
+					
+					if ($base and $quote)
+						$data[$this->pair ($base, $quote)] = $pos;
+					else 
+						$data[$pos['data']['symbol']] = $pos['data'];
+					
+				}
 				
 			}
 			
@@ -615,6 +644,11 @@
 				if ($key != 'name')
 				$request->params[$key] = $value;
 			
+			if ($this->hedgeMode)
+				$request->params['position_idx'] = ($this->isLong () ? 'Buy' : 'Sell');
+			else
+				$request->params['position_idx'] = 0;
+			
 			return $request->connect ('private/linear/position/trading-stop')['result'];
 			
 		}
@@ -659,6 +693,11 @@
 				
 				if (isset ($order['name']))
 					$data['order_link_id'] = $order['name'];
+				
+				if ($this->hedgeMode)
+					$data['position_idx'] = ($this->isLong () ? 'Buy' : 'Sell');
+				else
+					$data['position_idx'] = 0;
 				
 				$list[] = $data;
 				
