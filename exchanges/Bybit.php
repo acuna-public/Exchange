@@ -606,6 +606,8 @@
 				
 				'symbol' => $this->pair ($base, $quote),
 				'side' => ($this->isLong () ? 'Buy' : 'Sell'),
+				//'tp_trigger_by' => 'MarkPrice',
+				//'sl_trigger_by' => 'MarkPrice',
 				
 			];
 			
