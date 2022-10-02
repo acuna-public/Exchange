@@ -278,6 +278,8 @@
 		abstract function getOrders ($base, $quote);
 		abstract function getOrderInfo ($id);
 		
+		function editFuturesPosition ($base, $quote, $data) {}
+		
 		function createMarketOrder ($type, $base, $quote, $amount) {
 			return $this->createOrder ($type, $base, $quote, $amount, 0);
 		}
