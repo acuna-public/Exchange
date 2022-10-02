@@ -595,7 +595,7 @@
 			
 		}
 		
-		function editFuturesPosition ($base, $quote, $side, $data) {
+		function editFuturesPosition ($base, $quote, $data) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
