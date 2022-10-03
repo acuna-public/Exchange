@@ -676,7 +676,7 @@
 					'qty' => $order['quantity'],
 					'time_in_force' => 'GoodTillCancel',
 					'reduce_only' => (isset ($order['close']) ? 'true' : 'false'),
-					'close_on_trigger' => 'true',
+					'close_on_trigger' => 'false',
 					'tp_trigger_by' => 'MarkPrice',
 					'sl_trigger_by' => 'MarkPrice',
 					
