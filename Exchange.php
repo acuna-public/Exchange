@@ -465,7 +465,7 @@
 			return $this->maxQuantity;
 		}
 		
-		function setFuturesMode ($quote) {}
+		function setFuturesMode ($base, $quote) {}
 		function cancelFuturesOrderName ($base, $quote, $name) {}
 		function closeFuturesMarketPosition ($base, $quote, $data) {}
 		

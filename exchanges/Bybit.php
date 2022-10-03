@@ -287,16 +287,20 @@
 			
 		}
 		
-		function setFuturesMode ($quote) {
+		function setFuturesMode ($base, $quote) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
 			$request->params = [
 				
-				'coin' => $quote,
 				'mode' => ($this->hedgeMode ? 'BothSide' : 'MergedSingle'),
 				
 			];
+			
+			if ($base)
+				$request->params['symbol'] = $this->pair ($base, $quote);
+			else
+				$request->params['coin'] = $quote;
 			
 			$request->method = BybitRequest::POST;
 			$request->market = BybitRequest::FUTURES;
@@ -720,7 +724,7 @@
 				$request->market = BybitRequest::FUTURES;
 				$request->method = BybitRequest::POST;
 				
-				$output[] = $request->connect ('private/linear/order/create')['result'];
+				$output[] = $request->connect ('private/linear/order/create')['result']['order_id'];
 				
 			}
 			
