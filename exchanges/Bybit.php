@@ -635,8 +635,8 @@
 				
 				'symbol' => $this->pair ($base, $quote),
 				'side' => ($this->isLong () ? 'Buy' : 'Sell'),
-				//'tp_trigger_by' => 'MarkPrice',
-				//'sl_trigger_by' => 'MarkPrice',
+				'tp_trigger_by' => 'MarkPrice',
+				'sl_trigger_by' => 'MarkPrice',
 				
 			];
 			
@@ -645,7 +645,7 @@
 				$request->params[$key] = $value;
 			
 			if ($this->hedgeMode)
-				$request->params['position_idx'] = ($this->isLong () ? 'Buy' : 'Sell');
+				$request->params['position_idx'] = ($this->isLong () ? 1 : 2);
 			else
 				$request->params['position_idx'] = 0;
 			
@@ -676,7 +676,7 @@
 					'qty' => $order['quantity'],
 					'time_in_force' => 'GoodTillCancel',
 					'reduce_only' => (isset ($order['close']) ? 'true' : 'false'),
-					'close_on_trigger' => 'false',
+					'close_on_trigger' => 'true',
 					'tp_trigger_by' => 'MarkPrice',
 					'sl_trigger_by' => 'MarkPrice',
 					
@@ -695,7 +695,7 @@
 					$data['order_link_id'] = $order['name'];
 				
 				if ($this->hedgeMode)
-					$data['position_idx'] = ($this->isLong () ? 'Buy' : 'Sell');
+					$data['position_idx'] = ($this->isLong () ? 1 : 2);
 				else
 					$data['position_idx'] = 0;
 				
