@@ -1,6 +1,6 @@
 # Exchange
  
-Crypto exchanges API wrapper
+Exchange is a powerful crypto exchanges API wrapper
 
 [v] Binance
 [v] Bybit
