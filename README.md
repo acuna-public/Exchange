@@ -14,7 +14,8 @@ Supported exchanges:
 - Open/Close positions
 - TP/SL set & edit
 - Switch margin type (cross/isolated)
-- Calculate PNL & ROE
+- Calculate position PNL & ROE
+- Calculate liquidation price
 - Calculate fees
 
 `Manual will be soon`
