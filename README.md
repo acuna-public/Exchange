@@ -10,7 +10,7 @@ Supported exchanges:
 ## Capabilities
 
 - Get prices in every interval
-- Gets position info
+- Get positions info
 - Open/Close positions
 - TP/SL set & edit
 - Switch margin type (cross/isolated)
