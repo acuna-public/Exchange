@@ -23,6 +23,6 @@ Supported exchanges:
 - Switch hedge mode
 - Calculate position PNL & ROE
 - Calculate liquidation price
-- Calculate fees
+- Calculate open/close & funding fees
 
 `Manual will be soon`
