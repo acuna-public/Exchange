@@ -7,4 +7,9 @@ Supported exchanges:
 - [x] Binance
 - [x] Bybit
 
+## Capabilities
+
+- Open/Close positions
+- 
+
 `Manual will be soon`
