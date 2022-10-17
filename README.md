@@ -18,6 +18,7 @@ Supported exchanges:
 - Get Long/Short ratio
 - Open & Close positions
 - TP/SL set & edit
+- TP/SL cancel
 - Set leverage
 - Switch margin type (cross/isolated)
 - Switch hedge mode
