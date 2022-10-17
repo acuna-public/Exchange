@@ -2,7 +2,7 @@
  
 Exchange is a powerful crypto exchanges API wrapper
 
-[v] Binance
-[v] Bybit
+[x] Binance
+[x] Bybit
 
 `Manual will be soon`
