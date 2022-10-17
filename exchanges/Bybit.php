@@ -4,7 +4,7 @@
 	
 	class Bybit extends \Exchange {
 		
-		public $fees = [
+		public $feesRate = [
 			
 			self::FTYPE_USD => [
 				
@@ -1007,11 +1007,11 @@
 		public
 			$apiUrl = 'https://api.bybit.com',
 			$futuresUrl = 'https://api.bybit.com',
-			$streamsUrl = 'tls://stream.binance.com',
+			$streamsUrl = 'tls://stream.bybit.com',
 			
 			$testApiUrl = 'https://api-testnet.bybit.com',
 			$testFuturesUrl = 'https://api-testnet.bybit.com',
-			$testStreamsUrl = 'tls://testnet-dex.binance.org';
+			$testStreamsUrl = 'tls://testnet-dex.bybit.org';
 		
 		public
 			$params = [],
@@ -1022,7 +1022,7 @@
 			$errorCodes = [404],
 			$func,
 			$order,
-			$recvWindow = 60000; // 5 seconds
+			$recvWindow = 60000; // 1 second
 		
 		const GET = 'GET', POST = 'POST', PUT = 'PUT', DELETE = 'DELETE';
 		const FUTURES = 'FUTURES';
@@ -1133,7 +1133,7 @@
 			curl_close ($ch);
 			
 			if (isset ($data['ret_code']) and $data['ret_code'] != 0)
-				throw new \ExchangeException ($data['ret_msg'], $data['ret_code'], $this->func, $proxy, $this->order); // Типа ошибка
+				throw new \ExchangeException ($data['ret_msg'], $data['ret_code'], $this->func, $proxy, $this->order);
 			
 			return $data;
 			
@@ -1178,10 +1178,6 @@
 			
 			list ($msec, $sec) = explode (' ', microtime ());
 			
-			// raspbian 32-bit integer workaround
-			// https://github.com/ccxt/ccxt/issues/5978
-			// return (int) ($sec.substr ($msec, 2, 3));
-			
 			return $sec.substr ($msec, 2, 3);
 			
 		}
@@ -1189,7 +1185,7 @@
 		public function milliseconds64 () {
 			
 			list ($msec, $sec) = explode (' ', microtime ());
-			// this method will not work on 32-bit raspbian
+			
 			return (int) ($sec . substr ($msec, 2, 3));
 			
 		}

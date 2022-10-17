@@ -4,7 +4,7 @@
 	
 	class Binance extends \Exchange {
 		
-		public $fees = [
+		public $feesRate = [
 			
 			self::FTYPE_USD => [
 				

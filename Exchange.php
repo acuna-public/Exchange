@@ -12,7 +12,7 @@
 			$amount = 3,
 			$precision = 2,
 			$date = 'd.m.y H:i',
-			$entryPrice = 0, // Только для расчета PNL
+			$entryPrice = 0,
 			$markPrice = 0,
 			$minQuantity = 0,
 			$maxQuantity = 0;
@@ -33,6 +33,7 @@
 		public
 			$cred = [],
 			$fees = [],
+			$feesRate = [],
 			$proxies = [],
 			$position = [],
 			$prices = [],
@@ -87,18 +88,14 @@
 			return ($this->side == self::SHORT);
 		}
 		
-		function getInitialMargin2 () {
-			return (1 / $this->leverage);
-		}
-		
 		function getLiquidationPrice ($price, $margin = 0) {
 			
 			$price *= $this->quantity;
 			
 			if ($this->isLong ())
-				$price *= ((1 - $this->getInitialMargin2 () + ($this->maintenanceMarginRate / 100)) - $margin);
+				$price *= ((1 - (1 / $this->leverage) + ($this->maintenanceMarginRate / 100)) - $margin);
 			else
-				$price *= ((1 + $this->getInitialMargin2 () - ($this->maintenanceMarginRate / 100)) + $margin);
+				$price *= ((1 + (1 / $this->leverage) - ($this->maintenanceMarginRate / 100)) + $margin);
 			
 			$price /= $this->quantity;
 			
@@ -159,10 +156,10 @@
 		
 		function futuresInit ($base, $quote) {
 			
-			if ($this->markPrice == 0) // NULLED
+			if ($this->markPrice == 0) // NULL
 				$this->markPrice = $this->getMarkPrice ($base, $quote);
 			
-			if ($this->leverage == 0) // NULLED
+			if ($this->leverage == 0) // NULL
 				$this->leverage = $this->getLeverage ();
 			
 			//$this->leverage = 10;
@@ -171,20 +168,22 @@
 			
 			$this->notional = ($this->margin * $this->leverage);
 			
-			if ($this->quantity == 0) // NULLED
+			if ($this->quantity == 0) // NULL
 				$this->quantity = $this->getQuantity ($this->markPrice);
 			
 		}
 		
 		function futuresUpdate () {
 			
-			//if ($this->entryPrice == 0) // NULLED
-			//	$this->entryPrice = $this->getEntryPrice ();
-			
 			if ($this->entryPrice == 0)
 				$this->entryPrice = $this->markPrice;
 			
 			$this->pnl = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
+			
+			$this->fees  = $this->getFuturesTakerFees ($this->entryPrice);
+			$this->fees += $this->getFuturesTakerFees ($this->markPrice);
+			
+			$this->pnl -= $this->fees;
 			
 			$this->roe = $this->getROE ($this->pnl);
 			
@@ -196,10 +195,10 @@
 		
 		function getFeeRate ($type) {
 			
-			$fee  = $this->fees[$this->ftype][$this->flevel][($type == self::MAKER ? 0 : 1)];
-			$fee -= $this->getMargin ($fee, $this->rebate);
+			$value  = $this->feesRate[$this->ftype][$this->flevel][($type == self::MAKER ? 0 : 1)];
+			$value -= $this->getMargin ($value, $this->rebate);
 			
-			return $fee;
+			return $value;
 			
 		}
 		
@@ -251,7 +250,7 @@
 		
 		function getRPRatio ($entryPrice, $stopLoss, $takeProfit) {
 			
-			$output = $this->getProfit ($entryPrice, $stopLoss);
+			$output  = $this->getProfit ($entryPrice, $stopLoss);
 			$output /= $this->getProfit ($takeProfit, $entryPrice);
 			
 			return $output;
@@ -285,7 +284,7 @@
 		}
 		
 		function longShortRatio ($base, $quote, $period) {
-			throw new \Exception ('Long/Short Ratio not implemented');
+			throw new \ExchangeException ('Long/Short Ratio not implemented');
 		}
 		
 		function setFuturesLeverage ($base, $quote, $leverage) {}
@@ -352,21 +351,13 @@
 			
 			foreach ($charts as $price) {
 				
-				if ($price['close'] > $max) {
+				if ($price['close'] > $max)
 					$max = $price['close'];
-					
-					//debug ([1, date ('d.m H:i:s', $price['date']), $max]);
-					
-				} elseif ($price['close'] < $min) {
+				elseif ($price['close'] < $min)
 					$min = $price['close'];
-					
-					//debug ([date ('d.m H:i:s', $price['date']), $min]);
-					
-				}
 				
 			}
 			
-			//return ($max - $min);
 			return ((($max - $min) * 100) / $max);
 			
 		}

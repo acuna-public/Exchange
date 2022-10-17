@@ -206,10 +206,9 @@
 			
 		}
 		
-		// all the estimators compute sigma^2
+		// All the estimators compute sigma^2
 		
-		// the preferred volatility estimator
-		// for more info, see paper "Drift-independent Volatility Estimation Based on High, Low, Open and Close Prices"
+		// The preferred volatility estimator for more info see paper "Drift-independent Volatility Estimation Based on High, Low, Open and Close Prices"
 		
 		function YangZhang ($open, $high, $low) {
 			
@@ -232,7 +231,7 @@
 			
 		}
 		
-		// the Parkinson volatility estimator
+		// Parkinson volatility estimator
 		
 		function Parkinson ($open, $high, $low) {
 			
@@ -245,7 +244,7 @@
 			
 		}
 		
-		// volatility recommended by Rogers AND Satchell (1991) AND Rogers, Satchell, AND Yoon (1994)
+		// Volatility recommended by Rogers AND Satchell (1991) AND Rogers, Satchell, AND Yoon (1994)
 		
 		function RogersSatchell ($open, $high, $low) {
 			
@@ -262,7 +261,7 @@
 			return $price['open'] - $price['close'];
 		}
 		
-		// the traditional close-to-close volatility
+		// Traditional close-to-close volatility
 		
 		function c2c () {
 			
