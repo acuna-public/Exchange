@@ -10,9 +10,15 @@ Supported exchanges:
 ## Capabilities
 
 - Get prices in every interval
+- Get ticker data
 - Get positions info
-- Open/Close positions
+- Get orders list
+- Get total & available balance
+- Get pairs data
+- Get Long/Short ratio
+- Open & Close positions
 - TP/SL set & edit
+- Set leverage
 - Switch margin type (cross/isolated)
 - Calculate position PNL & ROE
 - Calculate liquidation price
