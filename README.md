@@ -20,6 +20,7 @@ Supported exchanges:
 - TP/SL set & edit
 - Set leverage
 - Switch margin type (cross/isolated)
+- Switch hedge mode
 - Calculate position PNL & ROE
 - Calculate liquidation price
 - Calculate fees
