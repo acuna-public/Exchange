@@ -244,7 +244,7 @@
 			
 		}
 		
-		// Volatility recommended by Rogers AND Satchell (1991) AND Rogers, Satchell, AND Yoon (1994)
+		// Rogers AND Satchell (1991), Rogers, Satchell, AND Yoon (1994) Volatility
 		
 		function RogersSatchell ($open, $high, $low) {
 			
