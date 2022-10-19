@@ -43,8 +43,6 @@
         protected
             $lastDate = 0;
         
-        public $days = ['1m' => 1, '5m' => 2, '30m' => 10, '1h' => 20, '2h' => 499, '4h' => 120, '1d' => 1], $ratios = ['2h' => [1.2, 1.8]];
-        
         public $flevel = 0, $rebate = 10, $ftype = self::FTYPE_USD;
         
         public $side = self::LONG, $marginType = self::ISOLATED, $leverage = 0, $margin = 0;
