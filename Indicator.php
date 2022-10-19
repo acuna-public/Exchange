@@ -69,7 +69,7 @@
             $k = (0.34 / (1.34 + (($this->N + 1))));
             if ($this->N > 1) $k /= ($this->N - 1);
             
-            $sigma    = $this->CloseOpen ();
+            $sigma  = $this->CloseOpen ();
             $sigma += $this->OpenClose () * $k;
             $sigma += $this->RogersSatchell () * (1 - $k);
             
@@ -190,12 +190,12 @@
             
             foreach ($this->prices as $price) {
                 
-                $high    = $this->value ($price['high'], $price['open']);
+                $high  = $this->value ($price['high'], $price['open']);
                 $high *= $this->value ($price['high'], $price['close']);
                 
                 $sigma += $high;
                 
-                $high    = $this->value ($price['low'], $price['open']);
+                $high  = $this->value ($price['low'], $price['open']);
                 $high *= $this->value ($price['low'], $price['close']);
                 
                 $sigma += $high;
