@@ -2,8 +2,8 @@
     
     require 'ExchangeException.php';
     
-    require 'WebSocketException.php';
-    require 'WebSocket.php';
+    //require 'WebSocketException.php';
+    //require 'WebSocket.php';
     
     abstract class Exchange {
         
