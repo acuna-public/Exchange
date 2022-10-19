@@ -473,7 +473,7 @@
             
         }
         
-        protected function timeframe ($timeframe) {
+        protected function timeframe ($timeframe) { // From cctx
             
             $scales = [];
             
