@@ -180,7 +180,7 @@
             
             $this->pnl = $this->getPNL ($this->entryPrice, $this->markPrice, $this->quantity);
             
-            $this->fees    = $this->getFuturesTakerFees ($this->entryPrice);
+            $this->fees  = $this->getFuturesTakerFees ($this->entryPrice);
             $this->fees += $this->getFuturesTakerFees ($this->markPrice);
             
             $this->pnl -= $this->fees;
@@ -195,7 +195,7 @@
         
         function getFeeRate ($type) {
             
-            $value    = $this->feesRate[$this->ftype][$this->flevel][($type == self::MAKER ? 0 : 1)];
+            $value  = $this->feesRate[$this->ftype][$this->flevel][($type == self::MAKER ? 0 : 1)];
             $value -= $this->getMargin ($value, $this->rebate);
             
             return $value;
@@ -250,7 +250,7 @@
         
         function getRPRatio ($entryPrice, $stopLoss, $takeProfit) {
             
-            $output    = $this->getProfit ($entryPrice, $stopLoss);
+            $output  = $this->getProfit ($entryPrice, $stopLoss);
             $output /= $this->getProfit ($takeProfit, $entryPrice);
             
             return $output;
