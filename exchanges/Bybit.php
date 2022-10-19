@@ -487,9 +487,9 @@
             
             $request = $this->getRequest (__FUNCTION__);
             
-            $data = $request->connect2 ('https://api2.bybit.com/contract/v5/product/dynamic-symbol-list?filter=all');
-            
             $request->signed = false;
+            
+            $data = $request->connect2 ('https://api2.bybit.com/contract/v5/product/dynamic-symbol-list?filter=all');
             
             $symbols2 = [];
             
