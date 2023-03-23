@@ -250,8 +250,6 @@
 					foreach ($data as $data)
 						$balance[$data['asset']] = $data[$types[$type]];
 					
-					return $balance;
-					
 				} else return $data[$types[$type]];
 				
 			}
