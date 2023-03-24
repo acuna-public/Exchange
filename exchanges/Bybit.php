@@ -307,14 +307,14 @@
 			
 		}
 		
-		function setFuturesMarginType ($base, $quote, $type, $longLeverage = 10, $shortLeverage = 10) {
+		function setFuturesMarginType ($base, $quote, $longLeverage = 10, $shortLeverage = 10) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
 			$request->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
-				'is_isolated' => ($type == self::ISOLATED),
+				'is_isolated' => ($this->marginType == self::ISOLATED),
 				'buy_leverage' => $longLeverage,
 				'sell_leverage' => $shortLeverage,
 				

@@ -315,7 +315,7 @@
 		}
 		
 		function setFuturesLeverage ($base, $quote, $leverage) {}
-		function setFuturesMarginType ($base, $quote, $type, $longLeverage = 10, $shortLeverage = 10) {}
+		function setFuturesMarginType ($base, $quote, $longLeverage = 10, $shortLeverage = 10) {}
 		
 		function getFuturesPositions ($base = '', $quote = '') {}
 		

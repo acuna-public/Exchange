@@ -264,14 +264,14 @@
 			
 		}
 		
-		function setFuturesMarginType ($base, $quote, $type, $longLeverage = 10, $shortLeverage = 10) {
+		function setFuturesMarginType ($base, $quote, $longLeverage = 10, $shortLeverage = 10) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
 			$request->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
-				'marginType' => $type,
+				'marginType' => $this->marginType,
 				
 			];
 			
