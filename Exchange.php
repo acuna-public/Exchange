@@ -518,8 +518,12 @@
 			return ($this->markPrice * ($this->minQuantity / $this->leverage));
 		}
 		
-		function getCompoundIncome ($value, $rate, $contrib = 0) {
-			return (($value + $contrib) * ((1 + $rate)/ 100));
+		function getCompoundIncome ($value, $rate) {
+			
+			$value += ($value * ($rate / 100));
+			
+			return $value;
+			
 		}
 		
 	}
