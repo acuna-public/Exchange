@@ -126,13 +126,13 @@
 			foreach ($prices as $value)
 				$summary[] = [
 					
-					'date' => $value['start_at'],
-					'date_text' => $this->date ($value['start_at']),
 					'low' => $value['low'],
 					'high' => $value['high'],
 					'open' => $value['open'],
 					'close' => $value['close'],
 					'volume' => $value['volume'],
+					'date' => $value['start_at'],
+					'date_text' => $this->date ($value['start_at']),
 					
 				];
 			
@@ -356,13 +356,15 @@
 					
 					if ($base and $quote)
 						$data[$this->pair ($base, $quote)][($pos['side'] == 'Buy' ? self::LONG : self::SHORT)] = $pos;
-					else						 $data[$pos['data']['symbol']][($pos['data']['side'] == 'Buy' ? self::LONG : self::SHORT)] = $pos['data'];
+					else
+						$data[$pos['data']['symbol']][($pos['data']['side'] == 'Buy' ? self::LONG : self::SHORT)] = $pos['data'];
 					
 				} else {
 					
 					if ($base and $quote)
 						$data[$this->pair ($base, $quote)] = $pos;
-					else						 $data[$pos['data']['symbol']] = $pos['data'];
+					else
+						$data[$pos['data']['symbol']] = $pos['data'];
 					
 				}
 				
@@ -653,15 +655,6 @@
 			
 		}
 		
-		function createFuturesMarketStopOrder ($orders) {
-			
-			//foreach ($orders as $i => $order)
-			//	$orders[$i]['close'] = true;
-			
-			return $this->createFuturesTypeOrder ($orders, ($this->isLong () ? 'Buy' : 'Sell'), __FUNCTION__);
-			
-		}
-		
 		protected function createFuturesTypeOrder ($orders, $side, $func) {
 			
 			$list = [];
@@ -675,7 +668,7 @@
 					'side' => $side,
 					'qty' => $this->quantity (),
 					'time_in_force' => 'GoodTillCancel',
-					'reduce_only' => ((isset ($order['close']) and $order['close']) ? 'true' : 'false'),
+					'reduce_only' => ((isset ($order['close']) and $order['close']) ? 'true' : 'false'), // TODO
 					'close_on_trigger' => 'false',
 					'tp_trigger_by' => 'MarkPrice',
 					'sl_trigger_by' => 'MarkPrice',
@@ -994,6 +987,10 @@
 		
 		function getAdditionalMargin ($stopPrice) {
 			return round (parent::getAdditionalMargin ($stopPrice), 4);
+		}
+		
+		function getPrices () {
+			return $this->prices[end_key ($this->prices) - 1];
 		}
 		
 	}

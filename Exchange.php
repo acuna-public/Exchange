@@ -39,6 +39,7 @@
 			$proxies = [],
 			$position = [],
 			$prices = [],
+			$ticker = [],
 			$positions = [],
 			$orders = [];
 		
@@ -294,13 +295,17 @@
 		
 		function getMarkPrice ($base, $quote) {
 			
-			if (!$this->prices) $this->prices = $this->ticker ();
+			if (!$this->ticker) $this->ticker = $this->ticker ();
 			
-			return $this->prices[$this->pair ($base, $quote)]['mark_price'];
+			return $this->ticker[$this->pair ($base, $quote)]['mark_price'];
 			
 		}
 		
-		function createOrder ($type, $base, $quote, $price) {}
+		function getPrices () {
+			return end_value ($this->prices);
+		}
+		
+		function createOrder ($type, $base, $quote, $price) {} // TODO
 		abstract function getOrders ($base, $quote);
 		abstract function getOrderInfo ($id);
 		
@@ -343,7 +348,7 @@
 		function getFuturesFilledOrders ($base, $quote) {}
 		function openFuturesMarketPosition ($base, $quote, $order) {}
 		function createFuturesMarketTakeProfitOrder ($orders) {}
-		function createFuturesMarketStopOrder ($orders) {}
+		function createFuturesMarketStopOrder ($orders) {} // TODO
 		function createFuturesTrailingStopOrder ($order) {}
 		function cancelFuturesOpenOrders ($base, $quote) {}
 		
@@ -438,7 +443,7 @@
 			
 		}
 		
-		function quantity () {
+		protected function quantity () {
 			return $this->quantity;
 		}
 		
@@ -508,7 +513,7 @@
 		
 		function clean () {
 			
-			$this->prices = [];
+			$this->ticker = [];
 			$this->positions = [];
 			$this->orders = [];
 			
