@@ -140,7 +140,7 @@
 			
 		}
 		
-		function createOrder ($type, $base, $quote, $amount, $price) {
+		/*function createOrder ($type, $base, $quote, $price) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -149,7 +149,7 @@
 				'symbol' => $this->pair ($base, $quote),
 				'type' => 'LIMIT',
 				'side' => $type,
-				'quantity' => $this->amount ($amount),
+				'quantity' => $this->quantity (),
 				'price' => $price,
 				'timeInForce' => 'GTC',
 				
@@ -161,7 +161,7 @@
 			
 		}
 		
-		function createMarketOrder ($type, $base, $quote, $amount) {
+		function createMarketOrder ($type, $base, $quote) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -170,7 +170,7 @@
 				'symbol' => $this->pair ($base, $quote),
 				'type' => 'MARKET',
 				'side' => $type,
-				'quantity' => $this->amount ($amount),
+				'quantity' => $this->quantity (),
 				
 			];
 			
@@ -178,7 +178,7 @@
 			
 			return $request->connect ('api/v3/order');
 			
-		}
+		}*/
 		
 		function getOrders ($base, $quote) {
 			
@@ -563,8 +563,12 @@
 			$data['base'] = $base;
 			$data['quote'] = $quote;
 			
-			return $this->createFuturesTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), 'Limit', 'Market', __FUNCTION__);
+			return $this->createFuturesTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), __FUNCTION__);
 			
+		}
+		
+		function createFuturesMarketTakeProfitOrder ($orders) {
+			return $this->createFuturesTypeOrder ($orders, ($this->isLong () ? 'Buy' : 'Sell'), __FUNCTION__);
 		}
 		
 		function closeFuturesMarketPosition ($base, $quote, $data) {
@@ -574,12 +578,8 @@
 			
 			$data['close'] = true;
 			
-			return $this->createFuturesTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), 'Limit', 'Market', __FUNCTION__);
+			return $this->createFuturesTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
 			
-		}
-		
-		function createFuturesMarketTakeProfitOrder ($orders) {
-			return $this->createFuturesTypeOrder ($orders, ($this->isLong () ? 'Buy' : 'Sell'), 'Limit', 'Market', __FUNCTION__);
 		}
 		
 		function editFuturesOrder ($base, $quote, $id, $data) {
@@ -658,11 +658,11 @@
 			//foreach ($orders as $i => $order)
 			//	$orders[$i]['close'] = true;
 			
-			return $this->createFuturesTypeOrder ($orders, ($this->isLong () ? 'Buy' : 'Sell'), 'Limit', 'Market', __FUNCTION__);
+			return $this->createFuturesTypeOrder ($orders, ($this->isLong () ? 'Buy' : 'Sell'), __FUNCTION__);
 			
 		}
 		
-		function createFuturesTypeOrder ($orders, $side, $type1, $type2, $func) {
+		protected function createFuturesTypeOrder ($orders, $side, $func) {
 			
 			$list = [];
 			
@@ -671,11 +671,11 @@
 				$data = [
 					
 					'symbol' => $this->pair ($order['base'], $order['quote']),
-					'order_type' => (isset ($order['price']) ? $type1 : $type2),
+					'order_type' => (isset ($order['price']) ? 'Limit' : 'Market'),
 					'side' => $side,
-					'qty' => $order['quantity'],
+					'qty' => $this->quantity (),
 					'time_in_force' => 'GoodTillCancel',
-					'reduce_only' => (isset ($order['close']) ? 'true' : 'false'),
+					'reduce_only' => ((isset ($order['close']) and $order['close']) ? 'true' : 'false'),
 					'close_on_trigger' => 'false',
 					'tp_trigger_by' => 'MarkPrice',
 					'sl_trigger_by' => 'MarkPrice',

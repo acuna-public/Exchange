@@ -108,7 +108,7 @@
 			
 		}
 		
-		function createOrder ($type, $base, $quote, $amount, $price) {
+		/*function createOrder ($type, $base, $quote, $price) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -117,7 +117,7 @@
 				'symbol' => $this->pair ($base, $quote),
 				'type' => 'LIMIT',
 				'side' => $type,
-				'quantity' => $this->amount ($amount),
+				'quantity' => $this->quantity (),
 				'price' => $price,
 				'timeInForce' => 'GTC',
 				
@@ -129,7 +129,7 @@
 			
 		}
 		
-		function createMarketOrder ($type, $base, $quote, $amount) {
+		function createMarketOrder ($type, $base, $quote) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -138,7 +138,7 @@
 				'symbol' => $this->pair ($base, $quote),
 				'type' => 'MARKET',
 				'side' => $type,
-				'quantity' => $this->amount ($amount),
+				'quantity' => $this->quantity (),
 				
 			];
 			
@@ -146,7 +146,7 @@
 			
 			return $request->connect ('api/v3/order');
 			
-		}
+		}*/
 		
 		function getOrders ($base, $quote) {
 			

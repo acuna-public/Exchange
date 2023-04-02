@@ -300,14 +300,14 @@
 			
 		}
 		
-		abstract function createOrder ($type, $base, $quote, $amount, $price);
+		function createOrder ($type, $base, $quote, $price) {}
 		abstract function getOrders ($base, $quote);
 		abstract function getOrderInfo ($id);
 		
 		function editFuturesPosition ($base, $quote, $data) {}
 		
-		function createMarketOrder ($type, $base, $quote, $amount) {
-			return $this->createOrder ($type, $base, $quote, $amount, 0);
+		function createMarketOrder ($type, $base, $quote) {
+			return $this->createOrder ($type, $base, $quote, 0);
 		}
 		
 		function longShortRatio ($base, $quote, $period) {
@@ -389,7 +389,7 @@
 			
 		}
 		
-		protected function amount ($amount) {
+		function amount ($amount) {
 			
 			if ($this->amount > 0)
 				$amount = mash_number_format ($amount, $this->amount, '.', '');
