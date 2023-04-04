@@ -122,7 +122,7 @@
 			
 			$summary = [];
 			
-			if ($prices = $request->connect ('public/linear/kline')['result'])
+			if ($prices = $request->connect ('public/linear/mark-price-kline')['result'])
 			foreach ($prices as $value)
 				$summary[] = [
 					
