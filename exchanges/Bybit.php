@@ -130,7 +130,7 @@
 					'high' => $value['high'],
 					'open' => $value['open'],
 					'close' => $value['close'],
-					'volume' => $value['volume'],
+					//'volume' => $value['volume'],
 					'date' => $value['start_at'],
 					'date_text' => $this->date ($value['start_at']),
 					
