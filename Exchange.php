@@ -206,6 +206,8 @@
 			$this->fees  = $this->getFuturesTakerFees ($this->entryPrice);
 			$this->fees += $this->getFuturesTakerFees ($this->markPrice);
 			
+			$this->fees = $this->price ($this->fees);
+			
 			$this->pnl -= $this->fees;
 			
 			$this->roe = $this->getROE ();
