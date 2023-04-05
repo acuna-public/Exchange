@@ -34,11 +34,10 @@
 		
 		public
 			$cred = [],
-			$fees = [],
+			$fees = 0,
 			$feesRate = [],
 			$proxies = [],
 			$position = [],
-			$prices = [],
 			$ticker = [],
 			$positions = [],
 			$orders = [];
@@ -301,10 +300,6 @@
 			
 		}
 		
-		function getPrices () {
-			return end_value ($this->prices);
-		}
-		
 		function createOrder ($type, $base, $quote, $price) {} // TODO
 		abstract function getOrders ($base, $quote);
 		abstract function getOrderInfo ($id);
@@ -395,18 +390,11 @@
 		}
 		
 		function amount ($amount) {
-			
-			if ($this->amount > 0)
-				$amount = mash_number_format ($amount, $this->amount, '.', '');
-			else
-				$amount = round ($amount);
-			
-			return $amount;
-			
+			return round ($amount, $this->amount);
 		}
 		
 		function price ($amount) {
-			return mash_number_format ($amount, $this->precision, '.', '');
+			return round ($amount, $this->precision);
 		}
 		
 		function date ($date) {

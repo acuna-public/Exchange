@@ -989,10 +989,6 @@
 			return round (parent::getAdditionalMargin ($stopPrice), 4);
 		}
 		
-		function getPrices () {
-			return $this->prices[end_key ($this->prices) - 1];
-		}
-		
 	}
 	
 	class BybitRequest {
