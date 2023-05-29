@@ -73,6 +73,10 @@
 			$this->cred = $cred;
 		}
 		
+		function timeOffset () {
+			
+		}
+		
 		function changeSide () {
 			
 			if ($this->isLong ())

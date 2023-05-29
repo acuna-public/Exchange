@@ -70,9 +70,7 @@
 			return 'Bybit';
 		}
 		
-		function setCredentials ($cred) {
-			
-			parent::setCredentials ($cred);
+		function timeOffset () {
 			
 			if ($this->timeOffset == null) {
 				
@@ -102,7 +100,7 @@
 				
 			];
 			
-			if (!isset ($data['limit']))
+			if (!isset ($data['limit']) or $data['limit'] <= 0)
 				$data['limit'] = 200;
 			
 			$request->params['limit'] = $data['limit'];
@@ -573,7 +571,7 @@
 			return $this->createFuturesTypeOrder ($orders, ($this->isLong () ? 'Buy' : 'Sell'), __FUNCTION__);
 		}
 		
-		function closeFuturesMarketPosition ($base, $quote, $data) {
+		function closeFuturesMarketPosition ($base, $quote, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
