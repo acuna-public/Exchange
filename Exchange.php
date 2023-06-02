@@ -34,7 +34,8 @@
 		
 		public
 			$cred = [],
-			$fees = 0,
+			$openFee = 0,
+			$closeFee = 0,
 			$feesRate = [],
 			$proxies = [],
 			$position = [],
@@ -206,15 +207,32 @@
 				$this->entryPrice = $this->markPrice;
 			
 			$this->pnl = $this->getPNL ();
-			
-			$this->fees  = $this->getFuturesTakerFees ($this->entryPrice);
-			$this->fees += $this->getFuturesTakerFees ($this->markPrice);
-			
-			$this->pnl -= $this->fees;
-			
 			$this->roe = $this->getROE ();
 			
+		}
+		
+		function futuresOpen () {
+			
+			$this->openFee  = $this->getFuturesTakerFees ($this->entryPrice);
+			
+			$this->margin -= $this->openFee;
+			
+		}
+		
+		function futuresClose () {
+			
+			$this->futuresUpdate ();
+			
+			$this->closeFee = $this->getFuturesTakerFees ($this->markPrice);
+			
 			$this->margin += $this->pnl;
+			
+			if ($this->margin >= $this->closeFee)
+				$this->margin -= $this->closeFee;
+			else
+				$this->closeFee = 0;
+			
+			$this->pnl -= $this->closeFee;
 			
 		}
 		
