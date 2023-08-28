@@ -4,7 +4,7 @@
 		
 		public $func, $proxy, $order;
 		
-		function __construct ($message, $code, $func, $proxy, $order) {
+		function __construct ($message, $code = 0, $func = '', $proxy = [], $order = []) {
 			
 			parent::__construct ($message, $code);
 			

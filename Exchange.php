@@ -8,49 +8,59 @@
 	abstract class Exchange {
 		
 		public
-			$debug = 0,
-			$amount = 3,
-			$precision = 2,
-			$date = 'd.m.y H:i',
-			$entryPrice = 0,
-			$markPrice = 0,
-			$minQuantity = 0,
-			$maxQuantity = 0;
+			$hedgeMode = false,
+			$debug = 0;
 		
 		public
-			$hedgeMode = true,
-			$initialMarginRate = 0,
-			$maintenanceMarginRate = 0;
+			$amount = 3,
+			$basePrecision = 2,
+			$quotePrecision = 2,
+			$date = 'd.m.y H:i';
 		
 		public
 			$margin = 0,
+			$balance = 0,
 			$leverage = 0,
+			$takeProfit = 0,
+			$stopLoss = 0,
+			$entryPrice = 0,
+			$markPrice = 0,
+			$timeOffset = 0,
+			$minQuantity = 0,
+			$maxQuantity = 0,
+			$marginPercent = 100,
+			$balancePercent = 100,
 			$liquid = 0,
-			$notional = 0,
 			$quantity = 0,
-			$pnl = 0, $roe,
-			$timeOffset,
-			$queryNum = 0;
+			$initialMarginRate = 0,
+			$maintenanceMarginRate = 0;
 		
 		public
 			$cred = [],
 			$openFee = 0,
 			$closeFee = 0,
+			$pnl = 0, $roe = 0,
+			$fees = 0,
+			$queryNum = 0,
 			$feesRate = [],
 			$proxies = [],
 			$position = [],
-			$ticker = [],
 			$positions = [],
 			$orders = [];
+		
+		public
+			$recvWindow = 60000; // 1 minute
 		
 		protected
 			$lastDate = 0;
 		
 		public $days = ['1m' => 1, '5m' => 2, '30m' => 10, '1h' => 20, '2h' => 499, '4h' => 120, '1d' => 1], $ratios = ['2h' => [1.2, 1.8]];
 		
-		public $flevel = 0, $rebate = 10, $ftype = self::FTYPE_USD;
+		public $flevel = 0, $rebate = 10, $ftype = self::FTYPE_USD, $feeModel = self::MAKER;
 		
-		public $side = self::LONG, $marginType = self::CROSS;
+		public $side = self::LONG, $marginType = self::CROSS, $market = self::FUTURES;
+		
+		const FUTURES = 'FUTURES';
 		
 		const LONG = 'LONG', SHORT = 'SHORT', ISOLATED = 'ISOLATED', CROSS = 'CROSS', BUY = 'BUY', SELL = 'SELL', MAKER = 'MAKER', TAKER = 'TAKER', BALANCE_AVAILABLE = 'available', BALANCE_TOTAL = 'total', FTYPE_USD = 'USD', FTYPE_COIN = 'COIN';
 		
@@ -69,14 +79,13 @@
 		
 		abstract function getName ();
 		abstract function getTitle ();
+		abstract function getVersion ();
 		
 		function setCredentials ($cred) {
 			$this->cred = $cred;
 		}
 		
-		function timeOffset () {
-			
-		}
+		function timeOffset () {}
 		
 		function changeSide () {
 			
@@ -100,34 +109,86 @@
 		}
 		
 		function getSustainableLoss ($margin, $price) {
-			return $margin - $this->getMaintenanceMargin ($price);
+			return ($margin - $this->getMaintenanceMargin ($price));
 		}
 		
-		function getLiquidationPrice ($margin = 0) {
+		function getLiquidationPrice ($entryPrice = 0) {
 			
-			$price = $this->entryPrice;
+			if ($entryPrice <= 0) $entryPrice = $this->entryPrice;
+			
+			$price = $entryPrice;
 			
 			if ($this->marginType == self::CROSS) {
 				
 				if ($this->isLong ())
-					$price -= ($this->getSustainableLoss ($margin, $price) / $this->quantity);
+					$price -= ($this->getSustainableLoss ($this->balance, $price) / $this->quantity);
 				else
-					$price += ($this->getSustainableLoss ($margin, $price) / $this->quantity);
+					$price += ($this->getSustainableLoss ($this->balance, $price) / $this->quantity);
 				
 			} else {
 				
 				$price *= $this->quantity;
 				
 				if ($this->isLong ())
-					$price *= ((1 - $this->getInitialMargin () + ($this->maintenanceMarginRate / 100)) - $margin);
+					$price *= ((1 - $this->getInitialMargin () + ($this->maintenanceMarginRate / 100)) - $this->balance);
 				else
-					$price *= ((1 + $this->getInitialMargin () - ($this->maintenanceMarginRate / 100)) + $margin);
+					$price *= ((1 + $this->getInitialMargin () - ($this->maintenanceMarginRate / 100)) + $this->balance);
 				
 				$price /= $this->quantity;
 				
 			}
 			
-			return $this->price ($price);
+			$price = $this->basePrice ($price);
+			
+			return ($price > 0 ? $price : 0);
+			
+		}
+		
+		function getStopLoss ($entryPrice) {
+			
+			$price = $this->getLiquidationPrice ($entryPrice);
+			
+			if ($this->stopLoss <= 0) $this->stopLoss = $this->liquid;
+			
+			$percent = (($entryPrice * $this->stopLoss) / 100);
+			
+			if ($this->isLong ()) {
+				
+				$stopPrice = $this->basePrice ($entryPrice - $percent);
+				if ($stopPrice > $price) $price = $stopPrice;
+				
+			} else {
+				
+				$stopPrice = $this->basePrice ($entryPrice + $percent);
+				if ($stopPrice < $price) $price = $stopPrice;
+				
+			}
+			
+			return $price;
+			
+		}
+		
+		function getTakeProfit ($entryPrice) {
+			
+			if ($this->takeProfit < 0) $this->takeProfit = $this->liquid;
+			
+			if ($this->takeProfit > 0) {
+				
+				$percent = (($entryPrice * $this->takeProfit) / 100);
+				
+				if ($this->isLong ())
+					return $this->basePrice ($entryPrice + $percent);
+				else
+					return $this->basePrice ($entryPrice - $percent);
+				
+			} else return 0;
+			
+		}
+		
+		function liquidPricePercent ($entryPrice, $liquidPrice) {
+			
+			$price = ($entryPrice - $liquidPrice);
+			return (($price * 100) / $entryPrice);
 			
 		}
 		
@@ -148,12 +209,13 @@
 			
 		}
 		
-		abstract function getCharts ($base, $quote, array $data);
-		abstract function getBalance ($type, $quote = '');
+		abstract function getPrices ($base, $quote, array $data): array;
 		
-		function getFuturesCharts ($base, $quote, array $data) {
-			return $this->getCharts ($base, $quote, $data);
+		function getMarkPrices ($base, $quote, array $data): array {
+			return $this->getPrices ($base, $quote, $data);
 		}
+		
+		abstract function getBalance ($type, $quote = '');
 		
 		function getFuturesBalance ($type, $quote = '') {
 			return $this->getBalance ($type, $quote);
@@ -182,26 +244,16 @@
 			
 		}
 		
-		function futuresInit ($base, $quote) {
-			
-			if ($this->markPrice == 0) // NULL
-				$this->markPrice = $this->getMarkPrice ($base, $quote);
+		function start () {
 			
 			if ($this->leverage == 0) // NULL
 				$this->leverage = $this->getLeverage ();
 			
-			//$this->leverage = 10;
-			
 			$this->liquid = (100 / $this->leverage);
-			
-			$this->notional = ($this->margin * $this->leverage);
-			
-			if ($this->quantity == 0) // NULL
-				$this->quantity = $this->getQuantity ($this->markPrice);
 			
 		}
 		
-		function futuresUpdate () {
+		function update () {
 			
 			if ($this->entryPrice == 0)
 				$this->entryPrice = $this->markPrice;
@@ -211,28 +263,77 @@
 			
 		}
 		
-		function futuresOpen () {
+		function open () {
 			
-			$this->openFee  = $this->getFuturesTakerFees ($this->entryPrice);
+			$this->fees = 0;
 			
-			$this->margin -= $this->openFee;
+			if ($this->balancePercent <= 0 or $this->balancePercent > 100)
+				$this->balancePercent = 100;
+			
+			$percent = new \Percent ($this->balance);
+			$this->balance = $percent->valueOf ($this->balancePercent);
+			
+			$this->margin = $this->balance;
+			
+			if ($this->marginPercent <= 0 or $this->marginPercent > 100)
+				$this->marginPercent = 100;
+			
+			if ($this->marginType == self::CROSS) {
+				
+				$percent = new \Percent ($this->margin);
+				$this->margin = $percent->valueOf ($this->marginPercent);
+				
+			}
+			
+			$this->entryPrice = $this->markPrice;
+			$this->quantity = $quantity = $this->getQuantity ();
+			
+			if ($this->quantity > 0) {
+				
+				$min = $this->minQuantity ();
+				$max = $this->maxQuantity ();
+				
+				if ($min > 0 and $this->quantity < $min)
+					$this->quantity = $min;
+				elseif ($max > 0 and $this->quantity > $max)
+					$this->quantity = $max;
+				
+			}
+			
+			if ($quantity > 0 and $this->margin > 0) {
+				
+				$margin = $this->margin;
+				
+				if ($this->quantity != $quantity) {
+					
+					$percent = new \Percent ($this->quantity);
+					
+					$percent->delim = $quantity;
+					
+					$this->margin = $percent->valueOf ($this->margin);
+					
+					$margin -= $this->margin;
+					
+				}
+				
+				//debug ($margin, $this->balance, $this->margin);
+				
+				return ($margin >= 0 and $margin <= $this->balance);
+				
+			}
+			
+			return false;
 			
 		}
 		
-		function futuresClose () {
+		function close () {
 			
-			$this->futuresUpdate ();
+			$this->fees = ($this->getFees ($this->entryPrice) + $this->getFees ($this->markPrice));
 			
-			$this->closeFee = $this->getFuturesTakerFees ($this->markPrice);
+			if ($this->pnl > $this->fees)
+				$this->pnl -= $this->fees;
 			
 			$this->margin += $this->pnl;
-			
-			if ($this->margin >= $this->closeFee)
-				$this->margin -= $this->closeFee;
-			else
-				$this->closeFee = 0;
-			
-			$this->pnl -= $this->closeFee;
 			
 		}
 		
@@ -240,29 +341,25 @@
 			return (($balance * $percent) / 100);
 		}
 		
-		function getFeeRate ($type) {
+		function getFeeRate () {
 			
-			$value  = $this->feesRate[$this->ftype][$this->flevel][($type == self::MAKER ? 0 : 1)];
+			$value  = $this->feesRate[$this->market][$this->ftype][$this->flevel][($this->feeModel == self::MAKER ? 0 : 1)];
 			$value -= $this->getMargin ($value, $this->rebate);
 			
 			return $value;
 			
 		}
 		
-		function getFuturesFees ($price, $type) {
-			return $this->getMargin (($price * $this->quantity), $this->getFeeRate ($type));
+		function getFees ($price) {
+			return $this->getMargin (($price * $this->quantity), $this->getFeeRate ());
 		}
 		
-		function getFuturesMakerFees ($price) {
-			return $this->getFuturesFees ($price, self::MAKER);
-		}
-		
-		function getFuturesTakerFees ($price) {
-			return $this->getFuturesFees ($price, self::TAKER);
-		}
-		
-		function getQuantity ($price) {
-			return $this->amount ($this->notional / $price);
+		protected final function getQuantity () {
+			
+			$notional = ($this->margin * $this->leverage);
+			
+			return $this->amount ($notional / $this->entryPrice);
+			
 		}
 		
 		function getLeverage () {
@@ -279,10 +376,14 @@
 		
 		function getROE () {
 			
-			$pnl = $this->pnl;
+			$pnl = ($this->pnl * 100);
 			
-			$pnl *= 100;
-			$pnl /= (($this->quantity * $this->entryPrice) / $this->leverage);
+			$quantity = (($this->quantity * $this->entryPrice) / $this->leverage);
+			
+			if ($quantity > 0)
+				$pnl /= $quantity;
+			else
+				throw new \ExchangeException ('Position quantity must be greater than zero');
 			
 			return $pnl;
 			
@@ -310,19 +411,20 @@
 			return $this->position['entry_price'];
 		}
 		
+		function toPoint () {
+			return (1 / pow (10, $this->basePrecision));
+		}
+		
 		function pair ($base, $quote) {
 			return $base.$quote;
 		}
 		
-		function getMarkPrice ($base, $quote) {
-			
-			if (!$this->ticker) $this->ticker = $this->ticker ();
-			
-			return $this->ticker[$this->pair ($base, $quote)]['mark_price'];
-			
+		function getTickerPrice ($base, $quote) {
+			return $this->getTickerPrices ()[$this->pair ($base, $quote)];
 		}
 		
 		function createOrder ($type, $base, $quote, $price) {} // TODO
+		
 		abstract function getOrders ($base, $quote);
 		abstract function getOrderInfo ($id);
 		
@@ -383,17 +485,13 @@
 			return '';
 		}
 		
-		abstract function ticker ($base = '', $quote = '');
-		
-		function futuresTicker ($base = '', $quote = '') {
-			return $this->ticker ($base, $quote);
-		}
+		abstract function getTickerPrices ($base = '', $quote = '');
 		
 		function getVolatility ($base, $quote, $interval = '1h') {
 			
 			$date = new \Date ();
 			
-			$charts = $this->getCharts ($base, $quote, ['interval' => $interval, 'start_time' => $date->add (-\Date::DAY * 1)->getTime ()]);
+			$charts = $this->getMarkPrices ($base, $quote, ['interval' => $interval, 'start_time' => $date->add (-\Date::DAY * 1)->getTime ()]);
 			
 			$min = $charts[0]['close'];
 			$max = 0;
@@ -415,8 +513,12 @@
 			return round ($amount, $this->amount);
 		}
 		
-		function price ($amount) {
-			return round ($amount, $this->precision);
+		function basePrice ($amount) {
+			return round ($amount, $this->basePrecision);
+		}
+		
+		function quotePrice ($amount) {
+			return round ($amount, $this->quotePrecision);
 		}
 		
 		function date ($date) {
@@ -463,7 +565,7 @@
 			
 			do {
 				
-				$prices2 = $this->getCharts ($base, $quote, $data);
+				$prices2 = $this->getMarkPrices ($base, $quote, $data);
 				
 				$prices3 = [];
 				
@@ -499,8 +601,8 @@
 		}
 		
 		function setFuturesMode ($base, $quote) {}
-		function cancelFuturesOrderName ($base, $quote, $name) {}
-		function closeFuturesMarketPosition ($base, $quote, $data) {}
+		function cancelOrderName ($base, $quote, $name) {}
+		function closeMarketPosition ($side, $base, $quote, $data) {}
 		
 		protected function timeframe ($timeframe) { // From cctx
 			
@@ -523,7 +625,6 @@
 		
 		function clean () {
 			
-			$this->ticker = [];
 			$this->positions = [];
 			$this->orders = [];
 			

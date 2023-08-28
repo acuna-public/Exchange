@@ -6,24 +6,28 @@
 		
 		public $feesRate = [
 			
-			self::FTYPE_USD => [
+			self::FUTURES => [
 				
-				[0.010, 0.06],
-				[0.006, 0.05],
-				[0.004, 0.045],
-				[0.002, 0.0425],
-				[0, 0.04],
-				[0, 0.035],
-				[0, 0.03],
+				self::FTYPE_USD => [
+					
+					[0.010, 0.06],
+					[0.006, 0.05],
+					[0.004, 0.045],
+					[0.002, 0.0425],
+					[0, 0.04],
+					[0, 0.035],
+					[0, 0.03],
+					
+				],
 				
-			],
-			
-			self::FTYPE_COIN => [
-				
-				[0.0100, 0.0500], // 30d BTC Volume Maker / Taker %
-				[0.0080, 0.0450],
-				[0.0050, 0.0400],
-				[0.0030, 0.0300],
+				self::FTYPE_COIN => [
+					
+					[0.0100, 0.0500], // 30d BTC Volume Maker / Taker %
+					[0.0080, 0.0450],
+					[0.0050, 0.0400],
+					[0.0030, 0.0300],
+					
+				],
 				
 			],
 			
@@ -70,25 +74,25 @@
 			return 'Bybit';
 		}
 		
+		function getVersion () {
+			return '1.4';
+		}
+		
 		function timeOffset () {
 			
-			if ($this->timeOffset == null) {
-				
-				$request = $this->getRequest (__FUNCTION__);
-				
-				$request->signed = false;
-				
-				$time = $request->connect ('v2/public/time')['time_now'];
-				
-				$this->timeOffset = ((number_format ($time, 0, '.', '') * 1000) - $request->milliseconds ());
-				
-			}
+			$request = $this->getRequest (__FUNCTION__);
+			
+			$request->signed = false;
+			
+			$time = $request->connect ('v2/public/time')['time_now'];
+			
+			$this->timeOffset = ((number_format ($time, 0, '.', '') * 1000) - $request->milliseconds ());
 			
 		}
 		
-		function getCharts ($base, $quote, array $data) {
+		protected function pricesRequest ($func, $base, $quote, array $data): BybitRequest {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$request = $this->getRequest ($func);
 			
 			if (isset ($this->curChanges[$base]))
 				$base = $this->curChanges[$base];
@@ -118,9 +122,38 @@
 			$request->signed = false;
 			$request->debug = 0;
 			
+			return $request;
+			
+		}
+		
+		function getPrices ($base, $quote, array $data): array {
+			
 			$summary = [];
 			
-			if ($prices = $request->connect ('public/linear/mark-price-kline')['result'])
+			if ($prices = $this->pricesRequest (__FUNCTION__, $base, $quote, $data)->connect ('public/linear/kline')['result'])
+			foreach ($prices as $value)
+				$summary[] = [
+					
+					//'symbol' => $this->pair ($base, $quote),
+					'low' => $value['low'],
+					'high' => $value['high'],
+					'open' => $value['open'],
+					'close' => $value['close'],
+					'volume' => $value['volume'],
+					'date' => $value['start_at'],
+					'date_text' => $this->date ($value['start_at']),
+					
+				];
+			
+			return $summary;
+			
+		}
+		
+		function getMarkPrices ($base, $quote, array $data): array {
+			
+			$summary = [];
+			
+			if ($prices = $this->pricesRequest (__FUNCTION__, $base, $quote, $data)->connect ('public/linear/mark-price-kline')['result'])
 			foreach ($prices as $value)
 				$summary[] = [
 					
@@ -563,22 +596,22 @@
 			$data['base'] = $base;
 			$data['quote'] = $quote;
 			
-			return $this->createFuturesTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), __FUNCTION__);
+			return $this->createFuturesTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), $this->side, __FUNCTION__);
 			
 		}
 		
 		function createFuturesMarketTakeProfitOrder ($orders) {
-			return $this->createFuturesTypeOrder ($orders, ($this->isLong () ? 'Buy' : 'Sell'), __FUNCTION__);
+			return $this->createFuturesTypeOrder ($orders, ($this->isLong () ? 'Buy' : 'Sell'), $this->side, __FUNCTION__);
 		}
 		
-		function closeFuturesMarketPosition ($base, $quote, $data = []) {
+		function closeMarketPosition ($side, $base, $quote, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
 			
 			$data['close'] = true;
 			
-			return $this->createFuturesTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
+			return $this->createFuturesTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), $this->side, __FUNCTION__);
 			
 		}
 		
@@ -653,7 +686,7 @@
 			
 		}
 		
-		protected function createFuturesTypeOrder ($orders, $side, $func) {
+		protected function createFuturesTypeOrder (array $orders, string $side, string $side2, string $func) {
 			
 			$list = [];
 			
@@ -686,7 +719,7 @@
 					$data['order_link_id'] = $order['name'];
 				
 				if ($this->hedgeMode)
-					$data['position_idx'] = ($this->isLong () ? 1 : 2);
+					$data['position_idx'] = ($side2 == self::LONG ? 1 : 2);
 				else
 					$data['position_idx'] = 0;
 				
@@ -853,7 +886,7 @@
 			
 		}
 		
-		protected function getRequest ($func, $order = []) {
+		protected function getRequest ($func, $order = []): BybitRequest {
 			return new BybitRequest ($this, $func, $order);
 		}
 		
@@ -869,7 +902,7 @@
 			
 		}
 		
-		function ticker ($base = '', $quote = '') {
+		function getTickerPrices ($base = '', $quote = '') {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -1008,8 +1041,7 @@
 			$debug = 0,
 			$errorCodes = [404],
 			$func,
-			$order,
-			$recvWindow = 60000; // 1 second
+			$order;
 		
 		const GET = 'GET', POST = 'POST', PUT = 'PUT', DELETE = 'DELETE';
 		const FUTURES = 'FUTURES';
@@ -1049,7 +1081,7 @@
 			if ($this->signed) {
 				
 				$this->params['api_key'] = $this->exchange->cred['key'];
-				$this->params['recv_window'] =	$this->recvWindow;
+				$this->params['recv_window'] =	$this->exchange->recvWindow;
 				$this->params['timestamp'] = $this->time ();
 				$this->params['sign'] = $this->signature ();
 				

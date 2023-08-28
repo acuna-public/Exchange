@@ -6,21 +6,25 @@
 		
 		public $feesRate = [
 			
-			self::FTYPE_USD => [
+			self::FUTURES => [
 				
-				[0.0200, 0.0400],
-				[0.0160, 0.0400],
-				[0.0140, 0.0350],
-				[0.0120, 0.0320],
+				self::FTYPE_USD => [
+					
+					[0.0200, 0.0400],
+					[0.0160, 0.0400],
+					[0.0140, 0.0350],
+					[0.0120, 0.0320],
+					
+				],
 				
-			],
-			
-			self::FTYPE_COIN => [
-				
-				[0.0100, 0.0500], // 30d BTC Volume Maker / Taker %
-				[0.0080, 0.0450],
-				[0.0050, 0.0400],
-				[0.0030, 0.0300],
+				self::FTYPE_COIN => [
+					
+					[0.0100, 0.0500], // 30d BTC Volume Maker / Taker %
+					[0.0080, 0.0450],
+					[0.0050, 0.0400],
+					[0.0030, 0.0300],
+					
+				],
 				
 			],
 			
@@ -45,6 +49,10 @@
 			return 'Binance';
 		}
 		
+		function getVersion () {
+			return '1.4';
+		}
+		
 		function setCredentials ($cred) {
 			
 			parent::setCredentials ($cred);
@@ -64,9 +72,9 @@
 			
 		}
 		
-		function getCharts ($base, $quote, array $data) {
+		protected function pricesRequest ($func, $base, $quote, array $data): BybitRequest {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$request = $this->getRequest ($func);
 			
 			if (isset ($this->curChanges[$base]))
 				$base = $this->curChanges[$base];
@@ -87,12 +95,41 @@
 			if (isset ($data['limit']))
 				$request->params['limit'] = $data['limit'];
 			
+			$request->market = BinanceRequest::FUTURES;
+			
 			$request->signed = false;
 			$request->debug = 0;
 			
+			return $request;
+			
+		}
+		
+		function getPrices ($base, $quote, array $data): array {
+			
 			$summary = [];
 			
-			foreach ($request->connect ('api/v3/klines') as $value)
+			foreach ($this->pricesRequest (__FUNCTION__, $base, $quote, $data)->connect ('fapi/v1/klines') as $value)
+				$summary[] = [
+					
+					'date' => ($value[0] / 1000),
+					'date_text' => $this->date ($value[0] / 1000),
+					'low' => $value[3],
+					'high' => $value[2],
+					'open' => $value[1], // Покупка
+					'close' => $value[4], // Продажа
+					'volume' => $value['volume'],
+					
+				];
+			
+			return $summary;
+			
+		}
+		
+		function getMarkPrices ($base, $quote, array $data): array {
+			
+			$summary = [];
+			
+			foreach ($this->pricesRequest (__FUNCTION__, $base, $quote, $data)->connect ('fapi/v1/markPriceKlines') as $value)
 				$summary[] = [
 					
 					'date' => ($value[0] / 1000),
@@ -123,7 +160,7 @@
 				
 			];
 			
-			$request->method = Request::POST;
+			$request->method = BinanceRequest::POST;
 			
 			return $request->connect ('api/v3/order');
 			
@@ -142,7 +179,7 @@
 				
 			];
 			
-			$request->method = Request::POST;
+			$request->method = BinanceRequest::POST;
 			
 			return $request->connect ('api/v3/order');
 			
@@ -218,7 +255,7 @@
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
-			$request->market = Request::FUTURES;
+			$request->market = BinanceRequest::FUTURES;
 			
 			if ($quote) $request->params['cur'] = $quote;
 			
@@ -257,8 +294,8 @@
 				
 			];
 			
-			$request->method = Request::POST;
-			$request->market = Request::FUTURES;
+			$request->method = BinanceRequest::POST;
+			$request->market = BinanceRequest::FUTURES;
 			
 			return $request->connect ('fapi/v1/leverage');
 			
@@ -275,8 +312,8 @@
 				
 			];
 			
-			$request->method = Request::POST;
-			$request->market = Request::FUTURES;
+			$request->method = BinanceRequest::POST;
+			$request->market = BinanceRequest::FUTURES;
 			
 			return $request->connect ('fapi/v1/marginType');
 			
@@ -289,7 +326,7 @@
 			if ($base and $quote)
 				$request->params['symbol'] = $this->pair ($base, $quote);
 			
-			$request->market = Request::FUTURES;
+			$request->market = BinanceRequest::FUTURES;
 			
 			$data = [];
 			
@@ -315,7 +352,7 @@
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
-			$request->method = Request::POST;
+			$request->method = BinanceRequest::POST;
 			
 			$data = $request->connect ('api/v3/userDataStream');
 			$this->userKey = $data['listenKey'];
@@ -332,7 +369,7 @@
 				
 			];
 			
-			$request->method = Request::PUT;
+			$request->method = BinanceRequest::PUT;
 			
 			return $request->connect ('api/v3/userDataStream');
 			
@@ -360,8 +397,8 @@
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
-			$request->method = Request::POST;
-			$request->market = Request::FUTURES;
+			$request->method = BinanceRequest::POST;
+			$request->market = BinanceRequest::FUTURES;
 			
 			$data = $request->connect ('fapi/v1/listenKey');
 			$this->futuresKey = $data['listenKey'];
@@ -378,7 +415,7 @@
 				
 			];
 			
-			$request->method = Request::PUT;
+			$request->method = BinanceRequest::PUT;
 			
 			return $request->connect ('v1/listenKey');
 			
@@ -394,7 +431,7 @@
 				
 			];
 			
-			$request->market = Request::FUTURES;
+			$request->market = BinanceRequest::FUTURES;
 			
 			return $request->connect ('fapi/v1/userTrades');
 			
@@ -416,7 +453,7 @@
 			
 			$request->signed = false;
 			
-			$request->market = Request::FUTURES;
+			$request->market = BinanceRequest::FUTURES;
 			
 			return $request->connect ('fapi/v1/exchangeInfo');
 			
@@ -432,7 +469,7 @@
 				
 			];
 			
-			$request->market = Request::FUTURES;
+			$request->market = BinanceRequest::FUTURES;
 			
 			return $request->connect ('fapi/v1/openOrders');
 			
@@ -454,8 +491,8 @@
 			if ($this->hedgeMode)
 				$request->params['positionSide'] = $side;
 			
-			$request->market = Request::FUTURES;
-			$request->method = Request::POST;
+			$request->market = BinanceRequest::FUTURES;
+			$request->method = BinanceRequest::POST;
 			
 			return $request->connect ('fapi/v1/order');
 			
@@ -473,8 +510,8 @@
 				
 			];
 			
-			$request->market = Request::FUTURES;
-			$request->method = Request::POST;
+			$request->market = BinanceRequest::FUTURES;
+			$request->method = BinanceRequest::POST;
 			
 			return $request->connect ('fapi/v1/batchOrders');
 			
@@ -572,8 +609,8 @@
 			if (isset ($order['name']))
 				$request->params['newClientOrderId'] = $order['name'];
 			
-			$request->market = Request::FUTURES;
-			$request->method = Request::POST;
+			$request->market = BinanceRequest::FUTURES;
+			$request->method = BinanceRequest::POST;
 			
 			return $request->connect ('fapi/v1/order');
 			
@@ -589,8 +626,8 @@
 				
 			];
 			
-			$request->market = Request::FUTURES;
-			$request->method = Request::DELETE;
+			$request->market = BinanceRequest::FUTURES;
+			$request->method = BinanceRequest::DELETE;
 			
 			return $request->connect ('fapi/v1/allOpenOrders');
 			
@@ -609,7 +646,7 @@
 				
 			];
 			
-			$request->market = Request::FUTURES;
+			$request->market = BinanceRequest::FUTURES;
 			$request->signed = false;
 			
 			foreach ($request->connect ('futures/data/topLongShortAccountRatio') as $value) {
@@ -658,8 +695,8 @@
 				
 			];
 			
-			$request->market = Request::FUTURES;
-			$request->method = Request::DELETE;
+			$request->market = BinanceRequest::FUTURES;
+			$request->method = BinanceRequest::DELETE;
 			
 			return $request->connect ('fapi/v1/batchOrders');
 			
@@ -676,15 +713,15 @@
 				
 			];
 			
-			$request->market = Request::FUTURES;
-			$request->method = Request::DELETE;
+			$request->market = BinanceRequest::FUTURES;
+			$request->method = BinanceRequest::DELETE;
 			
 			return $request->connect ('fapi/v1/batchOrders');
 			
 		}
 		
-		protected function getRequest ($func, $order = []) {
-			return new Request ($this, $func, $order);
+		protected function getRequest ($func, $order = []): BinanceRequest {
+			return new BinanceRequest ($this, $func, $order);
 		}
 		
 		function orderCreateDate ($order) {
@@ -701,7 +738,7 @@
 				
 			];
 			
-			$request->market = Request::FUTURES;
+			$request->market = BinanceRequest::FUTURES;
 			
 			$data = $request->connect ('fapi/v1/premiumIndex');
 			
@@ -736,7 +773,7 @@
 			
 			$request = $this->getRequest ($func);
 			
-			$request->market = Request::FUTURES;
+			$request->market = BinanceRequest::FUTURES;
 			
 			$data = $request->connect ('fapi/v1/leverageBracket');
 			
@@ -784,38 +821,14 @@
 			
 		}
 		
-		function ticker ($base = '', $quote = '') {
+		function getTickerPrices ($base = '', $quote = '') {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
 			if ($base and $quote)
 				$request->params['symbol'] = $this->pair ($base, $quote);
 			
-			$request->signed = false;
-			
-			$data = $request->connect ('api/v3/ticker/24hr');
-			
-			if (!$base and !$quote) {
-				
-				$output = [];
-				
-				foreach ($data as $pair)
-					$output[$pair['symbol']] = $this->prepTicker ($pair);
-				
-			} else $output = $this->prepTicker ($data);
-			
-			return $output;
-			
-		}
-		
-		function futuresTicker ($base = '', $quote = '') {
-			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			if ($base and $quote)
-				$request->params['symbol'] = $this->pair ($base, $quote);
-			
-			$request->market = Request::FUTURES;
+			$request->market = BinanceRequest::FUTURES;
 			$request->debug = 0;
 			
 			$data = $request->connect ('fapi/v1/ticker/24hr');
@@ -847,8 +860,8 @@
 				
 			];
 			
-			$request->market = Request::FUTURES;
-			$request->method = Request::POST;
+			$request->market = BinanceRequest::FUTURES;
+			$request->method = BinanceRequest::POST;
 			
 			return $request->connect ('fapi/v1/positionSide/dual');
 			
@@ -858,7 +871,7 @@
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
-			$request->market = Request::FUTURES;
+			$request->market = BinanceRequest::FUTURES;
 			
 			return $request->connect ('fapi/v1/positionSide/dual')['dualSidePosition'];
 			
@@ -871,7 +884,7 @@
 			if ($base and $quote)
 				$request->params['symbol'] = $this->pair ($base, $quote);
 			
-			$request->market = Request::FUTURES;
+			$request->market = BinanceRequest::FUTURES;
 			$request->debug = 0;
 			
 			$data = $request->connect ('fapi/v1/apiTradingStatus');
@@ -918,7 +931,7 @@
 		
 	}
 	
-	class Request {
+	class BinanceRequest {
 		
 		public
 			$apiUrl = 'https://api.binance.com',
@@ -937,8 +950,7 @@
 			$debug = 1,
 			$errorCodes = [405],
 			$func,
-			$order,
-			$recvWindow = 10000000; // 1 minute
+			$order;
 		
 		const GET = 'GET', POST = 'POST', PUT = 'PUT', DELETE = 'DELETE';
 		const FUTURES = 'FUTURES';
@@ -977,7 +989,7 @@
 			
 			if ($this->signed) {
 				
-				//$this->params['recvWindow'] =	$this->recvWindow;
+				$this->params['recvWindow'] =	$this->exchange->recvWindow;
 				$this->params['adjustForTimeDifference'] = true;
 				$this->params['timestamp'] = $this->time ();
 				$this->params['signature'] = $this->signature ();
