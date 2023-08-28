@@ -278,12 +278,8 @@
 			if ($this->marginPercent <= 0 or $this->marginPercent > 100)
 				$this->marginPercent = 100;
 			
-			if ($this->marginType == self::CROSS) {
-				
-				$percent = new \Percent ($this->margin);
-				$this->margin = $percent->valueOf ($this->marginPercent);
-				
-			}
+			$percent = new \Percent ($this->margin);
+			$this->margin = $percent->valueOf ($this->marginPercent);
 			
 			$this->entryPrice = $this->markPrice;
 			$this->quantity = $quantity = $this->getQuantity ();

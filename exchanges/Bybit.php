@@ -946,13 +946,13 @@
 			
 		}
 		
-		function setPairsFuturesHedgeMode () {
+		function setPairsFuturesHedgeMode (bool $hedge) {
 			
 		}
 		
 		function setFuturesHedgeMode (bool $hedge, $base = '', $quote = '') {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			/*$request = $this->getRequest (__FUNCTION__);
 			
 			$request->params = [
 				
@@ -964,7 +964,9 @@
 			$request->market = BybitRequest::FUTURES;
 			$request->method = BybitRequest::POST;
 			
-			return $request->connect ('private/linear/position/switch-mod')['result'];
+			return $request->connect ('private/linear/position/switch-mod')['result'];*/
+			
+			return '';
 			
 		}
 		
