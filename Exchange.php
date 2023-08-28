@@ -541,10 +541,10 @@
 			return [];
 		}
 		
-		function setPairsFuturesHedgeMode () {
+		function setPairsFuturesHedgeMode (bool $hedge) {
 			
 			try {
-				$this->setFuturesHedgeMode ($this->hedgeMode);
+				$this->setFuturesHedgeMode ($hedge);
 			} catch (\ExchangeException $e) {
 				// ignore
 			}
