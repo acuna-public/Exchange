@@ -112,11 +112,9 @@
 			return ($margin - $this->getMaintenanceMargin ($price));
 		}
 		
-		function getLiquidationPrice ($entryPrice = 0) {
+		function getLiquidationPrice ($quote, $extraMargin = 0) {
 			
-			if ($entryPrice <= 0) $entryPrice = $this->entryPrice;
-			
-			$price = $entryPrice;
+			$price = $this->entryPrice;
 			
 			if ($this->marginType == self::CROSS) {
 				
@@ -127,14 +125,21 @@
 				
 			} else {
 				
-				$price *= $this->quantity;
-				
-				if ($this->isLong ())
-					$price *= ((1 - $this->getInitialMargin () + ($this->maintenanceMarginRate / 100)) - $this->balance);
-				else
-					$price *= ((1 + $this->getInitialMargin () - ($this->maintenanceMarginRate / 100)) + $this->balance);
-				
-				$price /= $this->quantity;
+				if ($quote == 'USDT') {
+					
+					if ($this->isLong ())
+						$price *= (1 - $this->getInitialMargin () + ($this->maintenanceMarginRate / 100)) - ($extraMargin / $this->quantity);
+					else
+						$price *= (1 + $this->getInitialMargin () - ($this->maintenanceMarginRate / 100)) + ($extraMargin / $this->quantity);
+					
+				} elseif ($quote == 'USDC') {
+					
+					if ($this->isLong ())
+						$price += (($this->getInitialMargin () + $extraMargin - ($this->maintenanceMarginRate / 100)) / $this->quantity);
+					else
+						$price -= (($this->getInitialMargin () + $extraMargin - ($this->maintenanceMarginRate / 100)) / $this->quantity);
+					
+				}
 				
 			}
 			
@@ -144,7 +149,11 @@
 			
 		}
 		
-		function getStopLoss ($entryPrice) {
+		function getInitialMargin () {
+			return (1 / $this->leverage);
+		}
+		
+		function getStopLoss ($quote, $entryPrice) {
 			
 			$price = $this->getLiquidationPrice ($entryPrice);
 			
@@ -194,10 +203,6 @@
 		
 		function getMarginQuantity ($margin, $price) {
 			return ($this->getSustainableLoss ($margin, $this->entryPrice) / $price);
-		}
-		
-		function getInitialMargin () {
-			return (1 / $this->leverage);
 		}
 		
 		function getAdditionalMargin ($stopPrice) { // TODO
@@ -311,8 +316,6 @@
 					$margin -= $this->margin;
 					
 				}
-				
-				//debug ($margin, $this->balance, $this->margin);
 				
 				return ($margin >= 0 and $margin <= $this->balance);
 				
@@ -434,7 +437,7 @@
 			throw new \ExchangeException ('Long/Short Ratio not implemented');
 		}
 		
-		function setFuturesLeverage ($base, $quote, $leverage) {}
+		function setLeverage ($base, $quote, $leverage) {}
 		function setFuturesMarginType ($base, $quote, $longLeverage = 10, $shortLeverage = 10) {}
 		
 		function getFuturesPositions ($base = '', $quote = '') {}
@@ -596,7 +599,7 @@
 			return $this->maxQuantity;
 		}
 		
-		function setFuturesMode ($base, $quote) {}
+		function setMode ($base, $quote) {}
 		function cancelOrderName ($base, $quote, $name) {}
 		function closeMarketPosition ($side, $base, $quote, $data) {}
 		

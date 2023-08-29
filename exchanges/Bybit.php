@@ -297,7 +297,7 @@
 			
 		}
 		
-		function setFuturesLeverage ($base, $quote, $leverage) {
+		function setLeverage ($base, $quote, $leverage) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -316,7 +316,7 @@
 			
 		}
 		
-		function setFuturesMode ($base, $quote) {
+		function setMode ($base, $quote) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -338,7 +338,7 @@
 			
 		}
 		
-		function setFuturesMarginType ($base, $quote, $longLeverage = 10, $shortLeverage = 10) {
+		function setMarginType ($base, $quote, $longLeverage = 10, $shortLeverage = 10) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
