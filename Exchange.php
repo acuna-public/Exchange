@@ -418,10 +418,6 @@
 			return $base.$quote;
 		}
 		
-		function getTickerPrice ($base, $quote) {
-			return $this->getTickerPrices ()[$this->pair ($base, $quote)];
-		}
-		
 		function createOrder ($type, $base, $quote, $price) {} // TODO
 		
 		abstract function getOrders ($base, $quote);
@@ -484,7 +480,7 @@
 			return '';
 		}
 		
-		abstract function getTickerPrices ($base = '', $quote = '');
+		abstract function getPrice ($base = '', $quote = '');
 		
 		function getVolatility ($base, $quote, $interval = '1h') {
 			
