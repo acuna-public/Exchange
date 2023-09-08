@@ -275,13 +275,11 @@
 			if ($this->balancePercent <= 0 or $this->balancePercent > 100)
 				$this->balancePercent = 100;
 			
-			$percent = new \Percent ($this->balance);
-			$this->balance = $percent->valueOf ($this->balancePercent);
-			
-			$this->margin = $this->balance;
-			
 			if ($this->marginPercent <= 0 or $this->marginPercent > 100)
 				$this->marginPercent = 100;
+			
+			$percent = new \Percent ($this->balance);
+			$this->margin = $percent->valueOf ($this->balancePercent);
 			
 			$percent = new \Percent ($this->margin);
 			$this->margin = $percent->valueOf ($this->marginPercent);
