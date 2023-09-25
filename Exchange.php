@@ -19,7 +19,8 @@
 		
 		public
 			$margin = 0,
-			$balance = 0,
+			$openBalance = 0,
+			$closeBalance = 0,
 			$leverage = 0,
 			$takeProfit = 0,
 			$stopLoss = 0,
@@ -30,6 +31,7 @@
 			$maxQuantity = 0,
 			$marginPercent = 100,
 			$balancePercent = 100,
+			$balanceAvailable = 0,
 			$liquid = 0,
 			$quantity = 0,
 			$initialMarginRate = 0,
@@ -119,9 +121,9 @@
 			if ($this->marginType == self::CROSS) {
 				
 				if ($this->isLong ())
-					$price -= ($this->getSustainableLoss ($this->balance, $price) / $this->quantity);
+					$price -= ($this->getSustainableLoss ($this->openBalance, $price) / $this->quantity);
 				else
-					$price += ($this->getSustainableLoss ($this->balance, $price) / $this->quantity);
+					$price += ($this->getSustainableLoss ($this->openBalance, $price) / $this->quantity);
 				
 			} else {
 				
@@ -260,9 +262,6 @@
 		
 		function update () {
 			
-			if ($this->entryPrice == 0)
-				$this->entryPrice = $this->markPrice;
-			
 			$this->pnl = $this->getPNL ();
 			$this->roe = $this->getROE ();
 			
@@ -272,50 +271,56 @@
 			
 			$this->fees = 0;
 			
-			if ($this->balancePercent <= 0 or $this->balancePercent > 100)
-				$this->balancePercent = 100;
-			
-			if ($this->marginPercent <= 0 or $this->marginPercent > 100)
-				$this->marginPercent = 100;
-			
-			$percent = new \Percent ($this->balance);
-			$this->margin = $percent->valueOf ($this->balancePercent);
-			
-			$percent = new \Percent ($this->margin);
-			$this->margin = $percent->valueOf ($this->marginPercent);
-			
-			$this->entryPrice = $this->markPrice;
-			$this->quantity = $quantity = $this->getQuantity ();
-			
-			if ($this->quantity > 0) {
+			if ($this->openBalance > 0) {
 				
-				$min = $this->minQuantity ();
-				$max = $this->maxQuantity ();
+				if ($this->balancePercent <= 0 or $this->balancePercent > 100)
+					$this->balancePercent = 100;
 				
-				if ($min > 0 and $this->quantity < $min)
-					$this->quantity = $min;
-				elseif ($max > 0 and $this->quantity > $max)
-					$this->quantity = $max;
+				$percent = new \Percent ($this->openBalance);
+				$this->openBalance = $percent->valueOf ($this->balancePercent);
 				
-			}
-			
-			if ($quantity > 0 and $this->margin > 0) {
+				if ($this->marginPercent <= 0 or $this->marginPercent > 100)
+					$this->marginPercent = 100;
 				
-				$margin = $this->margin;
+				$percent = new \Percent ($this->openBalance);
+				$this->margin = $percent->valueOf ($this->marginPercent);
 				
-				if ($this->quantity != $quantity) {
+				$this->balanceAvailable -= $this->openBalance;
+				
+				$this->entryPrice = $this->markPrice;
+				$this->quantity = $quantity = $this->getQuantity ();
+				
+				if ($this->quantity > 0) {
 					
-					$percent = new \Percent ($this->quantity);
+					$min = $this->minQuantity ();
+					$max = $this->maxQuantity ();
 					
-					$percent->delim = $quantity;
-					
-					$this->margin = $percent->valueOf ($this->margin);
-					
-					$margin -= $this->margin;
+					if ($min > 0 and $this->quantity < $min)
+						$this->quantity = $min;
+					elseif ($max > 0 and $this->quantity > $max)
+						$this->quantity = $max;
 					
 				}
 				
-				return ($margin >= 0 and $margin <= $this->balance);
+				if ($quantity > 0 and $this->margin > 0) {
+					
+					$margin = $this->margin;
+					
+					if ($this->quantity != $quantity) {
+						
+						$percent = new \Percent ($this->quantity);
+						
+						$percent->delim = $quantity;
+						
+						$this->margin = $percent->valueOf ($this->margin);
+						
+						$margin -= $this->margin;
+						
+					}
+					
+					return ($margin > 0 and $margin < $this->balanceAvailable);
+					
+				}
 				
 			}
 			
@@ -331,6 +336,9 @@
 				$this->pnl -= $this->fees;
 			
 			$this->margin += $this->pnl;
+			$this->closeBalance += $this->pnl;
+			
+			$this->balanceAvailable += $this->closeBalance;
 			
 		}
 		
@@ -351,7 +359,7 @@
 			return $this->getMargin (($price * $this->quantity), $this->getFeeRate ());
 		}
 		
-		protected final function getQuantity () {
+		function getQuantity () {
 			
 			$notional = ($this->margin * $this->leverage);
 			
