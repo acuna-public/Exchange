@@ -285,6 +285,7 @@
 				$percent = new \Percent ($this->openBalance);
 				$this->margin = $percent->valueOf ($this->marginPercent);
 				
+				$balanceAvailable = $this->balanceAvailable;
 				$this->balanceAvailable -= $this->openBalance;
 				
 				$this->entryPrice = $this->markPrice;
@@ -318,7 +319,7 @@
 						
 					}
 					
-					return ($margin > 0 and $margin < $this->balanceAvailable);
+					return ($margin > 0 and $margin < $balanceAvailable);
 					
 				}
 				
