@@ -114,16 +114,16 @@
 			return ($margin - $this->getMaintenanceMargin ($price));
 		}
 		
-		function getLiquidationPrice ($quote, $extraMargin = 0) {
+		function getLiquidationPrice ($quote, $openBalance, $extraMargin = 0) {
 			
 			$price = $this->entryPrice;
 			
 			if ($this->marginType == self::CROSS) {
 				
 				if ($this->isLong ())
-					$price -= ($this->getSustainableLoss ($this->openBalance, $price) / $this->quantity);
+					$price -= ($this->getSustainableLoss ($openBalance, $price) / $this->quantity);
 				else
-					$price += ($this->getSustainableLoss ($this->openBalance, $price) / $this->quantity);
+					$price += ($this->getSustainableLoss ($openBalance, $price) / $this->quantity);
 				
 			} else {
 				
