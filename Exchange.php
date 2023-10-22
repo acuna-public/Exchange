@@ -362,9 +362,13 @@
 		
 		function getQuantity () {
 			
-			$notional = ($this->margin * $this->leverage);
-			
-			return $this->amount ($notional / $this->entryPrice);
+			if ($this->entryPrice > 0) {
+				
+				$notional = ($this->margin * $this->leverage);
+				
+				return $this->amount ($notional / $this->entryPrice);
+				
+			} else throw new \ExchangeException ('Price must be higher than 0');
 			
 		}
 		
