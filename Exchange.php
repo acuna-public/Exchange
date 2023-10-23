@@ -50,6 +50,7 @@
 			$orders = [];
 		
 		public
+			$cookie = '',
 			$recvWindow = 60000; // 1 minute
 		
 		protected

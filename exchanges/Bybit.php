@@ -1167,12 +1167,16 @@
 			
 			curl_setopt ($ch, CURLOPT_URL, $url);
 			curl_setopt ($ch, CURLOPT_RETURNTRANSFER, true);
-			//curl_setopt ($ch, CURLOPT_USERAGENT, '');
+			curl_setopt ($ch, CURLOPT_USERAGENT, get_useragent ());
+			curl_setopt ($ch, CURLOPT_COOKIE, $this->exchange->cookie);
 			
 			$data = curl_exec ($ch);
+			$info = curl_getinfo ($ch);
 			
 			if ($error = curl_error ($ch))
-				throw new \ExchangeException ($error, curl_errno ($ch), $this->func, $proxy, $this->order);
+				throw new \ExchangeException ($error, curl_errno ($ch));
+			elseif ($info['http_code'] != 200)
+				throw new \ExchangeException ('Access denied', $info['http_code']);
 			
 			curl_close ($ch);
 			
