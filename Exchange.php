@@ -20,7 +20,6 @@
 		public
 			$margin = 0,
 			$openBalance = 0,
-			$closeBalance = 0,
 			$leverage = 0,
 			$takeProfit = 0,
 			$stopLoss = 0,
@@ -334,12 +333,11 @@
 			$this->fees = ($this->getFees ($this->entryPrice) + $this->getFees ($this->markPrice));
 			
 			if ($this->pnl > $this->fees)
-				$this->pnl -= $this->fees;
+				$this->pnl -= $this->fees; // TODO
 			
 			$this->margin += $this->pnl;
-			$this->closeBalance += $this->pnl;
 			
-			$this->balanceAvailable += $this->closeBalance;
+			$this->balanceAvailable += $this->margin;
 			
 		}
 		
