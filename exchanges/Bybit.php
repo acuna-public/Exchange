@@ -1168,7 +1168,7 @@
 			curl_setopt ($ch, CURLOPT_URL, $url);
 			curl_setopt ($ch, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt ($ch, CURLOPT_USERAGENT, get_useragent ());
-			curl_setopt ($ch, CURLOPT_COOKIE, $this->exchange->cookie);
+			curl_setopt ($ch, CURLOPT_COOKIE, $this->exchange->cookies);
 			
 			$data = curl_exec ($ch);
 			$info = curl_getinfo ($ch);

@@ -20,6 +20,8 @@
 		public
 			$margin = 0,
 			$openBalance = 0,
+			$closeBalance = 0,
+			$balance = 0,
 			$leverage = 0,
 			$takeProfit = 0,
 			$stopLoss = 0,
@@ -42,6 +44,7 @@
 			$closeFee = 0,
 			$pnl = 0, $roe = 0,
 			$fees = 0,
+			$cookies = '',
 			$queryNum = 0,
 			$feesRate = [],
 			$proxies = [],
@@ -50,7 +53,6 @@
 			$orders = [];
 		
 		public
-			$cookie = '',
 			$recvWindow = 60000; // 1 minute
 		
 		protected
@@ -114,16 +116,16 @@
 			return ($margin - $this->getMaintenanceMargin ($price));
 		}
 		
-		function getLiquidationPrice ($quote, $openBalance, $extraMargin = 0) {
+		function getLiquidationPrice ($quote, $balance, $extraMargin = 0) {
 			
 			$price = $this->entryPrice;
 			
 			if ($this->marginType == self::CROSS) {
 				
 				if ($this->isLong ())
-					$price -= ($this->getSustainableLoss ($openBalance, $price) / $this->quantity);
+					$price -= ($this->getSustainableLoss ($balance, $price) / $this->quantity);
 				else
-					$price += ($this->getSustainableLoss ($openBalance, $price) / $this->quantity);
+					$price += ($this->getSustainableLoss ($balance, $price) / $this->quantity);
 				
 			} else {
 				
@@ -277,15 +279,16 @@
 					$this->balancePercent = 100;
 				
 				$percent = new \Percent ($this->openBalance);
-				$this->openBalance = $percent->valueOf ($this->balancePercent);
+				$this->balance = $percent->valueOf ($this->balancePercent);
 				
 				if ($this->marginPercent <= 0 or $this->marginPercent > 100)
 					$this->marginPercent = 100;
 				
-				$percent = new \Percent ($this->openBalance);
+				$percent = new \Percent ($this->balance);
 				$this->margin = $percent->valueOf ($this->marginPercent);
 				
-				$this->balanceAvailable -= $this->openBalance;
+				$balanceAvailable = $this->balanceAvailable;
+				$this->balanceAvailable -= $this->balance;
 				
 				$this->entryPrice = $this->markPrice;
 				$this->quantity = $quantity = $this->getQuantity ();
@@ -318,7 +321,7 @@
 						
 					}
 					
-					return ($margin > 0 and $margin < $this->balanceAvailable);
+					return ($margin > 0 and $margin < $balanceAvailable);
 					
 				}
 				
@@ -336,8 +339,9 @@
 				$this->pnl -= $this->fees; // TODO
 			
 			$this->margin += $this->pnl;
+			$this->closeBalance += $this->pnl;
 			
-			$this->balanceAvailable += $this->margin;
+			$this->balanceAvailable += $this->closeBalance;
 			
 		}
 		
