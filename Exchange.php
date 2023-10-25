@@ -18,9 +18,8 @@
 			$date = 'd.m.y H:i';
 		
 		public
-			$margin = 0,
 			$openBalance = 0,
-			$closeBalance = 0,
+			$margin = 0,
 			$balance = 0,
 			$leverage = 0,
 			$takeProfit = 0,
@@ -339,9 +338,8 @@
 				$this->pnl -= $this->fees; // TODO
 			
 			$this->margin += $this->pnl;
-			$this->closeBalance += $this->pnl;
 			
-			$this->balanceAvailable += $this->closeBalance;
+			$this->balanceAvailable += $this->margin;
 			
 		}
 		
@@ -518,15 +516,15 @@
 		}
 		
 		function amount ($amount) {
-			return round ($amount, $this->amount);
+			return pos_round ($amount, $this->amount);
 		}
 		
 		function basePrice ($amount) {
-			return round ($amount, $this->basePrecision);
+			return pos_round ($amount, $this->basePrecision);
 		}
 		
 		function quotePrice ($amount) {
-			return round ($amount, $this->quotePrecision);
+			return pos_round ($amount, $this->quotePrecision);
 		}
 		
 		function date ($date) {
