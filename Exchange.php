@@ -333,10 +333,10 @@
 		function close () {
 			
 			$this->fees = ($this->getFees ($this->entryPrice) + $this->getFees ($this->markPrice));
-			if ($this->pnl < 0) debug ([$this->margin, $this->pnl]);
+			
 			if ($this->pnl > $this->fees)
 				$this->pnl -= $this->fees; // TODO
-			if ($this->pnl < 0) debug ([$this->margin, $this->pnl]);
+			
 			$this->margin += $this->pnl;
 			
 			$this->balanceAvailable += $this->margin;
