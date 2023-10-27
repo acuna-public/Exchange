@@ -13,8 +13,7 @@
 		
 		public
 			$amount = 3,
-			$basePrecision = 2,
-			$quotePrecision = 2,
+			$precision = 2,
 			$date = 'd.m.y H:i';
 		
 		public
@@ -146,7 +145,7 @@
 				
 			}
 			
-			$price = $this->basePrice ($price);
+			$price = $this->price ($price);
 			
 			return ($price > 0 ? $price : 0);
 			
@@ -166,12 +165,12 @@
 			
 			if ($this->isLong ()) {
 				
-				$stopPrice = $this->basePrice ($entryPrice - $percent);
+				$stopPrice = $this->price ($entryPrice - $percent);
 				if ($stopPrice > $price) $price = $stopPrice;
 				
 			} else {
 				
-				$stopPrice = $this->basePrice ($entryPrice + $percent);
+				$stopPrice = $this->price ($entryPrice + $percent);
 				if ($stopPrice < $price) $price = $stopPrice;
 				
 			}
@@ -189,9 +188,9 @@
 				$percent = (($entryPrice * $this->takeProfit) / 100);
 				
 				if ($this->isLong ())
-					return $this->basePrice ($entryPrice + $percent);
+					return $this->price ($entryPrice + $percent);
 				else
-					return $this->basePrice ($entryPrice - $percent);
+					return $this->price ($entryPrice - $percent);
 				
 			} else return 0;
 			
@@ -337,9 +336,9 @@
 			if ($this->pnl > $this->fees)
 				$this->pnl -= $this->fees; // TODO
 			
-			$this->margin += $this->pnl;
+			$this->balance += $this->pnl;
 			
-			$this->balanceAvailable += $this->margin;
+			$this->balanceAvailable += $this->balance;
 			
 		}
 		
@@ -422,7 +421,7 @@
 		}
 		
 		function toPoint () {
-			return (1 / pow (10, $this->basePrecision));
+			return (1 / pow (10, $this->precision));
 		}
 		
 		function pair ($base, $quote) {
@@ -516,15 +515,11 @@
 		}
 		
 		function amount ($amount) {
-			return pos_round ($amount, $this->amount);
+			return round ($amount, $this->amount);
 		}
 		
-		function basePrice ($amount) {
-			return pos_round ($amount, $this->basePrecision);
-		}
-		
-		function quotePrice ($amount) {
-			return pos_round ($amount, $this->quotePrecision);
+		function price ($price) {
+			return round ($price, $this->precision);
 		}
 		
 		function date ($date) {
