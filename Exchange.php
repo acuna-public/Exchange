@@ -268,9 +268,7 @@
 		
 		function open () {
 			
-			$this->pnl = 0;
-			$this->roe = 0;
-			$this->fees = 0;
+			$this->pnl = $this->roe = $this->margin = $this->fees = 0;
 			
 			if ($this->openBalance > 0) {
 				
