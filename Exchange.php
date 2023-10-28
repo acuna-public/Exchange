@@ -9,38 +9,40 @@
 		
 		public
 			$hedgeMode = false,
-			$debug = 0;
+			$debug = 0,
+			$timeOffset = 0,
+			$recvWindow = 60000; // 1 minute
 		
 		public
 			$amount = 3,
 			$precision = 2,
+			$marginPercent = 100,
+			$balancePercent = 100,
 			$date = 'd.m.y H:i';
 		
 		public
-			$openBalance = 0,
-			$margin = 0,
+			$pnl = 0,
+			$roe = 0,
+			$quantity = 0,
 			$balance = 0,
 			$leverage = 0,
 			$takeProfit = 0,
+			$openBalance = 0,
 			$stopLoss = 0,
 			$entryPrice = 0,
 			$markPrice = 0,
-			$timeOffset = 0,
 			$minQuantity = 0,
 			$maxQuantity = 0,
-			$marginPercent = 100,
-			$balancePercent = 100,
 			$balanceAvailable = 0,
-			$liquid = 0,
-			$quantity = 0,
 			$initialMarginRate = 0,
 			$maintenanceMarginRate = 0;
 		
 		public
+			$liquid = 0,
+			$margin = 0;
+		
+		public
 			$cred = [],
-			$openFee = 0,
-			$closeFee = 0,
-			$pnl = 0, $roe = 0,
 			$fees = 0,
 			$cookies = '',
 			$queryNum = 0,
@@ -49,9 +51,6 @@
 			$position = [],
 			$positions = [],
 			$orders = [];
-		
-		public
-			$recvWindow = 60000; // 1 minute
 		
 		protected
 			$lastDate = 0;
