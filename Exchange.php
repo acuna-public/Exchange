@@ -45,6 +45,7 @@
 			$cred = [],
 			$fees = 0,
 			$cookies = '',
+			$userAgent = '',
 			$queryNum = 0,
 			$feesRate = [],
 			$proxies = [],
