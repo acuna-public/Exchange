@@ -592,27 +592,89 @@
 			
 		}
 		
-		function openFuturesMarketPosition ($base, $quote, $data) {
+		protected function createFuturesBatchOrder ($orders, $func) {
+			
+			$output = [];
+			
+			foreach ($orders as $order) {
+				
+				$request = $this->getRequest ($func);
+				
+				$request->params = $order;
+				
+				$request->market = BybitRequest::FUTURES;
+				$request->method = BybitRequest::POST;
+				
+				$output[] = $request->connect ('private/linear/order/create')['result']['order_id'];
+				
+			}
+			
+			return $output;
+			
+		}
+		
+		protected function createFuturesTypeOrder (array $orders, string $side, string $side2, string $func) {
+			
+			$list = [];
+			
+			foreach ($orders as $order) {
+				
+				$data = [
+					
+					'symbol' => $this->pair ($order['base'], $order['quote']),
+					'order_type' => (isset ($order['price']) ? 'Limit' : 'Market'),
+					'side' => $side,
+					'qty' => $this->quantity (),
+					'time_in_force' => 'GoodTillCancel',
+					'reduce_only' => ((isset ($order['close']) and $order['close']) ? 'true' : 'false'),
+					'close_on_trigger' => 'false',
+					'tp_trigger_by' => 'MarkPrice',
+					'sl_trigger_by' => 'MarkPrice',
+					
+				];
+				
+				if (isset ($order['take_profit']))
+					$data['take_profit'] = $this->price ($order['take_profit']);
+				
+				if (isset ($order['stop_loss']))
+					$data['stop_loss'] = $this->price ($order['stop_loss']);
+				
+				if (isset ($order['price']))
+					$data['price'] = $this->price ($order['price']);
+				
+				if (isset ($order['name']))
+					$data['order_link_id'] = $order['name'];
+				
+				if ($this->hedgeMode)
+					$data['position_idx'] = ($side2 == self::LONG ? 1 : 2);
+				else
+					$data['position_idx'] = 0;
+				
+				$list[] = $data;
+				
+			}
+			
+			return $this->createFuturesBatchOrder ($list, $func);
+			
+		}
+		
+		function openFuturesMarketPosition ($base, $quote, $side, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
 			
-			return $this->createFuturesTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), $this->side, __FUNCTION__);
+			return $this->createFuturesTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), $side, __FUNCTION__);
 			
 		}
 		
-		function createFuturesMarketTakeProfitOrder ($orders) {
-			return $this->createFuturesTypeOrder ($orders, ($this->isLong () ? 'Buy' : 'Sell'), $this->side, __FUNCTION__);
-		}
-		
-		function closeMarketPosition ($side, $base, $quote, $data = []) {
+		function closeMarketPosition ($base, $quote, $side, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
 			
 			$data['close'] = true;
 			
-			return $this->createFuturesTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), $this->side, __FUNCTION__);
+			return $this->createFuturesTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), $side, __FUNCTION__);
 			
 		}
 		
@@ -658,7 +720,7 @@
 			
 		}
 		
-		function editFuturesPosition ($base, $quote, $data) {
+		function editFuturesPosition ($base, $quote, $side, $data) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -679,77 +741,11 @@
 				$request->params[$key] = $value;
 			
 			if ($this->hedgeMode)
-				$request->params['position_idx'] = ($this->isLong () ? 1 : 2);
+				$request->params['position_idx'] = ($side ? 1 : 2);
 			else
 				$request->params['position_idx'] = 0;
 			
 			return $request->connect ('private/linear/position/trading-stop')['result'];
-			
-		}
-		
-		protected function createFuturesTypeOrder (array $orders, string $side, string $side2, string $func) {
-			
-			$list = [];
-			
-			foreach ($orders as $order) {
-				
-				$data = [
-					
-					'symbol' => $this->pair ($order['base'], $order['quote']),
-					'order_type' => (isset ($order['price']) ? 'Limit' : 'Market'),
-					'side' => $side,
-					'qty' => $this->quantity (),
-					'time_in_force' => 'GoodTillCancel',
-					'reduce_only' => ((isset ($order['close']) and $order['close']) ? 'true' : 'false'), // TODO
-					'close_on_trigger' => 'false',
-					'tp_trigger_by' => 'MarkPrice',
-					'sl_trigger_by' => 'MarkPrice',
-					
-				];
-				
-				if (isset ($order['take_profit']))
-					$data['take_profit'] = $this->price ($order['take_profit']);
-				
-				if (isset ($order['stop_loss']))
-					$data['stop_loss'] = $this->price ($order['stop_loss']);
-				
-				if (isset ($order['price']))
-					$data['price'] = $this->price ($order['price']);
-				
-				if (isset ($order['name']))
-					$data['order_link_id'] = $order['name'];
-				
-				if ($this->hedgeMode)
-					$data['position_idx'] = ($side2 == self::LONG ? 1 : 2);
-				else
-					$data['position_idx'] = 0;
-				
-				$list[] = $data;
-				
-			}
-			
-			return $this->createFuturesBatchOrder ($list, $func);
-			
-		}
-		
-		protected function createFuturesBatchOrder ($orders, $func) {
-			
-			$output = [];
-			
-			foreach ($orders as $order) {
-				
-				$request = $this->getRequest ($func);
-				
-				$request->params = $order;
-				
-				$request->market = BybitRequest::FUTURES;
-				$request->method = BybitRequest::POST;
-				
-				$output[] = $request->connect ('private/linear/order/create')['result']['order_id'];
-				
-			}
-			
-			return $output;
 			
 		}
 		

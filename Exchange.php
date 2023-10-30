@@ -433,7 +433,7 @@
 		abstract function getOrders ($base, $quote);
 		abstract function getOrderInfo ($id);
 		
-		function editFuturesPosition ($base, $quote, $data) {}
+		function editFuturesPosition ($base, $quote, $side, $data) {}
 		
 		function createMarketOrder ($type, $base, $quote) {
 			return $this->createOrder ($type, $base, $quote, 0);
@@ -470,7 +470,7 @@
 		
 		function getFuturesOpenOrders ($base, $quote) {}
 		function getFuturesFilledOrders ($base, $quote) {}
-		function openFuturesMarketPosition ($base, $quote, $order) {}
+		function openFuturesMarketPosition ($base, $quote, $side, $order = []) {}
 		function createFuturesMarketTakeProfitOrder ($orders) {}
 		function createFuturesMarketStopOrder ($orders) {} // TODO
 		function createFuturesTrailingStopOrder ($order) {}
@@ -603,7 +603,7 @@
 		
 		function setMode ($base, $quote) {}
 		function cancelOrderName ($base, $quote, $name) {}
-		function closeMarketPosition ($side, $base, $quote, $data) {}
+		function closeMarketPosition ($base, $quote, $side, $data) {}
 		
 		protected function timeframe ($timeframe) { // From cctx
 			
