@@ -1015,6 +1015,10 @@
 			return $position;
 		}
 		
+		function positionActive (): bool {
+			return ($this->position['size'] > 0);
+		}
+		
 		function getAdditionalMargin ($stopPrice) {
 			return round (parent::getAdditionalMargin ($stopPrice), 4);
 		}

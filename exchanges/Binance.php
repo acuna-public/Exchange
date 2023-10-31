@@ -921,6 +921,10 @@
 			return ['stop_loss' => $position['stopPrice']];
 		}
 		
+		function positionActive (): bool {
+			return ($this->position['size'] > 0);
+		}
+		
 		function minQuantity () {
 			return ($this->markPrice * $this->minQuantity);
 		}

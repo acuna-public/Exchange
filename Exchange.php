@@ -243,6 +243,8 @@
 			
 		}
 		
+		abstract function positionActive (): bool;
+		
 		function optPosition ($base, $quote) {
 			
 			$this->getPosition ($base, $quote);
