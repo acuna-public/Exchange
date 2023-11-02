@@ -269,15 +269,15 @@
 			$types = [
 				
 				self::BALANCE_AVAILABLE => 'available_balance',
-				self::BALANCE_TOTAL => 'position_margin',
+				self::BALANCE_TOTAL => 'wallet_balance',
 				
 			];
+			
+			$balance = [];
 			
 			foreach ($request->connect ('v2/private/wallet/balance')['result'] as $data) {
 				
 				if (!$quote) {
-					
-					$balance = [];
 					
 					foreach ($data as $data) {
 						
@@ -297,9 +297,9 @@
 					
 				}
 				
-				return $balance;
-				
 			}
+			
+			return $balance;
 			
 		}
 		
