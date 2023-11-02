@@ -290,11 +290,13 @@
 			
 		}
 		
-		function open () {
+		final function open () {
 			
 			$this->pnl = $this->roe = $this->margin = $this->fees = 0;
 			
 			if ($this->openBalance > 0) {
+				
+				$this->entryPrice = $this->markPrice;
 				
 				if ($this->balancePercent <= 0 or $this->balancePercent > 100)
 					$this->balancePercent = 100;
@@ -308,13 +310,9 @@
 				$percent = new \Percent ($this->balance);
 				$this->margin = $percent->valueOf ($this->marginPercent);
 				
-				$balanceAvailable = $this->balanceAvailable;
-				$this->balanceAvailable -= $this->balance;
-				
-				$this->entryPrice = $this->markPrice;
 				$this->quantity = $quantity = $this->getQuantity ();
 				
-				if ($this->quantity > 0) {
+				if ($this->quantity > 0 and $this->margin > 0) {
 					
 					$min = $this->minQuantity ();
 					$max = $this->maxQuantity ();
@@ -324,25 +322,29 @@
 					elseif ($max > 0 and $this->quantity > $max)
 						$this->quantity = $max;
 					
-				}
-				
-				if ($quantity > 0 and $this->margin > 0) {
+					$this->balanceAvailable -= $this->openBalance;
 					
-					$margin = $this->margin;
+					$this->fees = $this->getOpenFee ();
 					
-					if ($this->quantity != $quantity) {
+					if ($this->balanceAvailable >= 0) {
 						
-						$percent = new \Percent ($this->quantity);
+						$margin = $this->margin;
 						
-						$percent->delim = $quantity;
+						if ($this->quantity != $quantity) {
+							
+							$percent = new \Percent ($this->quantity);
+							
+							$percent->delim = $quantity;
+							
+							$this->margin = $percent->valueOf ($this->margin);
+							
+							$margin -= $this->margin;
+							
+						}
 						
-						$this->margin = $percent->valueOf ($this->margin);
-						
-						$margin -= $this->margin;
+						return ($margin >= 0);
 						
 					}
-					
-					return ($margin > 0 and $margin < $balanceAvailable);
 					
 				}
 				
@@ -352,12 +354,14 @@
 			
 		}
 		
-		function close () {
+		final function close () {
 			
-			$this->fees = ($this->getOpenFee () + $this->getCloseFee ());
+			$this->fees = $this->getCloseFee ();
 			
-			if ($this->pnl > $this->fees)
-				$this->pnl -= $this->fees; // TODO
+			$fees = ($this->getOpenFee () + $this->fees);
+			
+			if ($this->pnl >= $fees)
+				$this->pnl -= $fees;
 			
 			$this->balance += $this->pnl;
 			
