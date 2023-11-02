@@ -269,7 +269,7 @@
 			$types = [
 				
 				self::BALANCE_AVAILABLE => 'available_balance',
-				self::BALANCE_TOTAL => 'position_margin',
+				self::BALANCE_TOTAL => 'wallet_balance',
 				
 			];
 			
