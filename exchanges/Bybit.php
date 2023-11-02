@@ -279,12 +279,25 @@
 					
 					$balance = [];
 					
-					foreach ($data as $data)
-						$balance[$data['asset']] = $data[$types[$type]];
+					foreach ($data as $data) {
+						
+						$balance[$data['asset']] = [];
+						
+						foreach ($types as $name => $value)
+							$balance[$data['asset']][$name] = $data[$value];
+						
+					}
 					
-					return $balance;
+				} else {
 					
-				} else return [$quote => $data[$types[$type]]];
+					$balance[$quote] = [];
+					
+					foreach ($types as $name => $value)
+						$balance[$quote][$name] = $data[$value];
+					
+				}
+				
+				return $balance;
 				
 			}
 			

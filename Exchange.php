@@ -245,7 +245,7 @@
 			if (!$this->balances)
 				$this->balances = $this->getBalances ($type, $quote);
 			
-			return $this->balances[$quote];
+			return $this->balances[$quote][$type];
 			
 		}
 		
