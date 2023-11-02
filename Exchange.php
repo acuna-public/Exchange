@@ -54,7 +54,8 @@
 			$orders = [];
 		
 		protected
-			$lastDate = 0;
+			$lastDate = 0,
+			$balances = [];
 		
 		public $days = ['1m' => 1, '5m' => 2, '30m' => 10, '1h' => 20, '2h' => 499, '4h' => 120, '1d' => 1], $ratios = ['2h' => [1.2, 1.8]];
 		
@@ -233,10 +234,19 @@
 			return $this->getPrices ($base, $quote, $data);
 		}
 		
-		abstract function getBalance ($type, $quote = '');
+		protected abstract function getBalances ($type, $quote = ''): array;
 		
 		function getFuturesBalance ($type, $quote = '') {
 			return $this->getBalance ($type, $quote);
+		}
+		
+		final function getBalance ($type, $quote = '') {
+			
+			if (!$this->balances)
+				$this->balances = $this->getBalances ($type, $quote);
+			
+			return $this->balances[$quote];
+			
 		}
 		
 		function getPosition ($base, $quote) {
@@ -641,6 +651,7 @@
 			
 			$this->positions = [];
 			$this->orders = [];
+			$this->balances = [];
 			
 		}
 		

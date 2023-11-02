@@ -233,7 +233,7 @@
 			
 		}
 		
-		function getBalance ($type, $quote = '') {
+		protected function getBalances ($type, $quote = ''): array {
 			
 			$balances = [];
 			

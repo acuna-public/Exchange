@@ -260,7 +260,7 @@
 			
 		}
 		
-		function getBalance ($type, $quote = '') {
+		protected function getBalances ($type, $quote = ''): array {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -269,7 +269,7 @@
 			$types = [
 				
 				self::BALANCE_AVAILABLE => 'available_balance',
-				self::BALANCE_TOTAL => 'wallet_balance',
+				self::BALANCE_TOTAL => 'position_margin',
 				
 			];
 			
@@ -282,7 +282,9 @@
 					foreach ($data as $data)
 						$balance[$data['asset']] = $data[$types[$type]];
 					
-				} else return $data[$types[$type]];
+					return $balance;
+					
+				} else return [$quote => $data[$types[$type]]];
 				
 			}
 			
