@@ -58,7 +58,7 @@
 		
 		public $days = ['1m' => 1, '5m' => 2, '30m' => 10, '1h' => 20, '2h' => 499, '4h' => 120, '1d' => 1], $ratios = ['2h' => [1.2, 1.8]];
 		
-		public $flevel = 0, $rebate = 10, $ftype = self::FTYPE_USD, $feeModel = self::MAKER;
+		public $flevel = 0, $rebate = 10, $ftype = self::FTYPE_USD, $feeModel = self::TAKER;
 		
 		public $side = self::LONG, $marginType = self::CROSS, $market = self::FUTURES;
 		
@@ -106,12 +106,12 @@
 			return ($this->side == self::SHORT);
 		}
 		
-		function getMaintenanceMargin ($price) {
-			return ($this->quantity * $price * ($this->maintenanceMarginRate / 100));
+		function getMaintenanceMargin () {
+			return ($this->quantity * $this->entryPrice * ($this->maintenanceMarginRate / 100));
 		}
 		
-		function getSustainableLoss ($margin, $price) {
-			return ($margin - $this->getMaintenanceMargin ($price));
+		function getSustainableLoss ($balance) {
+			return ($balance - $this->getMaintenanceMargin ());
 		}
 		
 		function getLiquidationPrice ($quote, $balance, $extraMargin = 0) {
@@ -121,9 +121,9 @@
 			if ($this->marginType == self::CROSS) {
 				
 				if ($this->isLong ())
-					$price -= ($this->getSustainableLoss ($balance, $price) / $this->quantity);
+					$price -= ($this->getSustainableLoss ($balance) / $this->quantity);
 				else
-					$price += ($this->getSustainableLoss ($balance, $price) / $this->quantity);
+					$price += ($this->getSustainableLoss ($balance) / $this->quantity);
 				
 			} else {
 				
@@ -148,6 +148,17 @@
 			$price = $this->price ($price);
 			
 			return ($price > 0 ? $price : 0);
+			
+		}
+		
+		function getMarginPercent ($stopLoss) {
+			
+			if ($this->isLong ())
+				$stopPrice = ($this->entryPrice - $stopLoss);
+			else
+				$stopPrice = ($this->entryPrice + $stopLoss);
+			
+			$diff = $this->getProfit ($this->entryPrice, $percent->valueOf ($stopLoss));
 			
 		}
 		
@@ -409,7 +420,7 @@
 			
 		}
 		
-		function getRPRatio ($entryPrice, $stopLoss, $takeProfit) {
+		function getRPRatio ($entryPrice, $takeProfit, $stopLoss) {
 			
 			$output  = $this->getProfit ($entryPrice, $stopLoss);
 			$output /= $this->getProfit ($takeProfit, $entryPrice);
