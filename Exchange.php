@@ -354,7 +354,7 @@
 		
 		function close () {
 			
-			$this->fees = ($this->getFees ($this->entryPrice) + $this->getFees ($this->markPrice));
+			$this->fees = ($this->getOpenFee () + $this->getCloseFee ());
 			
 			if ($this->pnl > $this->fees)
 				$this->pnl -= $this->fees; // TODO
@@ -378,8 +378,21 @@
 			
 		}
 		
-		function getFees ($price) {
-			return $this->getMargin (($price * $this->quantity), $this->getFeeRate ());
+		function getOpenFee () {
+			return (($this->quantity * $this->entryPrice * $this->getFeeRate ()) / 100);
+		}
+		
+		function getCloseFee () {
+			return (($this->quantity * $this->getBankruptcyPrice () * $this->getFeeRate ()) / 100);
+		}
+		
+		function getBankruptcyPrice () {
+			
+			if ($this->isLong ())
+				return $this->entryPrice * ($this->leverage - 1) / $this->leverage;
+			else
+				return $this->entryPrice * ($this->leverage + 1) / $this->leverage;
+			
 		}
 		
 		function getQuantity () {
