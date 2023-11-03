@@ -363,6 +363,7 @@
 			if ($this->pnl >= $fees)
 				$this->pnl -= $fees;
 			
+			$this->margin += $this->pnl;
 			$this->balance += $this->pnl;
 			
 			$this->balanceAvailable += $this->balance;
