@@ -221,6 +221,8 @@
 			
 		}
 		
+		function setMarginType ($base, $quote, $longLeverage = 0, $shortLeverage = 0) {}
+		
 		function liquidPricePercent ($liquidPrice) {
 			
 			$price = ($this->entryPrice - $liquidPrice);
@@ -551,10 +553,6 @@
 		abstract function isOrderTakeProfit ($order);
 		abstract function orderCreateDate ($order);
 		
-		function getFuturesSymbols ($quote = '') {
-			return $this->getSymbols ($quote);
-		}
-		
 		function getFuturesOpenOrders ($base, $quote) {}
 		function getFuturesFilledOrders ($base, $quote) {}
 		function openFuturesMarketPosition ($base, $quote, $side, $order = []) {}
@@ -562,6 +560,8 @@
 		function createFuturesMarketStopOrder ($orders) {} // TODO
 		function createFuturesTrailingStopOrder ($order) {}
 		function cancelFuturesOpenOrders ($base, $quote) {}
+		
+		function getMarginType () {}
 		
 		function cancelFuturesOrders ($base, $quote, array $ids) {}
 		

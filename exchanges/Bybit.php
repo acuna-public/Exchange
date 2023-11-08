@@ -82,6 +82,7 @@
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
+			$request->method = BybitRequest::GET;
 			$request->signed = false;
 			
 			$time = $request->connect ('v2/public/time')['time_now'];
@@ -93,6 +94,8 @@
 		protected function pricesRequest ($func, $base, $quote, array $data): BybitRequest {
 			
 			$request = $this->getRequest ($func);
+			
+			$request->method = BybitRequest::GET;
 			
 			if (isset ($this->curChanges[$base]))
 				$base = $this->curChanges[$base];
@@ -212,6 +215,8 @@
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
+			$request->method = BybitRequest::GET;
+			
 			$request->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
@@ -246,6 +251,8 @@
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
+			$request->method = BybitRequest::GET;
+			
 			$request->params = [
 				
 				'orderId' => $id,
@@ -259,6 +266,8 @@
 		protected function getBalances ($type, $quote = ''): array {
 			
 			$request = $this->getRequest (__FUNCTION__);
+			
+			$request->method = BybitRequest::GET;
 			
 			if ($quote) $request->params['coin'] = $quote;
 			
@@ -303,6 +312,7 @@
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
+			$request->method = BybitRequest::GET;
 			$request->signed = false;
 			
 			return $request->connect ('v2/public/announcement')['result'];
@@ -344,9 +354,12 @@
 			
 		}
 		
-		function setMarginType ($base, $quote, $longLeverage = 10, $shortLeverage = 10) {
+		function setMarginType ($base, $quote, $longLeverage = 0, $shortLeverage = 0) {
 			
 			$request = $this->getRequest (__FUNCTION__);
+			
+			if (!$longLeverage) $longLeverage = 10;
+			if (!$shortLeverage) $shortLeverage = 10;
 			
 			$request->params = [
 				
@@ -377,9 +390,10 @@
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
+			$request->method = BybitRequest::GET;
+			
 			if ($base and $quote)
 				$request->params['symbol'] = $this->pair ($base, $quote);
-			
 			
 			$data = [];
 			
@@ -479,12 +493,13 @@
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
+			$request->method = BybitRequest::GET;
+			
 			$request->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
 				
 			];
-			
 			
 			return $request->connect ('fapi/v1/userTrades');
 			
@@ -499,8 +514,8 @@
 				'leverage' => $symbol['leverage_filter']['max_leverage'],
 				'price_precision' => $symbol2['priceFraction'],
 				'amount_precision' => $symbol2['lotFraction'],
-				'min_quantity' => $symbol2['minQty'],
-				'max_quantity' => $symbol2['maxNewOrderQty'],
+				'min_quantity' => $symbol['lot_size_filter']['min_trading_qty'],
+				'max_quantity' => $symbol['lot_size_filter']['max_trading_qty'],
 				'initial_margin_rate' => ($symbol2['baseInitialMarginRateE4'] / 100),
 				'maintenance_margin_rate' => ($symbol2['baseMaintenanceMarginRateE4'] / 100),
 				
@@ -512,6 +527,7 @@
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
+			$request->method = BybitRequest::GET;
 			$request->signed = false;
 			
 			$data = $request->connect2 ('https://api2.bybit.com/contract/v5/product/dynamic-symbol-list?filter=all');
@@ -552,8 +568,40 @@
 				
 				$pair = $this->pair ($symbol['base_currency'], $symbol['quote_currency']);
 				
-				if ((!$quote or $symbol['quote_currency'] == $quote) and $symbol['status'] == 'Trading')
+				if ($symbol['status'] == 'Trading')
+				if (!$quote or $symbol['quote_currency'] == $quote)
 					$symbols[$pair] = $this->prepSymbol ($symbol, $symbols2[$pair]);
+				
+			}
+			
+			return $symbols;
+			
+		}
+		
+		function getSymbols2 ($quote = '') {
+			
+			$request = $this->getRequest (__FUNCTION__);
+			
+			$request->method = BybitRequest::GET;
+			$request->signed = false;
+			
+			$symbols = [];
+			
+			foreach ($request->connect ('v2/public/symbols')['result'] as $symbol) {
+				
+				$pair = $this->pair ($symbol['base_currency'], $symbol['quote_currency']);
+				
+				if ($symbol['status'] == 'Trading')
+				if (!$quote or $symbol['quote_currency'] == $quote)
+					$symbols[$pair] = [
+						
+						'base' => $symbol['base_currency'],
+						'quote' => $symbol['quote_currency'],
+						'leverage' => $symbol['leverage_filter']['max_leverage'],
+						'min_quantity' => $symbol['lot_size_filter']['min_trading_qty'],
+						'max_quantity' => $symbol['lot_size_filter']['max_trading_qty'],
+						
+					];
 				
 			}
 			
@@ -568,6 +616,8 @@
 		protected function getFuturesOrders ($base, $quote, $status) {
 			
 			$request = $this->getRequest (__FUNCTION__);
+			
+			$request->method = BybitRequest::GET;
 			
 			$request->params = [
 				
@@ -874,6 +924,7 @@
 			if ($base and $quote)
 				$request->params['symbol'] = $this->pair ($base, $quote);
 			
+			$request->method = BybitRequest::GET;
 			$request->signed = false;
 			
 			if ($pairs = $request->connect ('v2/public/tickers')) {
@@ -939,6 +990,8 @@
 			if ($base and $quote)
 				$request->params['symbol'] = $this->pair ($base, $quote);
 			
+			$request->method = BybitRequest::GET;
+			
 			$request->debug = 0;
 			
 			$data = $request->connect ('fapi/v1/apiTradingStatus');
@@ -981,6 +1034,10 @@
 		
 		function positionActive (): bool {
 			return ($this->position['size'] > 0);
+		}
+		
+		function getMarginType () {
+			return ($this->position['is_isolated'] ? self::ISOLATED : self::CROSS);
 		}
 		
 		function getAdditionalMargin ($stopPrice) {
