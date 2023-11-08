@@ -61,9 +61,9 @@
 		
 		public $flevel = 0, $rebate = 10, $ftype = self::FTYPE_USD, $feeModel = self::TAKER;
 		
-		public $side = self::LONG, $marginType = self::CROSS, $market = self::FUTURES;
+		public $side = self::LONG, $marginType = self::ISOLATED, $market = self::SPOT;
 		
-		const FUTURES = 'FUTURES';
+		const SPOT = 'SPOT', FUTURES = 'FUTURES';
 		
 		const LONG = 'LONG', SHORT = 'SHORT', ISOLATED = 'ISOLATED', CROSS = 'CROSS', BUY = 'BUY', SELL = 'SELL', MAKER = 'MAKER', TAKER = 'TAKER', BALANCE_AVAILABLE = 'available', BALANCE_TOTAL = 'total', FTYPE_USD = 'USD', FTYPE_COIN = 'COIN';
 		
@@ -111,44 +111,48 @@
 			return ($this->quantity * $this->entryPrice * ($this->maintenanceMarginRate / 100));
 		}
 		
-		function getSustainableLoss ($balance) {
-			return ($balance - $this->getMaintenanceMargin ());
+		function getSustainableLoss () {
+			return ($this->balanceAvailable - $this->getMaintenanceMargin ());
 		}
 		
-		function getLiquidationPrice ($quote, $balance, $extraMargin = 0) {
+		function getLiquidationPrice ($quote, $extraMargin = 0) {
 			
-			$price = $this->entryPrice;
-			
-			if ($this->marginType == self::CROSS) {
+			if ($this->quantity > 0) {
 				
-				if ($this->isLong ())
-					$price -= ($this->getSustainableLoss ($balance) / $this->quantity);
-				else
-					$price += ($this->getSustainableLoss ($balance) / $this->quantity);
+				$price = $this->entryPrice;
 				
-			} else {
-				
-				if ($quote == 'USDT') {
+				if ($this->marginType == self::CROSS) {
 					
 					if ($this->isLong ())
-						$price *= (1 - $this->getInitialMargin () + ($this->maintenanceMarginRate / 100)) - ($extraMargin / $this->quantity);
+						$price -= ($this->getSustainableLoss () / $this->quantity);
 					else
-						$price *= (1 + $this->getInitialMargin () - ($this->maintenanceMarginRate / 100)) + ($extraMargin / $this->quantity);
+						$price += ($this->getSustainableLoss () / $this->quantity);
 					
-				} elseif ($quote == 'USDC') {
+				} else {
 					
-					if ($this->isLong ())
-						$price += (($this->getInitialMargin () + $extraMargin - ($this->maintenanceMarginRate / 100)) / $this->quantity);
-					else
-						$price -= (($this->getInitialMargin () + $extraMargin - ($this->maintenanceMarginRate / 100)) / $this->quantity);
+					if ($quote == 'USDT') {
+						
+						if ($this->isLong ())
+							$price *= (1 - $this->getInitialMargin () + ($this->maintenanceMarginRate / 100)) - ($extraMargin / $this->quantity);
+						else
+							$price *= (1 + $this->getInitialMargin () - ($this->maintenanceMarginRate / 100)) + ($extraMargin / $this->quantity);
+						
+					} elseif ($quote == 'USDC') {
+						
+						if ($this->isLong ())
+							$price += (($this->getInitialMargin () + $extraMargin - ($this->maintenanceMarginRate / 100)) / $this->quantity);
+						else
+							$price -= (($this->getInitialMargin () + $extraMargin - ($this->maintenanceMarginRate / 100)) / $this->quantity);
+						
+					}
 					
 				}
 				
-			}
-			
-			$price = $this->price ($price);
-			
-			return ($price > 0 ? $price : 0);
+				$price = $this->price ($price);
+				
+				return ($price > 0 ? $price : 0);
+				
+			} else return 0;
 			
 		}
 		
@@ -164,7 +168,16 @@
 		}
 		
 		function getInitialMargin () {
-			return (1 / $this->leverage);
+			
+			if ($this->marginType == self::CROSS)
+				$price = ($this->quantity * $this->entryPrice);
+			else
+				$price = 1;
+			
+			$price /= $this->leverage;
+			
+			return $price;
+			
 		}
 		
 		function getStopLoss ($quote, $entryPrice) {
@@ -208,15 +221,15 @@
 			
 		}
 		
-		function liquidPricePercent ($entryPrice, $liquidPrice) {
+		function liquidPricePercent ($liquidPrice) {
 			
-			$price = ($entryPrice - $liquidPrice);
-			return (($price * 100) / $entryPrice);
+			$price = ($this->entryPrice - $liquidPrice);
+			return (($price * 100) / $this->entryPrice);
 			
 		}
 		
-		function getMarginQuantity ($margin, $price) {
-			return ($this->getSustainableLoss ($margin, $this->entryPrice) / $price);
+		function getMarginQuantity ($price) {
+			return ($this->getSustainableLoss () / $price);
 		}
 		
 		function getAdditionalMargin ($stopPrice) { // TODO
@@ -294,7 +307,7 @@
 			
 			$this->pnl = $this->roe = $this->margin = $this->fees = 0;
 			
-			if ($this->openBalance > 0) {
+			if ($this->openBalance > 0 and $this->balanceAvailable > 0) {
 				
 				$this->entryPrice = $this->markPrice;
 				
@@ -322,27 +335,28 @@
 					elseif ($max > 0 and $this->quantity > $max)
 						$this->quantity = $max;
 					
-					$this->balanceAvailable -= $this->openBalance;
-					
 					$this->fees = $this->getOpenFee ();
 					
-					if ($this->balanceAvailable >= 0) {
+					$margin = $this->margin;
+					
+					if ($this->quantity != $quantity) {
 						
-						$margin = $this->margin;
+						$percent = new \Percent ($this->quantity);
 						
-						if ($this->quantity != $quantity) {
-							
-							$percent = new \Percent ($this->quantity);
-							
-							$percent->delim = $quantity;
-							
-							$this->margin = $percent->valueOf ($this->margin);
-							
-							$margin -= $this->margin;
-							
-						}
+						$percent->delim = $quantity;
 						
-						return ($margin >= 0);
+						$this->margin = $percent->valueOf ($this->margin);
+						
+						$margin -= $this->margin;
+						
+					}
+					
+					if ($margin >= 0) {
+						
+						if ($this->openBalance > 0)
+							$this->balanceAvailable -= $this->openBalance;
+						
+						return ($this->balanceAvailable > 0);
 						
 					}
 					
@@ -360,8 +374,40 @@
 			
 			$fees = ($this->getOpenFee () + $this->fees);
 			
-			if ($this->pnl >= $fees)
+			$pnl = $this->pnl;
+			
+			if ($this->pnl > 0 and $this->pnl <= $fees)
+				$this->pnl = $this->roe = 0;
+			else
 				$this->pnl -= $fees;
+			
+			if ($this->roe < -100) {
+				
+				if ($this->marginType == self::ISOLATED) {
+					
+					$percent = new \Percent ($pnl);
+					
+					$percent->delim = $this->roe;
+					
+					$this->roe = -100;
+					
+					$this->pnl = $percent->valueOf ($this->roe);
+					
+				} else {
+					debug ();
+					$percent = new \Percent ($this->roe);
+					
+					$percent->delim = $this->pnl;
+					
+					$diff = ($this->balanceAvailable - $this->pnl);
+					
+					if ($diff < 0) $this->pnl -= $diff;
+					
+					$this->roe = $percent->valueOf ($this->pnl);
+					
+				}
+				
+			}
 			
 			$this->margin += $this->pnl;
 			$this->balance += $this->pnl;

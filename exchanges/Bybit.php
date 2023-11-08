@@ -187,8 +187,6 @@
 				
 			];
 			
-			$request->method = BybitRequest::POST;
-			
 			return $request->connect ('api/v3/order');
 			
 		}
@@ -205,8 +203,6 @@
 				'quantity' => $this->quantity (),
 				
 			];
-			
-			$request->method = BybitRequest::POST;
 			
 			return $request->connect ('api/v3/order');
 			
@@ -325,9 +321,6 @@
 				
 			];
 			
-			$request->method = BybitRequest::POST;
-			$request->market = BybitRequest::FUTURES;
-			
 			return $request->connect ('private/linear/position/set-leverage')['result'];
 			
 		}
@@ -347,9 +340,6 @@
 			else
 				$request->params['coin'] = $quote;
 			
-			$request->method = BybitRequest::POST;
-			$request->market = BybitRequest::FUTURES;
-			
 			return $request->connect ('private/linear/position/switch-mode')['result'];
 			
 		}
@@ -366,9 +356,6 @@
 				'sell_leverage' => $shortLeverage,
 				
 			];
-			
-			$request->method = BybitRequest::POST;
-			$request->market = BybitRequest::FUTURES;
 			
 			return $request->connect ('private/linear/position/switch-isolated')['result'];
 			
@@ -393,7 +380,6 @@
 			if ($base and $quote)
 				$request->params['symbol'] = $this->pair ($base, $quote);
 			
-			$request->market = BybitRequest::FUTURES;
 			
 			$data = [];
 			
@@ -424,8 +410,6 @@
 		function createUserStreamKey () {
 			
 			$request = $this->getRequest (__FUNCTION__);
-			
-			$request->method = BybitRequest::POST;
 			
 			$data = $request->connect ('api/v3/userDataStream');
 			$this->userKey = $data['listenKey'];
@@ -470,9 +454,6 @@
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
-			$request->method = BybitRequest::POST;
-			$request->market = BybitRequest::FUTURES;
-			
 			$data = $request->connect ('fapi/v1/listenKey');
 			$this->futuresKey = $data['listenKey'];
 			
@@ -504,7 +485,6 @@
 				
 			];
 			
-			$request->market = BybitRequest::FUTURES;
 			
 			return $request->connect ('fapi/v1/userTrades');
 			
@@ -596,8 +576,6 @@
 				
 			];
 			
-			$request->market = BybitRequest::FUTURES;
-			
 			$output = [];
 			
 			foreach ($request->connect ('private/linear/order/list')['result']['data'] as $order)
@@ -616,9 +594,6 @@
 				$request = $this->getRequest ($func);
 				
 				$request->params = $order;
-				
-				$request->market = BybitRequest::FUTURES;
-				$request->method = BybitRequest::POST;
 				
 				$output[] = $request->connect ('private/linear/order/create')['result']['order_id'];
 				
@@ -697,9 +672,6 @@
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
-			$request->market = BybitRequest::FUTURES;
-			$request->method = BybitRequest::POST;
-			
 			$request->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
@@ -718,9 +690,6 @@
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
-			$request->market = BybitRequest::FUTURES;
-			$request->method = BybitRequest::POST;
-			
 			$request->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
@@ -738,9 +707,6 @@
 		function editFuturesPosition ($base, $quote, $side, $data) {
 			
 			$request = $this->getRequest (__FUNCTION__);
-			
-			$request->market = BybitRequest::FUTURES;
-			$request->method = BybitRequest::POST;
 			
 			$request->params = [
 				
@@ -774,9 +740,6 @@
 				
 			];
 			
-			$request->market = BybitRequest::FUTURES;
-			$request->method = BybitRequest::POST;
-			
 			return $request->connect ('private/linear/order/cancel-all')['result'];
 			
 		}
@@ -791,9 +754,6 @@
 				'order_link_id' => $name,
 				
 			];
-			
-			$request->market = BybitRequest::FUTURES;
-			$request->method = BybitRequest::POST;
 			
 			$request->connect ('private/linear/order/cancel')['result'];
 			
@@ -812,7 +772,6 @@
 				
 			];
 			
-			$request->market = BybitRequest::FUTURES;
 			$request->signed = false;
 			
 			foreach ($request->connect ('futures/data/topLongShortAccountRatio') as $value) {
@@ -861,9 +820,6 @@
 					
 				];
 				
-				$request->market = BybitRequest::FUTURES;
-				$request->method = BybitRequest::POST;
-				
 				$output[] = $request->connect ('private/linear/stop-order/cancel')['result'];
 				
 			}
@@ -886,9 +842,6 @@
 					'order_link_id' => $id,
 					
 				];
-				
-				$request->market = BybitRequest::FUTURES;
-				$request->method = BybitRequest::POST;
 				
 				$output[] = $request->connect ('private/linear/stop-order/cancel')['result'];
 				
@@ -973,9 +926,6 @@
 				
 			];
 			
-			$request->market = BybitRequest::FUTURES;
-			$request->method = BybitRequest::POST;
-			
 			return $request->connect ('private/linear/position/switch-mod')['result'];*/
 			
 			return '';
@@ -989,7 +939,6 @@
 			if ($base and $quote)
 				$request->params['symbol'] = $this->pair ($base, $quote);
 			
-			$request->market = BybitRequest::FUTURES;
 			$request->debug = 0;
 			
 			$data = $request->connect ('fapi/v1/apiTradingStatus');
@@ -1053,8 +1002,7 @@
 		
 		public
 			$params = [],
-			$method = self::GET,
-			$market,
+			$method = self::POST,
 			$signed = true,
 			$debug = 0,
 			$errorCodes = [404],
@@ -1062,7 +1010,6 @@
 			$order;
 		
 		const GET = 'GET', POST = 'POST', PUT = 'PUT', DELETE = 'DELETE';
-		const FUTURES = 'FUTURES';
 		
 		protected $socket, $exchange;
 		
@@ -1082,14 +1029,14 @@
 			
 			if ($this->exchange->debug and $this->debug) {
 				
-				if ($this->market == self::FUTURES)
+				if ($this->exchange->market == \Exchange::FUTURES)
 					$url = $this->testFuturesUrl;
 				else
 					$url = $this->testApiUrl;
 				
 			} else {
 				
-				if ($this->market == self::FUTURES)
+				if ($this->exchange->market == \Exchange::FUTURES)
 					$url = str_replace ('', rand (1, 3), $this->futuresUrl);
 				else
 					$url = str_replace ('', rand (1, 17), $this->apiUrl);
