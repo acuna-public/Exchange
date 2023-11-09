@@ -350,7 +350,7 @@
 				'margin' => $this->extraMargin,
 				
 			];
-			
+			debug ($this->extraMargin);
 			if ($this->hedgeMode)
 				$request->params['positionIdx'] = ($side2 == self::LONG ? 1 : 2);
 			
