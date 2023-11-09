@@ -33,6 +33,7 @@
 			$markPrice = 0,
 			$minQuantity = 0,
 			$maxQuantity = 0,
+			$extraMargin = 0,
 			$balanceAvailable = 0,
 			$initialMarginRate = 0,
 			$maintenanceMarginRate = 0;
@@ -115,7 +116,7 @@
 			return ($this->balanceAvailable - $this->getMaintenanceMargin ());
 		}
 		
-		function getLiquidationPrice ($quote, $extraMargin = 0) {
+		function getLiquidationPrice ($quote) {
 			
 			if ($this->quantity > 0) {
 				
@@ -128,21 +129,21 @@
 					else
 						$price += ($this->getSustainableLoss () / $this->quantity);
 					
-				} else {
+				} elseif ($this->extraMargin >= 0) {
 					
 					if ($quote == 'USDT') {
 						
 						if ($this->isLong ())
-							$price *= (1 - $this->getInitialMargin () + ($this->maintenanceMarginRate / 100)) - ($extraMargin / $this->quantity);
+							$price *= (1 - $this->getInitialMargin () + ($this->maintenanceMarginRate / 100)) - ($this->extraMargin / $this->quantity);
 						else
-							$price *= (1 + $this->getInitialMargin () - ($this->maintenanceMarginRate / 100)) + ($extraMargin / $this->quantity);
+							$price *= (1 + $this->getInitialMargin () - ($this->maintenanceMarginRate / 100)) + ($this->extraMargin / $this->quantity);
 						
 					} elseif ($quote == 'USDC') {
 						
 						if ($this->isLong ())
-							$price += (($this->getInitialMargin () + $extraMargin - ($this->maintenanceMarginRate / 100)) / $this->quantity);
+							$price += (($this->getInitialMargin () + $this->extraMargin - ($this->maintenanceMarginRate / 100)) / $this->quantity);
 						else
-							$price -= (($this->getInitialMargin () + $extraMargin - ($this->maintenanceMarginRate / 100)) / $this->quantity);
+							$price -= (($this->getInitialMargin () + $this->extraMargin - ($this->maintenanceMarginRate / 100)) / $this->quantity);
 						
 					}
 					
@@ -266,7 +267,7 @@
 		
 		function getPosition ($base, $quote) {
 			
-			if (!$this->positions) $this->positions = $this->getFuturesPositions ();
+			if (!$this->positions) $this->positions = $this->getPositions ();
 			
 			if (isset ($this->positions[$this->pair ($base, $quote)])) {
 				
@@ -358,6 +359,9 @@
 						if ($this->openBalance > 0)
 							$this->balanceAvailable -= $this->openBalance;
 						
+						if ($this->marginType == self::ISOLATED)
+							$this->extraMargin = ($this->balance - $this->margin);
+						
 						return ($this->balanceAvailable > 0);
 						
 					}
@@ -387,16 +391,11 @@
 				
 				if ($this->marginType == self::ISOLATED) {
 					
-					$percent = new \Percent ($pnl);
-					
-					$percent->delim = $this->roe;
-					
-					$this->roe = -100;
-					
-					$this->pnl = $percent->valueOf ($this->roe);
+					if ($pnl < -$this->balance)
+						$this->pnl = -$this->balance;
 					
 				} else {
-					debug ();
+					
 					$percent = new \Percent ($this->roe);
 					
 					$percent->delim = $this->pnl;
@@ -535,7 +534,7 @@
 		function setLeverage ($base, $quote, $leverage) {}
 		function setFuturesMarginType ($base, $quote, $longLeverage = 10, $shortLeverage = 10) {}
 		
-		function getFuturesPositions ($base = '', $quote = '') {}
+		function getPositions ($base = '', $quote = '') {}
 		
 		function isOrderStopLoss ($order) {
 			return false;
@@ -555,11 +554,12 @@
 		
 		function getFuturesOpenOrders ($base, $quote) {}
 		function getFuturesFilledOrders ($base, $quote) {}
-		function openFuturesMarketPosition ($base, $quote, $side, $order = []) {}
+		function openMarketPosition ($base, $quote, $side, $order = []) {}
 		function createFuturesMarketTakeProfitOrder ($orders) {}
 		function createFuturesMarketStopOrder ($orders) {} // TODO
 		function createFuturesTrailingStopOrder ($order) {}
-		function cancelFuturesOpenOrders ($base, $quote) {}
+		function cancelOpenOrders ($base, $quote) {}
+		function changePositionMargin ($base, $quote, $side2) {}
 		
 		function getMarginType () {}
 		

@@ -335,6 +335,29 @@
 			
 		}
 		
+		protected function category ($quote) {
+			return ($quote == 'USD' ? 'inverse' : 'linear');
+		}
+		
+		function changePositionMargin ($base, $quote, $side2) {
+			
+			$request = $this->getRequest (__FUNCTION__);
+			
+			$request->params = [
+				
+				'symbol' => $this->pair ($base, $quote),
+				'category' => $this->category ($quote),
+				'margin' => $this->extraMargin,
+				
+			];
+			
+			if ($this->hedgeMode)
+				$request->params['positionIdx'] = ($side2 == self::LONG ? 1 : 2);
+			
+			return $request->connect ('v5/position/add-margin');
+			
+		}
+		
 		function setMode ($base, $quote) {
 			
 			$request = $this->getRequest (__FUNCTION__);
@@ -386,7 +409,7 @@
 			
 		}
 		
-		function getFuturesPositions ($base = '', $quote = '') {
+		function getPositions ($base = '', $quote = '') {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -635,7 +658,7 @@
 			
 		}
 		
-		protected function createFuturesBatchOrder ($orders, $func) {
+		protected function createBatchOrder ($orders, $func) {
 			
 			$output = [];
 			
@@ -653,7 +676,7 @@
 			
 		}
 		
-		protected function createFuturesTypeOrder (array $orders, string $side, string $side2, string $func) {
+		protected function createTypeOrder (array $orders, string $side, string $side2, string $func) {
 			
 			$list = [];
 			
@@ -694,16 +717,16 @@
 				
 			}
 			
-			return $this->createFuturesBatchOrder ($list, $func);
+			return $this->createBatchOrder ($list, $func);
 			
 		}
 		
-		function openFuturesMarketPosition ($base, $quote, $side, $data = []) {
+		function openMarketPosition ($base, $quote, $side, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
 			
-			return $this->createFuturesTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), $side, __FUNCTION__);
+			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), $side, __FUNCTION__);
 			
 		}
 		
@@ -714,7 +737,7 @@
 			
 			$data['close'] = true;
 			
-			return $this->createFuturesTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), $side, __FUNCTION__);
+			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), $side, __FUNCTION__);
 			
 		}
 		
@@ -780,7 +803,7 @@
 			
 		}
 		
-		function cancelFuturesOpenOrders ($base, $quote) {
+		function cancelOpenOrders ($base, $quote) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -1094,9 +1117,9 @@
 			} else {
 				
 				if ($this->exchange->market == \Exchange::FUTURES)
-					$url = str_replace ('', rand (1, 3), $this->futuresUrl);
+					$url = $this->futuresUrl;
 				else
-					$url = str_replace ('', rand (1, 17), $this->apiUrl);
+					$url = $this->apiUrl;
 				
 			}
 			

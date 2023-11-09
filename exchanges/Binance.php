@@ -475,7 +475,7 @@
 			
 		}
 		
-		function openFuturesMarketPosition ($base, $quote, $side, $order = []) {
+		function openMarketPosition ($base, $quote, $side, $order = []) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -616,7 +616,7 @@
 			
 		}
 		
-		function cancelFuturesOpenOrders ($base, $quote) {
+		function cancelOpenOrders ($base, $quote) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
