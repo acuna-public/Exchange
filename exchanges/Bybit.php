@@ -347,7 +347,7 @@
 				
 				'symbol' => $this->pair ($base, $quote),
 				'category' => $this->category ($quote),
-				'margin' => $this->extraMargin,
+				'margin' => round ($this->extraMargin, 4),
 				
 			];
 			
@@ -1192,12 +1192,14 @@
 			elseif (in_array ($info['http_code'], $this->errorCodes))
 				throw new \ExchangeException ($options[CURLOPT_URL].' '.http_get_message ($info['http_code']), $info['http_code'], $this->func, $proxy, $this->order);
 			
-			$data = json_decode ($data, true);
+			$data = json2array ($data);
 			
 			curl_close ($ch);
 			
 			if (isset ($data['ret_code']) and $data['ret_code'] != 0)
 				throw new \ExchangeException ($data['ret_msg'], $data['ret_code'], $this->func, $proxy, $this->order);
+			//elseif (isset ($data['retCode']) and $data['retCode'] != 0) // v5
+			//	throw new \ExchangeException ($data['retMsg'], $data['retCode'], $this->func, $proxy, $this->order);
 			
 			return $data;
 			

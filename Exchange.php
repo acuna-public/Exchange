@@ -360,8 +360,8 @@
 							$this->balanceAvailable -= $this->openBalance;
 						
 						if ($this->marginType == self::ISOLATED)
-							$this->extraMargin = $this->price ($this->balance - $this->margin);
-						debug ($this->extraMargin);
+							$this->extraMargin = ($this->balance - $this->margin);
+						
 						return ($this->balanceAvailable > 0);
 						
 					}
