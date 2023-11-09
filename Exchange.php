@@ -361,7 +361,7 @@
 						
 						if ($this->marginType == self::ISOLATED)
 							$this->extraMargin = $this->price ($this->balance - $this->margin);
-						
+						debug ($this->extraMargin);
 						return ($this->balanceAvailable > 0);
 						
 					}
