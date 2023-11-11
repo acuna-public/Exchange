@@ -687,7 +687,7 @@
 					'symbol' => $this->pair ($order['base'], $order['quote']),
 					'order_type' => (isset ($order['price']) ? 'Limit' : 'Market'),
 					'side' => $side,
-					'qty' => $this->quantity (),
+					'qty' => $order['quantity'],
 					'time_in_force' => 'GoodTillCancel',
 					'reduce_only' => ((isset ($order['close']) and $order['close']) ? 'true' : 'false'),
 					'close_on_trigger' => 'false',
@@ -721,21 +721,32 @@
 			
 		}
 		
-		function openMarketPosition ($base, $quote, $side, $data = []) {
+		function openMarketPosition ($base, $quote, $side, $quantity, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
+			$data['quantity'] = $quantity;
 			
 			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), $side, __FUNCTION__);
 			
 		}
 		
-		function closeMarketPosition ($base, $quote, $side, $data = []) {
+		function closeMarketPosition ($base, $quote, $side, $quantity, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
-			
+			$data['quantity'] = $quantity;
 			$data['close'] = true;
+			
+			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), $side, __FUNCTION__);
+			
+		}
+		
+		function decreaseMarketPosition ($base, $quote, $side, $quantity, $data = []) {
+			
+			$data['base'] = $base;
+			$data['quote'] = $quote;
+			$data['quantity'] = $quantity;
 			
 			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), $side, __FUNCTION__);
 			
@@ -1146,7 +1157,7 @@
 				
 			];
 			
-			//debug ($url.'/'.$path);
+			//debug ($options[CURLOPT_URL]);
 			
 			if ($this->method == self::POST) {
 				
@@ -1190,7 +1201,7 @@
 			if ($error = curl_error ($ch))
 				throw new \ExchangeException ($error, curl_errno ($ch), $this->func, $proxy, $this->order);
 			elseif (in_array ($info['http_code'], $this->errorCodes))
-				throw new \ExchangeException ($options[CURLOPT_URL].' '.http_get_message ($info['http_code']), $info['http_code'], $this->func, $proxy, $this->order);
+				throw new \ExchangeException (http_get_message ($info['http_code']).' ('.$options[CURLOPT_URL].')', $info['http_code'], $this->func, $proxy, $this->order);
 			
 			$data = json2array ($data);
 			
@@ -1198,8 +1209,8 @@
 			
 			if (isset ($data['ret_code']) and $data['ret_code'] != 0)
 				throw new \ExchangeException ($data['ret_msg'], $data['ret_code'], $this->func, $proxy, $this->order);
-			//elseif (isset ($data['retCode']) and $data['retCode'] != 0) // v5
-			//	throw new \ExchangeException ($data['retMsg'], $data['retCode'], $this->func, $proxy, $this->order);
+			elseif (isset ($data['retCode']) and $data['retCode'] != 0) // v5
+				throw new \ExchangeException ($data['retMsg'], $data['retCode'], $this->func, $proxy, $this->order);
 			
 			return $data;
 			

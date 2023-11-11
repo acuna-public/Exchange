@@ -22,11 +22,10 @@
 		
 		public
 			$pnl = 0,
-			$roe = 0,
+			$roe = 0, $roi = 0,
 			$quantity = 0,
 			$balance = 0,
 			$leverage = 0,
-			$takeProfit = 0,
 			$openBalance = 0,
 			$stopLoss = 0,
 			$entryPrice = 0,
@@ -290,6 +289,50 @@
 			
 		}
 		
+		function getPNL () {
+			return ($this->getProfit ($this->entryPrice, $this->markPrice) * $this->quantity);
+		}
+		
+		function getROE () {
+			
+			$pnl = ($this->pnl * 100);
+			
+			$quantity = ($this->quantity * $this->entryPrice);
+			
+			if ($quantity > 0)
+				$pnl /= $quantity;
+			else {
+				$pnl = 0;//throw new \Ex ();
+			}
+			return $pnl;
+			
+		}
+		
+		function getROI () {
+			return ($this->getROE () * $this->leverage);
+		}
+		
+		function getProfit ($entry, $exit) {
+			
+			if ($this->isLong ())
+				return ($exit - $entry);
+			else
+				return ($entry - $exit);
+			
+		}
+		
+		function getQuantity () {
+			
+			if ($this->entryPrice > 0) {
+				
+				$notional = ($this->margin * $this->leverage);
+				
+				return $this->amount ($notional / $this->entryPrice);
+				
+			} else throw new \ExchangeException ('Price must be higher than 0');
+			
+		}
+		
 		function start () {
 			
 			if ($this->leverage == 0) // NULL
@@ -303,12 +346,13 @@
 			
 			$this->pnl = $this->getPNL ();
 			$this->roe = $this->getROE ();
+			$this->roi = $this->getROI ();
 			
 		}
 		
 		final function open () {
 			
-			$this->pnl = $this->roe = $this->margin = $this->fees = 0;
+			$this->pnl = $this->roe = $this->roi = $this->margin = $this->fees = 0;
 			
 			if ($this->openBalance > 0 and $this->balanceAvailable > 0) {
 				
@@ -356,13 +400,15 @@
 					
 					if ($margin >= 0) {
 						
+						$balance = $this->balanceAvailable;
+						
 						if ($this->openBalance > 0)
 							$this->balanceAvailable -= $this->openBalance;
 						
 						if ($this->marginType == self::ISOLATED)
 							$this->extraMargin = ($this->balance - $this->margin);
 						
-						return ($this->balanceAvailable > 0);
+						return ($balance > 0);
 						
 					}
 					
@@ -410,7 +456,6 @@
 				
 			}
 			
-			$this->margin += $this->pnl;
 			$this->balance += $this->pnl;
 			
 			$this->balanceAvailable += $this->balance;
@@ -447,52 +492,12 @@
 			
 		}
 		
-		function getQuantity () {
-			
-			if ($this->entryPrice > 0) {
-				
-				$notional = ($this->margin * $this->leverage);
-				
-				return $this->amount ($notional / $this->entryPrice);
-				
-			} else throw new \ExchangeException ('Price must be higher than 0');
-			
-		}
-		
 		function getLeverage () {
 			return $this->position['leverage'];
 		}
 		
 		function getFuturesPositionAmount () {
 			return $this->position['positionAmt'];
-		}
-		
-		function getPNL () {
-			return ($this->getProfit ($this->entryPrice, $this->markPrice) * $this->quantity);
-		}
-		
-		function getROE () {
-			
-			$pnl = ($this->pnl * 100);
-			
-			$quantity = (($this->quantity * $this->entryPrice) / $this->leverage);
-			
-			if ($quantity > 0)
-				$pnl /= $quantity;
-			else
-				throw new \ExchangeException ('Position quantity must be greater than zero');
-			
-			return $pnl;
-			
-		}
-		
-		function getProfit ($entry, $exit) {
-			
-			if ($this->isLong ())
-				return ($exit - $entry);
-			else
-				return ($entry - $exit);
-			
 		}
 		
 		function getRPRatio ($entryPrice, $takeProfit, $stopLoss) {
@@ -554,7 +559,7 @@
 		
 		function getFuturesOpenOrders ($base, $quote) {}
 		function getFuturesFilledOrders ($base, $quote) {}
-		function openMarketPosition ($base, $quote, $side, $order = []) {}
+		function openMarketPosition ($base, $quote, $side, $quantity, $data = []) {}
 		function createFuturesMarketTakeProfitOrder ($orders) {}
 		function createFuturesMarketStopOrder ($orders) {} // TODO
 		function createFuturesTrailingStopOrder ($order) {}
@@ -690,7 +695,8 @@
 		
 		function setMode ($base, $quote) {}
 		function cancelOrderName ($base, $quote, $name) {}
-		function closeMarketPosition ($base, $quote, $side, $data) {}
+		function closeMarketPosition ($base, $quote, $side, $quantity, $data = []) {}
+		function decreaseMarketPosition ($base, $quote, $side, $quantity, $data = []) {}
 		
 		protected function timeframe ($timeframe) { // From cctx
 			
