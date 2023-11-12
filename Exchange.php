@@ -352,7 +352,7 @@
 		
 		final function open () {
 			
-			$this->pnl = $this->roe = $this->roi = $this->margin = $this->fees = 0;
+			$this->pnl = $this->roe = $this->roi = $this->margin = $this->fees = $this->extraMargin = 0;
 			
 			if ($this->openBalance > 0 and $this->balanceAvailable > 0) {
 				
@@ -462,14 +462,14 @@
 			
 		}
 		
-		function getMargin ($balance, $percent) {
+		function getMargin () {
 			return (($balance * $percent) / 100);
 		}
 		
 		function getFeeRate () {
 			
 			$value  = $this->feesRate[$this->market][$this->ftype][$this->flevel][($this->feeModel == self::MAKER ? 0 : 1)];
-			$value -= $this->getMargin ($value, $this->rebate);
+			$value -= (($value * $this->rebate) / 100);
 			
 			return $value;
 			
