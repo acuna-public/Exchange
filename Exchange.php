@@ -301,9 +301,10 @@
 			
 			if ($quantity > 0)
 				$pnl /= $quantity;
-			else {
-				$pnl = 0;//throw new \Ex ();
-			}
+			else
+				//throw new \Exchange ('Quantity must be higher than 0');
+				$pnl = 0;
+			
 			return $pnl;
 			
 		}
@@ -323,13 +324,10 @@
 		
 		function getQuantity () {
 			
-			if ($this->entryPrice > 0) {
-				
-				$notional = ($this->margin * $this->leverage);
-				
-				return $this->amount ($notional / $this->entryPrice);
-				
-			} else throw new \ExchangeException ('Price must be higher than 0');
+			if ($this->entryPrice > 0)
+				return $this->amount (($this->margin * $this->leverage) / $this->entryPrice);
+			else
+				throw new \ExchangeException ('Price must be higher than 0');
 			
 		}
 		
@@ -400,15 +398,13 @@
 					
 					if ($margin >= 0) {
 						
-						$balance = $this->balanceAvailable;
-						
 						if ($this->openBalance > 0)
 							$this->balanceAvailable -= $this->openBalance;
 						
 						if ($this->marginType == self::ISOLATED)
 							$this->extraMargin = ($this->balance - $this->margin);
 						
-						return ($balance > 0);
+						return ($this->balanceAvailable >= 0);
 						
 					}
 					
@@ -528,10 +524,6 @@
 		
 		function editFuturesPosition ($base, $quote, $side, $data) {}
 		
-		function createMarketOrder ($type, $base, $quote) {
-			return $this->createOrder ($type, $base, $quote, 0);
-		}
-		
 		function longShortRatio ($base, $quote, $period) {
 			throw new \ExchangeException ('Long/Short Ratio not implemented');
 		}
@@ -559,9 +551,9 @@
 		
 		function getFuturesOpenOrders ($base, $quote) {}
 		function getFuturesFilledOrders ($base, $quote) {}
-		function openMarketPosition ($base, $quote, $side, $quantity, $data = []) {}
-		function createFuturesMarketTakeProfitOrder ($orders) {}
-		function createFuturesMarketStopOrder ($orders) {} // TODO
+		function openPosition ($base, $quote, $side, $quantity, $data = []) {}
+		function createFuturesTakeProfitOrder ($orders) {}
+		function createFuturesStopOrder ($orders) {} // TODO
 		function createFuturesTrailingStopOrder ($order) {}
 		function cancelOpenOrders ($base, $quote) {}
 		function changePositionMargin ($base, $quote, $side2) {}
@@ -695,8 +687,8 @@
 		
 		function setMode ($base, $quote) {}
 		function cancelOrderName ($base, $quote, $name) {}
-		function closeMarketPosition ($base, $quote, $side, $quantity, $data = []) {}
-		function decreaseMarketPosition ($base, $quote, $side, $quantity, $data = []) {}
+		function closePosition ($base, $quote, $side, $quantity, $data = []) {}
+		function decreasePosition ($base, $quote, $side, $quantity, $data = []) {}
 		
 		protected function timeframe ($timeframe) { // From cctx
 			

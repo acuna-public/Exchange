@@ -166,7 +166,7 @@
 			
 		}
 		
-		function createMarketOrder ($type, $base, $quote) {
+		function createOrder ($type, $base, $quote) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -475,7 +475,7 @@
 			
 		}
 		
-		function openMarketPosition ($base, $quote, $side, $quantity, $order = []) {
+		function openPosition ($base, $quote, $side, $quantity, $order = []) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -517,7 +517,7 @@
 			
 		}
 		
-		function createFuturesMarketTakeProfitOrder ($orders) {
+		function createFuturesTakeProfitOrder ($orders) {
 			
 			foreach ($orders as $i => $order) {
 				
@@ -529,7 +529,7 @@
 			
 		}
 		
-		function createFuturesMarketStopOrder ($orders) {
+		function createFuturesStopOrder ($orders) {
 			
 			foreach ($orders as $i => $order) {
 				

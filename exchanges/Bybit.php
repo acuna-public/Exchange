@@ -194,7 +194,7 @@
 			
 		}
 		
-		function createMarketOrder ($type, $base, $quote) {
+		function createOrder ($type, $base, $quote) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -721,7 +721,7 @@
 			
 		}
 		
-		function openMarketPosition ($base, $quote, $side, $quantity, $data = []) {
+		function openPosition ($base, $quote, $side, $quantity, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
@@ -731,7 +731,7 @@
 			
 		}
 		
-		function closeMarketPosition ($base, $quote, $side, $quantity, $data = []) {
+		function closePosition ($base, $quote, $side, $quantity, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
@@ -742,7 +742,7 @@
 			
 		}
 		
-		function decreaseMarketPosition ($base, $quote, $side, $quantity, $data = []) {
+		function decreasePosition ($base, $quote, $side, $quantity, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
