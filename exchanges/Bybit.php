@@ -339,7 +339,7 @@
 			return ($quote == 'USD' ? 'inverse' : 'linear');
 		}
 		
-		function changePositionMargin ($base, $quote, $side2) {
+		function changePositionMargin ($base, $quote, $side2, $value) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -347,7 +347,7 @@
 				
 				'symbol' => $this->pair ($base, $quote),
 				'category' => $this->category ($quote),
-				'margin' => round ($this->extraMargin, 4),
+				'margin' => round ($value, 4),
 				
 			];
 			
@@ -721,11 +721,11 @@
 			
 		}
 		
-		function openPosition ($base, $quote, $side, $quantity, $data = []) {
+		function openPosition ($base, $quote, $side, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
-			$data['quantity'] = $quantity;
+			$data['quantity'] = $this->quantity;
 			
 			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), $side, __FUNCTION__);
 			

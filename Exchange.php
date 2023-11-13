@@ -551,12 +551,12 @@
 		
 		function getFuturesOpenOrders ($base, $quote) {}
 		function getFuturesFilledOrders ($base, $quote) {}
-		function openPosition ($base, $quote, $side, $quantity, $data = []) {}
+		function openPosition ($base, $quote, $side, $data = []) {}
 		function createFuturesTakeProfitOrder ($orders) {}
 		function createFuturesStopOrder ($orders) {} // TODO
 		function createFuturesTrailingStopOrder ($order) {}
 		function cancelOpenOrders ($base, $quote) {}
-		function changePositionMargin ($base, $quote, $side2) {}
+		function changePositionMargin ($base, $quote, $side2, $value) {}
 		
 		function getMarginType () {}
 		

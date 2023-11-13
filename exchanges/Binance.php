@@ -475,7 +475,7 @@
 			
 		}
 		
-		function openPosition ($base, $quote, $side, $quantity, $order = []) {
+		function openPosition ($base, $quote, $side, $order = []) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -484,7 +484,7 @@
 				'symbol' => $this->pair ($base, $quote),
 				'side' => ($this->isLong () ? 'BUY' : 'SELL'),
 				'type' => 'MARKET',
-				'quantity' => $quantity,
+				'quantity' => $this->quantity,
 				
 			];
 			
