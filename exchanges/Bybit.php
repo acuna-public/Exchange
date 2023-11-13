@@ -342,7 +342,7 @@
 		function changePositionMargin ($base, $quote, $side2, $value) {
 			
 			$request = $this->getRequest (__FUNCTION__);
-			
+			debug ($value);
 			$request->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
