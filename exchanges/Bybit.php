@@ -747,7 +747,6 @@
 			$data['base'] = $base;
 			$data['quote'] = $quote;
 			$data['quantity'] = $quantity;
-			$data['close'] = true;
 			
 			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), $side, __FUNCTION__);
 			
