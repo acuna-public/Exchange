@@ -452,10 +452,6 @@
 				
 			}
 			
-			$this->balance += $this->pnl;
-			
-			$this->balanceAvailable += $this->balance;
-			
 		}
 		
 		function getMargin () {
