@@ -131,7 +131,7 @@
 				} elseif ($this->extraMargin >= 0) {
 					
 					if ($quote == 'USDT') {
-						//if ($this->leverage == 20) debug ([$this->quantity, $this->entryPrice, ($this->quantity * $this->entryPrice), $this->extraMargin, $this->balance]);
+						
 						if ($this->isLong ())
 							$price *= (1 - $this->getInitialMargin () + ($this->maintenanceMarginRate / 100)) - ($this->extraMargin / $this->quantity);
 						else
@@ -451,6 +451,10 @@
 				}
 				
 			}
+			
+			$this->balance += $this->pnl;
+			
+			$this->balanceAvailable += $this->balance;
 			
 		}
 		
