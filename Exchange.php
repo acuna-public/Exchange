@@ -27,6 +27,7 @@
 			$balance = 0,
 			$leverage = 0,
 			$openBalance = 0,
+			$walletBalance = 0,
 			$stopLoss = 0,
 			$entryPrice = 0,
 			$markPrice = 0,
@@ -107,12 +108,24 @@
 			return ($this->side == self::SHORT);
 		}
 		
-		function getMaintenanceMargin () {
-			return ($this->quantity * $this->entryPrice * ($this->maintenanceMarginRate / 100));
-		}
-		
 		function getSustainableLoss () {
 			return ($this->balanceAvailable - $this->getMaintenanceMargin ());
+		}
+		
+		function getLiquidationPrice2 ($quote) {
+			
+			if ($this->quantity > 0) {
+				
+				$price = $this->walletBalance - 0 + 0 + ((($this->maintenanceMarginRate / 100) * $this->entryPrice) / 100) + 0 + 0;
+				$price -= ($this->isLong () ? 1 : -1) * $this->quantity * $this->entryPrice - 0 * 0 + 0 * 0;
+				$price /= $this->quantity * ($this->maintenanceMarginRate / 100) + 0 * 0 + 0 * 0;
+				
+				$price = $this->price ($price);
+				
+				return ($price > 0 ? $price : 0);
+				
+			} else return 0;
+			
 		}
 		
 		function getLiquidationPrice ($quote) {
@@ -133,16 +146,16 @@
 					if ($quote == 'USDT') {
 						
 						if ($this->isLong ())
-							$price *= (1 - $this->getInitialMargin () + ($this->maintenanceMarginRate / 100)) - ($this->extraMargin / $this->quantity);
+							$price *= (1 - $this->getInitialMargin () + $this->getMaintenanceMargin ()) - ($this->extraMargin / $this->quantity);
 						else
-							$price *= (1 + $this->getInitialMargin () - ($this->maintenanceMarginRate / 100)) + ($this->extraMargin / $this->quantity);
+							$price *= (1 + $this->getInitialMargin () - $this->getMaintenanceMargin ()) + ($this->extraMargin / $this->quantity);
 						
 					} elseif ($quote == 'USDC') {
 						
 						if ($this->isLong ())
-							$price += (($this->getInitialMargin () + $this->extraMargin - ($this->maintenanceMarginRate / 100)) / $this->quantity);
+							$price += (($this->getInitialMargin () + $this->extraMargin - $this->getMaintenanceMargin ()) / $this->quantity);
 						else
-							$price -= (($this->getInitialMargin () + $this->extraMargin - ($this->maintenanceMarginRate / 100)) / $this->quantity);
+							$price -= (($this->getInitialMargin () + $this->extraMargin - $this->getMaintenanceMargin ()) / $this->quantity);
 						
 					}
 					
@@ -170,14 +183,18 @@
 		function getInitialMargin () {
 			
 			if ($this->marginType == self::CROSS)
-				$price = ($this->quantity * $this->entryPrice);
+				return (($this->quantity * $this->entryPrice) / $this->leverage);
 			else
-				$price = 1;
+				return ($this->initialMarginRate / 100);
 			
-			$price /= $this->leverage;
-			
-			return $price;
-			
+		}
+		
+		function getMaintenanceMargin2 () {
+			return $this->entryPrice * $this->quantity * ($this->maintenanceMarginRate / 100) - (($this->initialMarginRate * ($this->entryPrice * $this->quantity)) / 100);
+		}
+		
+		function getMaintenanceMargin () {
+			return ($this->maintenanceMarginRate / 100);
 		}
 		
 		function getStopLoss ($quote, $entryPrice) {
