@@ -269,38 +269,29 @@
 			
 			$request->method = BybitRequest::GET;
 			
+			$request->params = [
+				
+				'accountType' => ($this->market == \Exchange::SPOT ? 'SPOT' : 'CONTRACT'),
+				
+			];
+			
 			if ($quote) $request->params['coin'] = $quote;
 			
 			$types = [
 				
-				self::BALANCE_AVAILABLE => 'available_balance',
-				self::BALANCE_TOTAL => 'wallet_balance',
+				self::BALANCE_TOTAL => 'walletBalance',
+				self::BALANCE_AVAILABLE => 'availableToWithdraw',
 				
 			];
 			
 			$balance = [];
 			
-			foreach ($request->connect ('v2/private/wallet/balance')['result'] as $data) {
+			foreach ($request->connect ('v5/account/wallet-balance')['result']['list'][0]['coin'] as $coin) {
 				
-				if (!$quote) {
-					
-					foreach ($data as $data) {
-						
-						$balance[$data['asset']] = [];
-						
-						foreach ($types as $name => $value)
-							$balance[$data['asset']][$name] = $data[$value];
-						
-					}
-					
-				} else {
-					
-					$balance[$quote] = [];
-					
-					foreach ($types as $name => $value)
-						$balance[$quote][$name] = $data[$value];
-					
-				}
+				$balance[$coin['coin']] = [];
+				
+				foreach ($types as $name => $value)
+					$balance[$coin['coin']][$name] = $coin[$value];
 				
 			}
 			
@@ -687,7 +678,7 @@
 					'symbol' => $this->pair ($order['base'], $order['quote']),
 					'order_type' => (isset ($order['price']) ? 'Limit' : 'Market'),
 					'side' => $side,
-					'qty' => $order['quantity'],
+					'qty' => $this->quantity ($order['quantity']),
 					'time_in_force' => 'GoodTillCancel',
 					'reduce_only' => ((isset ($order['close']) and $order['close']) ? 'true' : 'false'),
 					'close_on_trigger' => 'false',
@@ -696,13 +687,13 @@
 					
 				];
 				
-				if (isset ($order['take_profit']))
+				if (isset ($order['take_profit']) and $order['take_profit'] > 0)
 					$data['take_profit'] = $this->price ($order['take_profit']);
 				
-				if (isset ($order['stop_loss']))
+				if (isset ($order['stop_loss']) and $order['stop_loss'] > 0)
 					$data['stop_loss'] = $this->price ($order['stop_loss']);
 				
-				if (isset ($order['price']))
+				if (isset ($order['price']) and $order['price'] > 0)
 					$data['price'] = $this->price ($order['price']);
 				
 				if (isset ($order['name']))
@@ -1078,6 +1069,28 @@
 			return round (parent::getAdditionalMargin ($stopPrice), 4);
 		}
 		
+		function withdraw ($coin, $address, $chain, $amount, $data = []): array {
+			
+			$request = $this->getRequest (__FUNCTION__);
+			
+			$request->params = [
+				
+				'coin' => $coin,
+				'chain' => $chain,
+				'forceChain' => 1,
+				'address' => $address,
+				'amount' => $this->quantity ($amount),
+				'accountType' => ($this->market == \Exchange::SPOT ? 'SPOT' : 'FUND'),
+				
+			];
+			
+			foreach ($data as $key => $value)
+				$request->params[$key] = $value;
+			
+			return $request->connect ('v5/asset/withdraw/create')['result'];
+			
+		}
+		
 	}
 	
 	class BybitRequest {
@@ -1216,6 +1229,111 @@
 			
 		}
 		
+		function connect5 ($path) {
+			
+			$ch = curl_init ();
+			
+			if ($this->exchange->debug and $this->debug) {
+				
+				if ($this->exchange->market == \Exchange::FUTURES)
+					$url = $this->testFuturesUrl;
+				else
+					$url = $this->testApiUrl;
+				
+			} else {
+				
+				if ($this->exchange->market == \Exchange::FUTURES)
+					$url = $this->futuresUrl;
+				else
+					$url = $this->apiUrl;
+				
+			}
+			
+			if ($this->params and $this->method != self::POST)
+				$path .= '?'.http_build_query ($this->params);
+			
+			$options = [
+				
+				CURLOPT_URL => $url.'/'.$path,
+				CURLOPT_RETURNTRANSFER => true,
+				CURLOPT_FOLLOWLOCATION => true,
+				CURLOPT_USERAGENT => 'User-Agent: Mozilla/4.0 (compatible; PHP '.$this->exchange->getTitle ().' API)',
+				CURLOPT_SSL_VERIFYPEER => false,
+				CURLOPT_SSL_VERIFYHOST => false,
+				
+			];
+			
+			//debug ($options[CURLOPT_URL]);
+			
+			if ($this->method == self::POST) {
+				
+				$options[CURLOPT_POST] = 1;
+				
+				if ($this->signed) {
+					
+					$options[CURLOPT_POSTFIELDS] = http_build_query ([
+						
+						'X-BAPI-API-KEY' => $this->exchange->cred['key'],
+						'X-BAPI-RECV-WINDOW' =>	$this->exchange->recvWindow,
+						'X-BAPI-TIMESTAMP' => $this->time (),
+						'X-BAPI-SIGN' => $this->signature (),
+						
+					]);
+					
+				}
+				
+			} elseif ($this->method == self::PUT)
+				$options[CURLOPT_PUT] = true;
+			elseif ($this->method != self::GET)
+				$options[CURLOPT_CUSTOMREQUEST] = $this->method;
+			
+			$options[CURLOPT_HTTPHEADER] = ['Connection: keep-alive'];
+			
+			if ($this->exchange->proxies) {
+				
+				$proxy = trim ($this->exchange->proxies[mt_rand (0, count ($this->exchange->proxies) - 1)]);
+				
+				$parts = explode ('@', $proxy);
+				
+				if (count ($parts) > 1) {
+					
+					$proxy = $parts[1];
+					$options[CURLOPT_PROXYUSERPWD] = $parts[0];
+					
+				}
+				
+				$options[CURLOPT_PROXY] = $proxy;
+				$options[CURLOPT_PROXYTYPE] = CURLPROXY_SOCKS5;
+				
+			} else $proxy = '';
+			
+			curl_setopt_array ($ch, $options);
+			
+			$data = curl_exec ($ch);
+			$info = curl_getinfo ($ch);
+			
+			$this->exchange->queryNum++;
+			
+			$options[CURLOPT_SSL_CIPHER_LIST] = 'TLSv1';
+			
+			if ($error = curl_error ($ch))
+				throw new \ExchangeException ($error, curl_errno ($ch), $this->func, $proxy, $this->order);
+			elseif (in_array ($info['http_code'], $this->errorCodes))
+				throw new \ExchangeException (http_get_message ($info['http_code']).' ('.$options[CURLOPT_URL].')', $info['http_code'], $this->func, $proxy, $this->order);
+			
+			$data = json2array ($data);
+			
+			curl_close ($ch);
+			
+			if (isset ($data['ret_code']) and $data['ret_code'] != 0)
+				throw new \ExchangeException ($data['ret_msg'], $data['ret_code'], $this->func, $proxy, $this->order);
+			elseif (isset ($data['retCode']) and $data['retCode'] != 0) // v5
+				throw new \ExchangeException ($data['retMsg'], $data['retCode'], $this->func, $proxy, $this->order);
+			
+			return $data;
+			
+		}
+		
 		function connect2 ($url) {
 			
 			$ch = curl_init ();
@@ -1231,7 +1349,7 @@
 			if ($error = curl_error ($ch))
 				throw new \ExchangeException ($error, curl_errno ($ch));
 			elseif ($info['http_code'] != 200)
-				throw new \ExchangeException ('Access denied', $info['http_code']);
+				throw new \ExchangeException ($url.': Access denied', $info['http_code']);
 			
 			curl_close ($ch);
 			

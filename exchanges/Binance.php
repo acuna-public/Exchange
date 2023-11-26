@@ -32,8 +32,7 @@
 		
 		public $curChanges = [
 			
-			'1000SHIB' => 'SHIB',
-			'SHIB1000' => 'SHIB',
+			'SHIB1000' => '1000SHIB',
 			
 		];
 		
@@ -72,12 +71,9 @@
 			
 		}
 		
-		protected function pricesRequest ($func, $base, $quote, array $data): BybitRequest {
+		protected function pricesRequest ($func, $base, $quote, array $data): BinanceRequest {
 			
 			$request = $this->getRequest ($func);
-			
-			if (isset ($this->curChanges[$base]))
-				$base = $this->curChanges[$base];
 			
 			$request->params = [
 				
@@ -111,13 +107,13 @@
 			foreach ($this->pricesRequest (__FUNCTION__, $base, $quote, $data)->connect ('fapi/v1/klines') as $value)
 				$summary[] = [
 					
+					'open' => $value[1],
+					'high' => $value[2],
+					'low' => $value[3],
+					'close' => $value[4],
+					'volume' => $value[5],
 					'date' => ($value[0] / 1000),
 					'date_text' => $this->date ($value[0] / 1000),
-					'low' => $value[3],
-					'high' => $value[2],
-					'open' => $value[1], // Покупка
-					'close' => $value[4], // Продажа
-					'volume' => $value['volume'],
 					
 				];
 			
@@ -633,32 +629,142 @@
 			
 		}
 		
-		function longShortRatio ($base, $quote, $period) {
-			
-			$summary = [];
+		function openInterest ($base, $quote, $data) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
 			$request->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
-				'period' => $period,
+				'period' => $data['interval'],
 				
 			];
+			
+			if (!isset ($data['limit']) or $data['limit'] <= 0)
+				$data['limit'] = 500;
+			
+			$request->params['limit'] = $data['limit'];
+			
+			if (isset ($data['start_time']))
+				$request->params['startTime'] = ($data['start_time'] * 1000);
+			
+			if (isset ($data['end_time']))
+				$request->params['endTime'] = ($data['end_time'] * 1000);
 			
 			$request->market = BinanceRequest::FUTURES;
 			$request->signed = false;
 			
-			foreach ($request->connect ('futures/data/topLongShortAccountRatio') as $value) {
+			$summary = [];
+			
+			foreach ($request->connect ('futures/data/openInterestHist') as $value) {
 				
-				$date = ($value['timestamp'] / 1000);
+				$summary[] = [
+					
+					'amount' => $value['sumOpenInterest'],
+					'value' => $value['sumOpenInterestValue'],
+					'date' => ($value['timestamp'] / 1000),
+					'date_text' => $this->date ($value['timestamp'] / 1000),
+					
+				];
 				
-				$summary[$date] = [
+			}
+			
+			return $summary;
+			
+		}
+		
+		function longShortGlobalAccountsRatio ($base, $quote, $data) {
+			return $this->longShortRatio ('globalLongShortAccountRatio', $base, $quote, $data);
+		}
+		
+		function longShortTopAccountsRatio ($base, $quote, $data) {
+			return $this->longShortRatio ('topLongShortAccountRatio', $base, $quote, $data);
+		}
+		
+		function longShortPositionsRatio ($base, $quote, $data) {
+			return $this->longShortRatio ('topLongShortPositionRatio', $base, $quote, $data);
+		}
+		
+		protected function longShortRatio ($type, $base, $quote, $data) {
+			
+			$request = $this->getRequest (__FUNCTION__);
+			
+			$request->params = [
+				
+				'symbol' => $this->pair ($base, $quote),
+				'period' => $data['interval'],
+				
+			];
+			
+			if (!isset ($data['limit']) or $data['limit'] <= 0)
+				$data['limit'] = 500;
+			
+			$request->params['limit'] = $data['limit'];
+			
+			if (isset ($data['start_time']))
+				$request->params['startTime'] = ($data['start_time'] * 1000);
+			
+			if (isset ($data['end_time']))
+				$request->params['endTime'] = ($data['end_time'] * 1000);
+			
+			$request->market = BinanceRequest::FUTURES;
+			$request->signed = false;
+			
+			$summary = [];
+			
+			foreach ($request->connect ('futures/data/'.$type) as $value) {
+				
+				$summary[] = [
 					
 					'ratio' => $value['longShortRatio'],
 					'long' => $value['longAccount'],
 					'short' => $value['shortAccount'],
-					'date' => $date,
+					'date' => ($value['timestamp'] / 1000),
+					'date_text' => $this->date ($value['timestamp'] / 1000),
+					
+				];
+				
+			}
+			
+			return $summary;
+			
+		}
+		
+		function takerBuySellVolume ($base, $quote, $data) {
+			
+			$request = $this->getRequest (__FUNCTION__);
+			
+			$request->params = [
+				
+				'symbol' => $this->pair ($base, $quote),
+				'period' => $data['interval'],
+				
+			];
+			
+			if (!isset ($data['limit']) or $data['limit'] <= 0)
+				$data['limit'] = 500;
+			
+			$request->params['limit'] = $data['limit'];
+			
+			if (isset ($data['start_time']))
+				$request->params['startTime'] = ($data['start_time'] * 1000);
+			
+			if (isset ($data['end_time']))
+				$request->params['endTime'] = ($data['end_time'] * 1000);
+			
+			$request->market = BinanceRequest::FUTURES;
+			$request->signed = false;
+			
+			$summary = [];
+			
+			foreach ($request->connect ('futures/data/takerlongshortRatio') as $value) {
+				
+				$summary[] = [
+					
+					'buy' => $value['buyVol'],
+					'sell' => $value['sellVol'],
+					'ratio' => $value['buySellRatio'],
+					'date' => ($value['timestamp'] / 1000),
 					
 				];
 				

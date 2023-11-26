@@ -18,7 +18,7 @@
 			$precision = 2,
 			$marginPercent = 100,
 			$balancePercent = 100,
-			$date = 'd.m.y H:i';
+			$dateFormat = 'd.m.y H:i';
 		
 		public
 			$pnl = 0,
@@ -52,7 +52,8 @@
 			$proxies = [],
 			$position = [],
 			$positions = [],
-			$orders = [];
+			$orders = [],
+			$curChanges = [];
 		
 		protected
 			$lastDate = 0,
@@ -327,7 +328,7 @@
 		}
 		
 		function getROI () {
-			return ($this->getROE () * $this->leverage);
+			return ($this->roe * $this->leverage);
 		}
 		
 		function getProfit ($entry, $exit) {
@@ -470,6 +471,7 @@
 			}
 			
 			$this->balance += $this->pnl;
+			$this->walletBalance += $this->pnl;
 			
 			$this->balanceAvailable += $this->balance;
 			
@@ -531,7 +533,12 @@
 		}
 		
 		function pair ($base, $quote) {
+			
+			if (isset ($this->curChanges[$base]))
+				$base = $this->curChanges[$base];
+			
 			return $base.$quote;
+			
 		}
 		
 		function createOrder ($type, $base, $quote, $price) {} // TODO
@@ -540,10 +547,6 @@
 		abstract function getOrderInfo ($id);
 		
 		function editFuturesPosition ($base, $quote, $side, $data) {}
-		
-		function longShortRatio ($base, $quote, $period) {
-			throw new \ExchangeException ('Long/Short Ratio not implemented');
-		}
 		
 		function setLeverage ($base, $quote, $leverage) {}
 		function setFuturesMarginType ($base, $quote, $longLeverage = 10, $shortLeverage = 10) {}
@@ -624,7 +627,7 @@
 		}
 		
 		function date ($date) {
-			return date ($this->date, $date);
+			return date ($this->dateFormat, $date);
 		}
 		
 		abstract function setFuturesHedgeMode (bool $hedge, $base = '', $quote = '');
@@ -657,8 +660,8 @@
 			
 		}
 		
-		protected function quantity () {
-			return $this->quantity;
+		protected function quantity ($quantity) {
+			return $quantity;
 		}
 		
 		function getAllPrices ($base, $quote, $data, $callback = null) {
@@ -707,7 +710,7 @@
 		function closePosition ($base, $quote, $side, $quantity, $data = []) {}
 		function decreasePosition ($base, $quote, $side, $quantity, $data = []) {}
 		
-		protected function timeframe ($timeframe) { // From cctx
+		function timeframe ($timeframe) { // From cctx
 			
 			$scales = [];
 			
