@@ -1120,7 +1120,7 @@
 				
 			];
 			
-			//debug ($url.'/'.$path);
+			//debug ($options[CURLOPT_URL]);
 			
 			if ($this->method == self::POST) {
 				
