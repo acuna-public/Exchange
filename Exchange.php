@@ -440,19 +440,21 @@
 			
 			$fees = ($this->getOpenFee () + $this->fees);
 			
-			$pnl = $this->pnl;
-			
 			if ($this->pnl > 0 and $this->pnl <= $fees)
-				$this->pnl = $this->roe = 0;
+				$this->pnl = $this->roe = $this->roi = 0;
 			else
 				$this->pnl -= $fees;
 			
-			if ($this->roe < -100) {
+			if ($this->roi < -100) {
 				
 				if ($this->marginType == self::ISOLATED) {
 					
-					if ($pnl < -$this->balance)
+					if ($this->pnl < -$this->balance) {
+						
 						$this->pnl = -$this->balance;
+						$this->roi = -100;
+						
+					}
 					
 				} else {
 					
@@ -465,6 +467,7 @@
 					if ($diff < 0) $this->pnl -= $diff;
 					
 					$this->roe = $percent->valueOf ($this->pnl);
+					$this->roi = $this->getROI ();
 					
 				}
 				
