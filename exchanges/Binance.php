@@ -629,7 +629,7 @@
 			
 		}
 		
-		function openInterest ($base, $quote, $data) {
+		function getOpenInterest ($base, $quote, $data) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -716,9 +716,9 @@
 				
 				$summary[] = [
 					
-					'ratio' => $value['longShortRatio'],
 					'long' => $value['longAccount'],
 					'short' => $value['shortAccount'],
+					'ratio' => $value['longShortRatio'],
 					'date' => ($value['timestamp'] / 1000),
 					'date_text' => $this->date ($value['timestamp'] / 1000),
 					

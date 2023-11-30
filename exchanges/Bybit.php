@@ -1089,6 +1089,92 @@
 			
 		}
 		
+		function longShortGlobalAccountsRatio ($base, $quote, $data) {
+			
+			$request = $this->getRequest (__FUNCTION__);
+			
+			$request->params = [
+				
+				'symbol' => $this->pair ($base, $quote),
+				'category' => $this->category ($quote),
+				'period' => $data['interval'],
+				
+			];
+			
+			if (!isset ($data['limit']) or $data['limit'] <= 0)
+				$data['limit'] = 500;
+			
+			$request->params['limit'] = $data['limit'];
+			
+			$request->market = BinanceRequest::FUTURES;
+			$request->signed = false;
+			
+			$summary = [];
+			
+			foreach ($request->connect ('v5/market/account-ratio')['result']['list'] as $value) {
+				
+				$summary[] = [
+					
+					'long' => $value['buyRatio'],
+					'short' => $value['sellRatio'],
+					'ratio' => ($value['buyRatio'] / $value['sellRatio']),
+					'date' => ($value['timestamp'] / 1000),
+					'date_text' => $this->date ($value['timestamp'] / 1000),
+					
+				];
+				
+			}
+			
+			return $summary;
+			
+		}
+		
+		public $times = ['5m' => '5min', '15m' => '15min', '30m' => '30min', '1h' => '1h', '4h' => '4h', '1d' => '1d'];
+		
+		function getOpenInterest ($base, $quote, $data) {
+			
+			$request = $this->getRequest (__FUNCTION__);
+			
+			$request->params = [
+				
+				'symbol' => $this->pair ($base, $quote),
+				'category' => $this->category ($quote),
+				'intervalTime' => $this->times[$data['interval']],
+				
+			];
+			
+			if (!isset ($data['limit']) or $data['limit'] <= 0)
+				$data['limit'] = 500;
+			
+			$request->params['limit'] = $data['limit'];
+			
+			if (isset ($data['start_time']))
+				$request->params['startTime'] = ($data['start_time'] * 1000);
+			
+			if (isset ($data['end_time']))
+				$request->params['endTime'] = ($data['end_time'] * 1000);
+			
+			$request->market = BinanceRequest::FUTURES;
+			$request->signed = false;
+			
+			$summary = [];
+			
+			foreach ($request->connect ('v5/market/open-interest')['result']['list'] as $value) {
+				
+				$summary[] = [
+					
+					'value' => $value['openInterest'],
+					'date' => ($value['timestamp'] / 1000),
+					'date_text' => $this->date ($value['timestamp'] / 1000),
+					
+				];
+				
+			}
+			
+			return $summary;
+			
+		}
+		
 	}
 	
 	class BybitRequest {
