@@ -137,7 +137,6 @@
 			foreach ($prices as $value)
 				$summary[] = [
 					
-					'symbol' => $this->pair ($base, $quote),
 					'low' => $value['low'],
 					'high' => $value['high'],
 					'open' => $value['open'],
@@ -160,7 +159,6 @@
 			foreach ($prices as $value)
 				$summary[] = [
 					
-					'symbol' => $this->pair ($base, $quote),
 					'low' => $value['low'],
 					'high' => $value['high'],
 					'open' => $value['open'],

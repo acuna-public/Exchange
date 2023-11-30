@@ -765,6 +765,7 @@
 					'sell' => $value['sellVol'],
 					'ratio' => $value['buySellRatio'],
 					'date' => ($value['timestamp'] / 1000),
+					'date_text' => $this->date ($value['timestamp'] / 1000),
 					
 				];
 				
