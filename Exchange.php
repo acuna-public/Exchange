@@ -8,19 +8,17 @@
 	abstract class Exchange {
 		
 		public
-			$hedgeMode = false,
 			$debug = 0,
+			$hedgeMode = false,
 			$timeOffset = 0,
-			$recvWindow = 60000; // 1 minute
+			$recvWindow = 60000, // 1 minute
+			$dateFormat = 'd.m.y H:i';
 		
 		public
 			$amount = 3,
 			$precision = 2,
 			$marginPercent = 100,
 			$balancePercent = 100,
-			$dateFormat = 'd.m.y H:i';
-		
-		public
 			$pnl = 0,
 			$roe = 0, $roi = 0,
 			$quantity = 0,
@@ -343,10 +341,14 @@
 		function getQuantity () {
 			
 			if ($this->entryPrice > 0)
-				return $this->amount (($this->margin * $this->leverage) / $this->entryPrice);
+				return $this->amount ($this->getNotional () / $this->entryPrice);
 			else
 				throw new \ExchangeException ('Price must be higher than 0');
 			
+		}
+		
+		function getNotional () {
+			return ($this->margin * $this->leverage);
 		}
 		
 		function start () {
@@ -416,13 +418,18 @@
 					
 					if ($margin >= 0) {
 						
-						if ($this->openBalance > 0)
-							$this->balanceAvailable -= $this->openBalance;
+						$balanceAvailable = ($this->balanceAvailable - $this->openBalance);
 						
-						if ($this->marginType == self::ISOLATED)
-							$this->extraMargin = ($this->balance - $this->margin);
-						
-						return ($this->balanceAvailable >= 0);
+						if ($balanceAvailable >= 0) {
+							
+							$this->balanceAvailable = $balanceAvailable;
+							
+							if ($this->marginType == self::ISOLATED)
+								$this->extraMargin = ($this->balance - $this->margin);
+							
+							return true;
+							
+						}
 						
 					}
 					
@@ -439,7 +446,7 @@
 			$this->fees = $this->getCloseFee ();
 			
 			$fees = ($this->getOpenFee () + $this->fees);
-			
+			$fees = 0;
 			if ($this->pnl > 0 and $this->pnl <= $fees)
 				$this->pnl = $this->roe = $this->roi = 0;
 			else
@@ -494,11 +501,11 @@
 		}
 		
 		function getOpenFee () {
-			return (($this->quantity * $this->entryPrice * $this->getFeeRate ()) / 100);
+			return ($this->getNotional () * $this->getFeeRate ()) / 100;
 		}
 		
 		function getCloseFee () {
-			return (($this->quantity * $this->getBankruptcyPrice () * $this->getFeeRate ()) / 100);
+			return ($this->getNotional () * $this->getFeeRate ()) / 100;
 		}
 		
 		function getBankruptcyPrice () {
