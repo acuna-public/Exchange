@@ -701,7 +701,7 @@
 					$data['position_idx'] = ($side2 == self::LONG ? 1 : 2);
 				else
 					$data['position_idx'] = 0;
-				
+				debug ($data['position_idx']);
 				$list[] = $data;
 				
 			}
