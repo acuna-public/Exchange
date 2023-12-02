@@ -12,7 +12,8 @@
 			$hedgeMode = false,
 			$timeOffset = 0,
 			$recvWindow = 60000, // 1 minute
-			$dateFormat = 'd.m.y H:i';
+			$dateFormat = 'd.m.y H:i',
+			$sleep = 0;
 		
 		public
 			$amount = 3,

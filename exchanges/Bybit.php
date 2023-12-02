@@ -659,6 +659,8 @@
 				
 				$output[] = $request->connect ('private/linear/order/create')['result']['order_id'];
 				
+				sleep ($this->sleep);
+				
 			}
 			
 			return $output;
@@ -1251,6 +1253,7 @@
 				CURLOPT_USERAGENT => 'User-Agent: Mozilla/4.0 (compatible; PHP '.$this->exchange->getTitle ().' API)',
 				CURLOPT_SSL_VERIFYPEER => false,
 				CURLOPT_SSL_VERIFYHOST => false,
+				//CURLOPT_HEADER => 1,
 				
 			];
 			
@@ -1299,7 +1302,7 @@
 				throw new \ExchangeException ($error, curl_errno ($ch), $this->func, $proxy, $this->order);
 			elseif (in_array ($info['http_code'], $this->errorCodes))
 				throw new \ExchangeException (http_get_message ($info['http_code']).' ('.$options[CURLOPT_URL].')', $info['http_code'], $this->func, $proxy, $this->order);
-			
+			//debug ($data);
 			$data = json2array ($data);
 			
 			curl_close ($ch);
