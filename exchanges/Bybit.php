@@ -657,7 +657,7 @@
 				
 				$request->params = $order;
 				
-				$output[] = $request->connect ('private/linear/order/create')['result']['order_id'];
+				$output[] = $request->connect ('v5/order/create')['result']['orderId'];
 				
 				sleep ($this->sleep);
 				
@@ -676,34 +676,35 @@
 				$data = [
 					
 					'symbol' => $this->pair ($order['base'], $order['quote']),
-					'order_type' => (isset ($order['price']) ? 'Limit' : 'Market'),
+					'category' => $this->category ($order['quote']),
+					'orderType' => (isset ($order['price']) ? 'Limit' : 'Market'),
 					'side' => $side,
 					'qty' => $this->quantity ($order['quantity']),
-					'time_in_force' => 'GoodTillCancel',
-					'reduce_only' => ((isset ($order['close']) and $order['close']) ? 'true' : 'false'),
-					'close_on_trigger' => 'false',
-					'tp_trigger_by' => 'MarkPrice',
-					'sl_trigger_by' => 'MarkPrice',
+					'timeInForce' => 'GTC',
+					'reduceOnly' => ((isset ($order['close']) and $order['close']) ? 'true' : 'false'),
+					'closeOnTrigger' => 'false',
+					'tpTriggerBy' => 'MarkPrice',
+					'slTriggerBy' => 'MarkPrice',
 					
 				];
 				
 				if (isset ($order['take_profit']) and $order['take_profit'] > 0)
-					$data['take_profit'] = $this->price ($order['take_profit']);
+					$data['takeProfit'] = $this->price ($order['take_profit']);
 				
 				if (isset ($order['stop_loss']) and $order['stop_loss'] > 0)
-					$data['stop_loss'] = $this->price ($order['stop_loss']);
+					$data['stopLoss'] = $this->price ($order['stop_loss']);
 				
 				if (isset ($order['price']) and $order['price'] > 0)
 					$data['price'] = $this->price ($order['price']);
 				
 				if (isset ($order['name']))
-					$data['order_link_id'] = $order['name'];
+					$data['orderLinkId'] = $order['name'];
 				
 				if ($this->hedgeMode)
-					$data['position_idx'] = ($side2 == self::LONG ? 1 : 2);
+					$data['positionIdx'] = ($side2 == self::LONG ? 1 : 2);
 				else
-					$data['position_idx'] = 0;
-				debug ([$side, $data['position_idx']]);
+					$data['positionIdx'] = 0;
+				debug ([$side, $data['positionIdx']]);
 				$list[] = $data;
 				
 			}
