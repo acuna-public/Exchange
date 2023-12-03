@@ -680,18 +680,19 @@
 					'timeInForce' => 'GTC',
 					'reduceOnly' => ((isset ($order['close']) and $order['close']) ? 'true' : 'false'),
 					'closeOnTrigger' => 'false',
+					'triggerBy' => 'MarkPrice',
 					'tpTriggerBy' => 'MarkPrice',
 					'slTriggerBy' => 'MarkPrice',
 					
 				];
 				
-				if (isset ($order['take_profit']) and $order['take_profit'] > 0)
+				if (isset ($order['take_profit']))
 					$data['takeProfit'] = $this->price ($order['take_profit']);
 				
-				if (isset ($order['stop_loss']) and $order['stop_loss'] > 0)
+				if (isset ($order['stop_loss']))
 					$data['stopLoss'] = $this->price ($order['stop_loss']);
 				
-				if (isset ($order['price']) and $order['price'] > 0)
+				if (isset ($order['price']))
 					$data['price'] = $this->price ($order['price']);
 				
 				if (isset ($order['name']))
@@ -1045,20 +1046,22 @@
 			return ['price' => $order['base_price']];
 		}
 		
-		function getPositionInfo ($base, $quote) {
-			return $this->position;
-		}
-		
 		function getPositionData ($position) {
 			return $position;
 		}
 		
-		function positionActive (): bool {
+		function positionActive ($base, $quote): bool {
+			
+			$this->getPosition ($base, $quote);
 			return (isset ($this->position['size']) and $this->position['size'] > 0);
+			
 		}
 		
-		function getMarginType () {
+		function getMarginType ($base, $quote) {
+			
+			$this->getPosition ($base, $quote);
 			return (!isset ($this->position['tradeMode']) or $this->position['tradeMode'] == 1 ? self::ISOLATED : self::CROSS);
+			
 		}
 		
 		function getAdditionalMargin ($stopPrice) {

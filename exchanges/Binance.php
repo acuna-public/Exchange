@@ -340,7 +340,7 @@
 			return $this->position['markPrice'];
 		}
 		
-		function getEntryPrice () {
+		function getEntryPrice ($base, $quote) {
 			return $this->position['entryPrice'];
 		}
 		
@@ -1028,8 +1028,11 @@
 			return ['stop_loss' => $position['stopPrice']];
 		}
 		
-		function positionActive (): bool {
+		function positionActive ($base, $quote): bool {
+			
+			$this->getPosition ($base, $quote);
 			return ($this->position['size'] > 0);
+			
 		}
 		
 		function minQuantity () {

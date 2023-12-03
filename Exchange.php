@@ -300,7 +300,7 @@
 			
 		}
 		
-		abstract function positionActive (): bool;
+		abstract function positionActive ($base, $quote): bool;
 		
 		function getPNL () {
 			return ($this->getProfit ($this->entryPrice, $this->markPrice) * $this->quantity);
@@ -348,10 +348,10 @@
 			return ($this->margin * $this->leverage);
 		}
 		
-		function start () {
+		function start ($base, $quote) {
 			
 			if ($this->leverage == 0) // NULL
-				$this->leverage = $this->getLeverage ();
+				$this->leverage = $this->getLeverage ($base, $quote);
 			
 			$this->liquid = (100 / $this->leverage);
 			
@@ -415,11 +415,9 @@
 					
 					if ($margin >= 0) {
 						
-						$balanceAvailable = ($this->balanceAvailable - $this->openBalance);
-						
-						if ($balanceAvailable >= 0) {
+						if ($this->balanceAvailable >= $this->openBalance) {
 							
-							$this->balanceAvailable = $balanceAvailable;
+							$this->balanceAvailable = ($this->balanceAvailable - $this->openBalance);
 							
 							if ($this->marginType == self::ISOLATED)
 								$this->extraMargin = ($this->balance - $this->margin);
@@ -514,8 +512,11 @@
 			
 		}
 		
-		function getLeverage () {
+		function getLeverage ($base, $quote) {
+			
+			$this->getPosition ($base, $quote);
 			return $this->position['leverage'];
+			
 		}
 		
 		function getRPRatio ($entryPrice, $takeProfit, $stopLoss) {
@@ -527,8 +528,11 @@
 			
 		}
 		
-		function getEntryPrice () {
+		function getEntryPrice ($base, $quote) {
+			
+			$this->getPosition ($base, $quote);
 			return $this->position['entry_price'];
+			
 		}
 		
 		function toPoint () {
@@ -580,7 +584,7 @@
 		function createFuturesTrailingStopOrder ($order) {}
 		function changePositionMargin ($base, $quote, $value) {}
 		
-		function getMarginType () {}
+		function getMarginType ($base, $quote) {}
 		
 		function cancelFuturesOrders ($base, $quote, array $ids) {}
 		
