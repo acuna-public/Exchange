@@ -283,7 +283,7 @@
 		
 		function getPosition ($base, $quote) {
 			
-			if (!$this->positions) $this->positions = $this->getPositions ();
+			if (!$this->positions) $this->positions = $this->getPositions ('', $quote);
 			
 			if (isset ($this->positions[$this->pair ($base, $quote)])) {
 				
@@ -522,10 +522,6 @@
 			return $this->position['leverage'];
 		}
 		
-		function getFuturesPositionAmount () {
-			return $this->position['positionAmt'];
-		}
-		
 		function getRPRatio ($entryPrice, $takeProfit, $stopLoss) {
 			
 			$output  = $this->getProfit ($entryPrice, $stopLoss);
@@ -582,7 +578,7 @@
 		
 		function getFuturesOpenOrders ($base, $quote) {}
 		function getFuturesFilledOrders ($base, $quote) {}
-		function openPosition ($base, $quote, $side, $data = []) {}
+		function openPosition ($base, $quote, $quantity, $data = []) {}
 		function createFuturesTakeProfitOrder ($orders) {}
 		function createFuturesStopOrder ($orders) {} // TODO
 		function createFuturesTrailingStopOrder ($order) {}

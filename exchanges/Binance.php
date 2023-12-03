@@ -471,7 +471,7 @@
 			
 		}
 		
-		function openPosition ($base, $quote, $side, $order = []) {
+		function openPosition ($base, $quote, $quantity, $order = []) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -480,12 +480,12 @@
 				'symbol' => $this->pair ($base, $quote),
 				'side' => ($this->isLong () ? 'BUY' : 'SELL'),
 				'type' => 'MARKET',
-				'quantity' => $this->quantity,
+				'quantity' => $quantity,
 				
 			];
 			
 			if ($this->hedgeMode)
-				$request->params['positionSide'] = $side;
+				$request->params['positionSide'] = ($this->isLong () ? 'BUY' : 'SELL');
 			
 			$request->market = BinanceRequest::FUTURES;
 			$request->method = BinanceRequest::POST;

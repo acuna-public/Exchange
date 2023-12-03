@@ -404,26 +404,34 @@
 			
 			$request->method = BybitRequest::GET;
 			
+			$request->params = [
+				
+				'category' => $this->category ($quote),
+				
+			];
+			
 			if ($base and $quote)
 				$request->params['symbol'] = $this->pair ($base, $quote);
+			else
+				$request->params['settleCoin'] = $quote;
 			
 			$data = [];
 			
-			foreach ($request->connect ('private/linear/position/list')['result'] as $pos) {
+			foreach ($request->connect ('v5/position/list')['result']['list'] as $pos) {
 				
 				if ($this->hedgeMode) {
 					
 					if ($base and $quote)
 						$data[$this->pair ($base, $quote)][($pos['side'] == 'Buy' ? self::LONG : self::SHORT)] = $pos;
 					else
-						$data[$pos['data']['symbol']][($pos['data']['side'] == 'Buy' ? self::LONG : self::SHORT)] = $pos['data'];
+						$data[$pos['symbol']][($pos['side'] == 'Buy' ? self::LONG : self::SHORT)] = $pos;
 					
 				} else {
 					
 					if ($base and $quote)
 						$data[$this->pair ($base, $quote)] = $pos;
 					else
-						$data[$pos['data']['symbol']] = $pos['data'];
+						$data[$pos['symbol']] = $pos;
 					
 				}
 				
@@ -704,7 +712,7 @@
 					$data['positionIdx'] = ($side2 == self::LONG ? 1 : 2);
 				else
 					$data['positionIdx'] = 0;
-				debug ([$side, $data['positionIdx']]);
+				
 				$list[] = $data;
 				
 			}
@@ -713,13 +721,13 @@
 			
 		}
 		
-		function openPosition ($base, $quote, $side, $data = []) {
+		function openPosition ($base, $quote, $quantity, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
-			$data['quantity'] = $this->quantity;
+			$data['quantity'] = $quantity;
 			
-			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), $side, __FUNCTION__);
+			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), ($this->isLong () ? self::LONG : self::SHORT), __FUNCTION__);
 			
 		}
 		
@@ -1059,11 +1067,11 @@
 		}
 		
 		function positionActive (): bool {
-			return ($this->position['size'] > 0);
+			return (isset ($this->position['size']) and $this->position['size'] > 0);
 		}
 		
 		function getMarginType () {
-			return ($this->position['is_isolated'] ? self::ISOLATED : self::CROSS);
+			return (!isset ($this->position['tradeMode']) or $this->position['tradeMode'] == 1 ? self::ISOLATED : self::CROSS);
 		}
 		
 		function getAdditionalMargin ($stopPrice) {
