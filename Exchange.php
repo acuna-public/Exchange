@@ -557,7 +557,7 @@
 		abstract function getOrders ($base, $quote);
 		abstract function getOrderInfo ($id);
 		
-		function editFuturesPosition ($base, $quote, $side, $data) {}
+		function editPosition ($base, $quote, $data) {}
 		
 		function setLeverage ($base, $quote, $leverage) {}
 		function setFuturesMarginType ($base, $quote, $longLeverage = 10, $shortLeverage = 10) {}
@@ -582,12 +582,11 @@
 		
 		function getFuturesOpenOrders ($base, $quote) {}
 		function getFuturesFilledOrders ($base, $quote) {}
-		function openPosition ($base, $quote, $quantity, $data = []) {}
 		function createFuturesTakeProfitOrder ($orders) {}
 		function createFuturesStopOrder ($orders) {} // TODO
 		function createFuturesTrailingStopOrder ($order) {}
 		function cancelOpenOrders ($base, $quote) {}
-		function changePositionMargin ($base, $quote, $side2, $value) {}
+		function changePositionMargin ($base, $quote, $value) {}
 		
 		function getMarginType () {}
 		
@@ -718,8 +717,10 @@
 		
 		function setMode ($base, $quote) {}
 		function cancelOrderName ($base, $quote, $name) {}
-		function closePosition ($base, $quote, $side, $quantity, $data = []) {}
-		function decreasePosition ($base, $quote, $side, $quantity, $data = []) {}
+		
+		function openPosition ($base, $quote, $quantity, $data = []) {}
+		function closePosition ($base, $quote, $quantity, $data = []) {}
+		function decreasePosition ($base, $quote, $quantity, $data = []) {}
 		
 		function timeframe ($timeframe) { // From cctx
 			

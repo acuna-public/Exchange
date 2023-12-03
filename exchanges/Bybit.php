@@ -323,7 +323,7 @@
 			return ($quote == 'USD' ? 'inverse' : 'linear');
 		}
 		
-		function changePositionMargin ($base, $quote, $side2, $value) {
+		function changePositionMargin ($base, $quote, $value) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -336,7 +336,9 @@
 			];
 			
 			if ($this->hedgeMode)
-				$request->params['positionIdx'] = ($side2 == self::LONG ? 1 : 2);
+				$request->params['positionIdx'] = ($this->isLong () ? 1 : 2);
+			else
+				$request->params['positionIdx'] = 0;
 			
 			return $request->connect ('v5/position/add-margin');
 			
@@ -670,7 +672,7 @@
 			
 		}
 		
-		protected function createTypeOrder (array $orders, string $side, string $side2, string $func) {
+		protected function createTypeOrder (array $orders, string $side, string $func) {
 			
 			$list = [];
 			
@@ -704,7 +706,7 @@
 					$data['orderLinkId'] = $order['name'];
 				
 				if ($this->hedgeMode)
-					$data['positionIdx'] = ($side2 == self::LONG ? 1 : 2);
+					$data['positionIdx'] = ($this->isLong () ? 1 : 2);
 				else
 					$data['positionIdx'] = 0;
 				
@@ -722,28 +724,28 @@
 			$data['quote'] = $quote;
 			$data['quantity'] = $quantity;
 			
-			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), ($this->isLong () ? self::LONG : self::SHORT), __FUNCTION__);
+			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), __FUNCTION__);
 			
 		}
 		
-		function closePosition ($base, $quote, $side, $quantity, $data = []) {
+		function closePosition ($base, $quote, $quantity, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
 			$data['quantity'] = $quantity;
 			$data['close'] = true;
 			
-			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), $side, __FUNCTION__);
+			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
 			
 		}
 		
-		function decreasePosition ($base, $quote, $side, $quantity, $data = []) {
+		function decreasePosition ($base, $quote, $quantity, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
 			$data['quantity'] = $quantity;
 			
-			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), $side, __FUNCTION__);
+			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
 			
 		}
 		
@@ -783,7 +785,7 @@
 			
 		}
 		
-		function editFuturesPosition ($base, $quote, $side, $data) {
+		function editPosition ($base, $quote, $data) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -801,7 +803,7 @@
 				$request->params[$key] = $value;
 			
 			if ($this->hedgeMode)
-				$request->params['position_idx'] = ($side ? 1 : 2);
+				$request->params['position_idx'] = ($this->isLong () ? 1 : 2);
 			else
 				$request->params['position_idx'] = 0;
 			
