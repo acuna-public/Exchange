@@ -315,7 +315,7 @@
 			if ($quantity > 0)
 				$pnl /= $quantity;
 			else
-				//throw new \Exchange ('Quantity must be higher than 0');
+				//throw new \ExchangeException ('Quantity must be higher than 0');
 				$pnl = 0;
 			
 			return $pnl;
@@ -571,13 +571,13 @@
 		abstract function getSymbols ($quote = '');
 		abstract function isOrderTakeProfit ($order);
 		abstract function orderCreateDate ($order);
+		abstract function cancelOrders ($base = '', $quote = '', $filter = '');
 		
 		function getFuturesOpenOrders ($base, $quote) {}
 		function getFuturesFilledOrders ($base, $quote) {}
 		function createFuturesTakeProfitOrder ($orders) {}
 		function createFuturesStopOrder ($orders) {} // TODO
 		function createFuturesTrailingStopOrder ($order) {}
-		function cancelOpenOrders ($base, $quote) {}
 		function changePositionMargin ($base, $quote, $value) {}
 		
 		function getMarginType () {}
@@ -644,7 +644,7 @@
 		
 		abstract function orderData (array $order);
 		
-		function getAnnouncements () {
+		function getAnnouncements ($data = []) {
 			return [];
 		}
 		

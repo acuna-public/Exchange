@@ -203,29 +203,6 @@
 			
 		}*/
 		
-		function getOrders ($base, $quote) {
-			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			$request->method = BybitRequest::GET;
-			
-			$request->params = [
-				
-				'symbol' => $this->pair ($base, $quote),
-				
-			];
-			
-			$data = $request->connect ('api/v3/allOrders');
-			
-			$output = [];
-			
-			foreach ($data as $order)
-				$output[strtolower ($order['side'])][$order['orderId']] = $this->orderData ($order);
-			
-			return $output;
-			
-		}
-		
 		function orderData ($order) {
 			
 			return [
@@ -251,7 +228,7 @@
 				
 			];
 			
-			return $this->orderData ($request->connect ('api/v3/order'));
+			return $this->orderData ($request->connect ('v3/order'));
 			
 		}
 		
@@ -263,7 +240,7 @@
 			
 			$request->params = [
 				
-				'accountType' => ($this->market == \Exchange::SPOT ? 'SPOT' : 'CONTRACT'),
+				'accountType' => ($this->market == self::SPOT ? 'SPOT' : 'CONTRACT'),
 				
 			];
 			
@@ -291,14 +268,17 @@
 			
 		}
 		
-		function getAnnouncements () {
+		function getAnnouncements ($data = []) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
 			$request->method = BybitRequest::GET;
 			$request->signed = false;
 			
-			return $request->connect ('v2/public/announcement')['result'];
+			foreach ($data as $key => $value)
+				$request->params[$key] = $value;
+			
+			return $request->connect ('v5/announcements/index')['result']['list'];
 			
 		}
 		
@@ -320,7 +300,14 @@
 		}
 		
 		protected function category ($quote) {
-			return ($quote == 'USD' ? 'inverse' : 'linear');
+			
+			if ($this->market == self::SPOT)
+				return 'spot';
+			elseif ($quote == 'USD')
+				return 'inverse';
+			else
+				return 'linear';
+			
 		}
 		
 		function changePositionMargin ($base, $quote, $value) {
@@ -636,11 +623,7 @@
 			
 		}
 		
-		function getFuturesFilledOrders ($base, $quote) {
-			return $this->getFuturesOrders ($base, $quote, 'Filled');
-		}
-		
-		protected function getFuturesOrders ($base, $quote, $status) {
+		function getOrders ($base = '', $quote = '') {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -648,17 +631,16 @@
 			
 			$request->params = [
 				
-				'symbol' => $this->pair ($base, $quote),
-				'stop_order_status' => $status,
+				'category' => $this->category ($quote),
 				
 			];
 			
-			$output = [];
+			if ($base and $quote)
+				$request->params['symbol'] = $this->pair ($base, $quote);
+			else
+				$request->params['settleCoin'] = $quote;
 			
-			foreach ($request->connect ('private/linear/order/list')['result']['data'] as $order)
-				$output[] = ['trigger_price' => $order['last_exec_price']];
-			
-			return $output;
+			return $request->connect ('v5/order/realtime')['result']['list'];
 			
 		}
 		
@@ -759,39 +741,36 @@
 			
 		}
 		
-		function editFuturesOrder ($base, $quote, $id, $data) {
+		function editOrder ($base, $quote, $orders) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
+			$list = [];
+			
+			foreach ($orders as $order) {
+				
+				$order['symbol'] = $this->pair ($base, $quote);
+				
+				if (isset ($order['id']))
+					$order['orderId'] = $order['id'];
+				elseif (isset ($order['name']))
+					$order['orderLinkId'] = $order['name'];
+				
+				if (isset ($order['quantity']))
+					$order['qty'] = $order['quantity'];
+				
+				$list[] = $order;
+				
+			}
+			
 			$request->params = [
 				
-				'symbol' => $this->pair ($base, $quote),
-				'order_id' => $id,
+				'category' => $this->category ($quote),
+				'request' => $list,
 				
 			];
 			
-			foreach ($data as $key => $value)
-				$request->params[$key] = $value;
-			
-			return $request->connect ('private/linear/order/replace')['result'];
-			
-		}
-		
-		function editFuturesOrderName ($base, $quote, $name, $data) {
-			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			$request->params = [
-				
-				'symbol' => $this->pair ($base, $quote),
-				'order_link_id' => $name,
-				
-			];
-			
-			foreach ($data as $key => $value)
-				$request->params[$key] = $value;
-			
-			return $request->connect ('private/linear/order/replace')['result'];
+			return $request->connect ('v5/order/amend-batch')['result']['list'];
 			
 		}
 		
@@ -821,32 +800,29 @@
 			
 		}
 		
-		function cancelOpenOrders ($base, $quote) {
+		function cancelOrders ($base = '', $quote = '', $filter = '') {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
 			$request->params = [
 				
-				'symbol' => $this->pair ($base, $quote),
+				'category' => $this->category ($quote),
 				
 			];
 			
-			return $request->connect ('private/linear/order/cancel-all')['result'];
+			if ($base and $quote)
+				$request->params['symbol'] = $this->pair ($base, $quote);
+			elseif ($base)
+				$request->params['baseCoin'] = $base;
+			else
+				$request->params['settleCoin'] = $quote;
 			
-		}
-		
-		function cancelFuturesOrderName ($base, $quote, $name) {
+			if ($filter == 'stop')
+				$request->params['orderFilter'] = 'StopOrder';
+			elseif ($filter == 'tpsl')
+				$request->params['orderFilter'] = 'tpslOrder';
 			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			$request->params = [
-				
-				'symbol' => $this->pair ($base, $quote),
-				'order_link_id' => $name,
-				
-			];
-			
-			$request->connect ('private/linear/order/cancel')['result'];
+			return $request->connect ('v5/order/cancel-all')['result']['list'];
 			
 		}
 		
@@ -968,9 +944,13 @@
 			$request->method = BybitRequest::GET;
 			$request->signed = false;
 			
-			if ($pairs = $request->connect ('v2/public/tickers')) {
+			$request->params = [
 				
-				$pairs = $pairs['result'];
+				'category' => $this->category ($quote),
+				
+			];
+			
+			if ($pairs = $request->connect ('v5/market/tickers')['result']['list']) {
 				
 				if (!$base and !$quote) {
 					
@@ -993,11 +973,11 @@
 			
 			return [
 				
-				'mark_price' => $item['mark_price'],
-				'index_price' => $item['index_price'],
-				'last_price' => $item['last_price'],
-				'prev' => $item['prev_price_24h'],
-				'change_percent' => $item['price_24h_pcnt'],
+				'mark_price' => $item['markPrice'],
+				'index_price' => $item['indexPrice'],
+				'last_price' => $item['lastPrice'],
+				'prev' => $item['prevPrice24h'],
+				'change_percent' => $item['price24hPcnt'],
 				
 			];
 			
@@ -1096,7 +1076,7 @@
 				'forceChain' => 1,
 				'address' => $address,
 				'amount' => $this->quantity ($amount),
-				'accountType' => ($this->market == \Exchange::SPOT ? 'SPOT' : 'FUND'),
+				'accountType' => ($this->market == self::SPOT ? 'SPOT' : 'FUND'),
 				
 			];
 			
@@ -1338,14 +1318,14 @@
 			
 			if ($this->exchange->debug and $this->debug) {
 				
-				if ($this->exchange->market == \Exchange::FUTURES)
+				if ($this->exchange->market == self::FUTURES)
 					$url = $this->testFuturesUrl;
 				else
 					$url = $this->testApiUrl;
 				
 			} else {
 				
-				if ($this->exchange->market == \Exchange::FUTURES)
+				if ($this->exchange->market == self::FUTURES)
 					$url = $this->futuresUrl;
 				else
 					$url = $this->apiUrl;

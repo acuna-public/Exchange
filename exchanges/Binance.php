@@ -612,7 +612,7 @@
 			
 		}
 		
-		function cancelOpenOrders ($base, $quote) {
+		function cancelOrders ($base = '', $quote = '', $filter = '') {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
