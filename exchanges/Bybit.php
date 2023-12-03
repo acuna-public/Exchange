@@ -85,7 +85,7 @@
 			$request->method = BybitRequest::GET;
 			$request->signed = false;
 			
-			$time = $request->connect ('v2/public/time')['time_now'];
+			$time = $request->connect ('v5/market/time')['result']['timeSecond'];
 			
 			$this->timeOffset = ((number_format ($time, 0, '.', '') * 1000) - $request->milliseconds ());
 			
@@ -97,12 +97,10 @@
 			
 			$request->method = BybitRequest::GET;
 			
-			if (isset ($this->curChanges[$base]))
-				$base = $this->curChanges[$base];
-			
 			$request->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
+				'category' => $this->category ($quote),
 				'interval' => $this->intervalChanges[$data['interval']],
 				
 			];
@@ -112,15 +110,11 @@
 			
 			$request->params['limit'] = $data['limit'];
 			
-			if (!isset ($data['end_time']))
-				$data['end_time'] = time ();
+			if (isset ($data['start_time']))
+				$request->params['start'] = $data['start_time'];
 			
-			$request->params['to'] = $data['end_time'];
-			
-			if (!isset ($data['start_time']))
-				$data['start_time'] = ($data['end_time'] - ($data['limit'] * $this->timeframe ($data['interval'])));
-			
-			$request->params['from'] = $data['start_time'];
+			if (isset ($data['end_time']))
+				$request->params['end'] = $data['end_time'];
 			
 			$request->signed = false;
 			$request->debug = 0;
@@ -133,17 +127,17 @@
 			
 			$summary = [];
 			
-			if ($prices = $this->pricesRequest (__FUNCTION__, $base, $quote, $data)->connect ('public/linear/kline')['result'])
+			if ($prices = $this->pricesRequest (__FUNCTION__, $base, $quote, $data)->connect ('v5/market/kline')['result']['list'])
 			foreach ($prices as $value)
 				$summary[] = [
 					
-					'low' => $value['low'],
-					'high' => $value['high'],
-					'open' => $value['open'],
-					'close' => $value['close'],
-					'volume' => $value['volume'],
-					'date' => $value['start_at'],
-					'date_text' => $this->date ($value['start_at']),
+					'low' => $value[3],
+					'high' => $value[2],
+					'open' => $value[1],
+					'close' => $value[4],
+					'volume' => $value[5],
+					'date' => ($value[0] / 1000),
+					'date_text' => $this->date (($value[0] / 1000)),
 					
 				];
 			
@@ -315,12 +309,13 @@
 			$request->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
-				'buy_leverage' => $leverage,
-				'sell_leverage' => $leverage,
+				'category' => $this->category ($quote),
+				'buyLeverage' => $leverage,
+				'sellLeverage' => $leverage,
 				
 			];
 			
-			return $request->connect ('private/linear/position/set-leverage')['result'];
+			return $request->connect ('v5/position/set-leverage')['result'];
 			
 		}
 		
