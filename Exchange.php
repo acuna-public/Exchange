@@ -302,14 +302,6 @@
 		
 		abstract function positionActive (): bool;
 		
-		function optPosition ($base, $quote) {
-			
-			$this->getPosition ($base, $quote);
-			
-			return isset ($this->positions[$this->pair ($base, $quote)]);
-			
-		}
-		
 		function getPNL () {
 			return ($this->getProfit ($this->entryPrice, $this->markPrice) * $this->quantity);
 		}

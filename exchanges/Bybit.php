@@ -350,7 +350,8 @@
 			
 			$request->params = [
 				
-				'mode' => ($this->hedgeMode ? 'BothSide' : 'MergedSingle'),
+				'category' => $this->category ($quote),
+				'mode' => ($this->hedgeMode ? 3 : 0),
 				
 			];
 			
@@ -359,7 +360,7 @@
 			else
 				$request->params['coin'] = $quote;
 			
-			return $request->connect ('private/linear/position/switch-mode')['result'];
+			return $request->connect ('v5/position/switch-mode')['result'];
 			
 		}
 		
@@ -373,13 +374,14 @@
 			$request->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
-				'is_isolated' => ($this->marginType == self::ISOLATED),
-				'buy_leverage' => $longLeverage,
-				'sell_leverage' => $shortLeverage,
+				'category' => $this->category ($quote),
+				'tradeMode' => (($this->marginType == self::ISOLATED) ? 1 : 0),
+				'buyLeverage' => $longLeverage,
+				'sellLeverage' => $shortLeverage,
 				
 			];
 			
-			return $request->connect ('private/linear/position/switch-isolated')['result'];
+			return $request->connect ('v5/position/switch-isolated')['result'];
 			
 		}
 		
@@ -599,24 +601,32 @@
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
+			$request->params = [
+				
+				'category' => $this->category ($quote),
+				
+			];
+			
 			$request->method = BybitRequest::GET;
 			$request->signed = false;
 			
 			$symbols = [];
 			
-			foreach ($request->connect ('v2/public/symbols')['result'] as $symbol) {
+			foreach ($request->connect ('v5/market/instruments-info')['result']['list'] as $symbol) {
 				
-				$pair = $this->pair ($symbol['base_currency'], $symbol['quote_currency']);
+				$pair = $this->pair ($symbol['baseCoin'], $symbol['quoteCoin']);
 				
 				if ($symbol['status'] == 'Trading')
-				if (!$quote or $symbol['quote_currency'] == $quote)
+				if (!$quote or $symbol['quoteCoin'] == $quote)
 					$symbols[$pair] = [
 						
-						'base' => $symbol['base_currency'],
-						'quote' => $symbol['quote_currency'],
-						'leverage' => $symbol['leverage_filter']['max_leverage'],
-						'min_quantity' => $symbol['lot_size_filter']['min_trading_qty'],
-						'max_quantity' => $symbol['lot_size_filter']['max_trading_qty'],
+						'base' => $symbol['baseCoin'],
+						'quote' => $symbol['quoteCoin'],
+						'launched' => $symbol['launchTime'],
+						'minLeverage' => $symbol['leverageFilter']['minLeverage'],
+						'maxLeverage' => $symbol['leverageFilter']['maxLeverage'],
+						'minQuantity' => $symbol['lotSizeFilter']['minOrderQty'],
+						'maxQuantity' => $symbol['lotSizeFilter']['maxOrderQty'],
 						
 					];
 				
@@ -1305,18 +1315,18 @@
 			$options[CURLOPT_SSL_CIPHER_LIST] = 'TLSv1';
 			
 			if ($error = curl_error ($ch))
-				throw new \ExchangeException ($error, curl_errno ($ch), $this->func, $proxy, $this->order);
+				throw new \ExchangeException ($error, curl_errno ($ch), $options, $this->func);
 			elseif (in_array ($info['http_code'], $this->errorCodes))
-				throw new \ExchangeException (http_get_message ($info['http_code']).' ('.$options[CURLOPT_URL].')', $info['http_code'], $this->func, $proxy, $this->order);
+				throw new \ExchangeException (http_get_message ($info['http_code']).' ('.$options[CURLOPT_URL].')', $info['http_code'], $options, $this->func);
 			//debug ($data);
 			$data = json2array ($data);
 			
 			curl_close ($ch);
 			
 			if (isset ($data['ret_code']) and $data['ret_code'] != 0)
-				throw new \ExchangeException ($data['ret_msg'], $data['ret_code'], $this->func, $proxy, $this->order);
+				throw new \ExchangeException ($data['ret_msg'], $data['ret_code'], $options, $this->func);
 			elseif (isset ($data['retCode']) and $data['retCode'] != 0) // v5
-				throw new \ExchangeException ($data['retMsg'], $data['retCode'], $this->func, $proxy, $this->order);
+				throw new \ExchangeException ($data['retMsg'], $data['retCode'], $options, $this->func);
 			
 			return $data;
 			
@@ -1410,18 +1420,18 @@
 			$options[CURLOPT_SSL_CIPHER_LIST] = 'TLSv1';
 			
 			if ($error = curl_error ($ch))
-				throw new \ExchangeException ($error, curl_errno ($ch), $this->func, $proxy, $this->order);
+				throw new \ExchangeException ($error, curl_errno ($ch), $options, $this->func);
 			elseif (in_array ($info['http_code'], $this->errorCodes))
-				throw new \ExchangeException (http_get_message ($info['http_code']).' ('.$options[CURLOPT_URL].')', $info['http_code'], $this->func, $proxy, $this->order);
+				throw new \ExchangeException (http_get_message ($info['http_code']).' ('.$options[CURLOPT_URL].')', $info['http_code'], $options, $this->func);
 			
 			$data = json2array ($data);
 			
 			curl_close ($ch);
 			
 			if (isset ($data['ret_code']) and $data['ret_code'] != 0)
-				throw new \ExchangeException ($data['ret_msg'], $data['ret_code'], $this->func, $proxy, $this->order);
+				throw new \ExchangeException ($data['ret_msg'], $data['ret_code'], $options, $this->func);
 			elseif (isset ($data['retCode']) and $data['retCode'] != 0) // v5
-				throw new \ExchangeException ($data['retMsg'], $data['retCode'], $this->func, $proxy, $this->order);
+				throw new \ExchangeException ($data['retMsg'], $data['retCode'], $options, $this->func);
 			
 			return $data;
 			
@@ -1440,9 +1450,9 @@
 			$info = curl_getinfo ($ch);
 			
 			if ($error = curl_error ($ch))
-				throw new \ExchangeException ($error, curl_errno ($ch));
+				throw new \ExchangeException ($error, curl_errno ($ch), $info, $this->func);
 			elseif ($info['http_code'] != 200)
-				throw new \ExchangeException ($url.': Access denied', $info['http_code']);
+				throw new \ExchangeException ('Access denied', $info['http_code'], $info, $this->func);
 			
 			curl_close ($ch);
 			

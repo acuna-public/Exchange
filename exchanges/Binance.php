@@ -1166,20 +1166,20 @@
 			$options[CURLOPT_SSL_CIPHER_LIST] = 'TLSv1';
 			
 			if ($error = curl_error ($ch))
-				throw new \ExchangeException ($error, curl_errno ($ch), $this->func, $proxy, $this->order);
+				throw new \ExchangeException ($error, curl_errno ($ch), $options, $this->func);
 			elseif (in_array ($info['http_code'], $this->errorCodes))
-				throw new \ExchangeException ($options[CURLOPT_URL].' '.http_get_message ($info['http_code']), $info['http_code'], $this->func, $proxy, $this->order);
+				throw new \ExchangeException (http_get_message ($info['http_code']), $info['http_code'], $options, $this->func);
 			
 			$data = json_decode ($data, true);
 			
 			curl_close ($ch);
 			
 			if (isset ($data[0]['msg']) or (isset ($data[0]['code']) and $data[0]['code'] == 400))
-				throw new \ExchangeException ($data[0]['msg'], $data[0]['code'], $this->func, $proxy, $this->order); // Типа ошибка
+				throw new \ExchangeException ($data[0]['msg'], $data[0]['code'], $options, $this->func); // Типа ошибка
 			elseif (isset ($data['msg']) and !isset ($data['code']))
-				throw new \ExchangeException ($data['msg'], 0, $this->func, $proxy, $this->order);
+				throw new \ExchangeException ($data['msg'], 0, $options, $this->func);
 			elseif (isset ($data['msg']) and $data['code'] != 200)
-				throw new \ExchangeException ($data['msg'], $data['code'], $this->func, $proxy, $this->order);
+				throw new \ExchangeException ($data['msg'], $data['code'], $options, $this->func);
 			
 			return $data;
 			
