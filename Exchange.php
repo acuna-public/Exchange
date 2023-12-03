@@ -287,10 +287,14 @@
 			
 			if (isset ($this->positions[$this->pair ($base, $quote)])) {
 				
-				if ($this->hedgeMode)
-					$this->position = $this->positions[$this->pair ($base, $quote)][$this->side];
-				else
-					$this->position = $this->positions[$this->pair ($base, $quote)];
+				if ($this->hedgeMode) {
+					
+					if (isset ($this->positions[$this->pair ($base, $quote)][$this->side]))
+						$this->position = $this->positions[$this->pair ($base, $quote)][$this->side];
+					else
+						$this->position = [];
+					
+				} else $this->position = $this->positions[$this->pair ($base, $quote)];
 				
 			}
 			
