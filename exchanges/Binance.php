@@ -928,7 +928,7 @@
 			
 		}
 		
-		function getPrice ($base = '', $quote = '') {
+		function getTickerPrice ($base, $quote) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			

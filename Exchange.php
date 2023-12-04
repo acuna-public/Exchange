@@ -300,6 +300,10 @@
 			
 		}
 		
+		function getTicker ($base, $quote) {
+			return $this->getTickerPrice ($base, $quote)[$this->pair ($base, $quote)];
+		}
+		
 		abstract function positionActive ($base, $quote): bool;
 		
 		function getPNL () {
@@ -600,7 +604,7 @@
 			return '';
 		}
 		
-		abstract function getPrice ($base = '', $quote = '');
+		abstract function getTickerPrice ($base, $quote);
 		
 		function getVolatility ($base, $quote, $interval = '1h') {
 			

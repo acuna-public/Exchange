@@ -935,12 +935,9 @@
 			
 		}
 		
-		function getPrice ($base = '', $quote = '') {
+		function getTickerPrice ($base, $quote) {
 			
 			$request = $this->getRequest (__FUNCTION__);
-			
-			if ($base and $quote)
-				$request->params['symbol'] = $this->pair ($base, $quote);
 			
 			$request->method = BybitRequest::GET;
 			$request->signed = false;
@@ -951,18 +948,17 @@
 				
 			];
 			
+			if ($base and $quote)
+				$request->params['symbol'] = $this->pair ($base, $quote);
+			
 			if ($pairs = $request->connect ('v5/market/tickers')['result']['list']) {
 				
-				if (!$base and !$quote) {
-					
-					$output = [];
-					
-					foreach ($pairs as $pair)
-						$output[$pair['symbol']] = $this->prepTicker ($pair);
-					
-					return $output;
-					
-				} else return $this->prepTicker ($pairs[0]);
+				$output = [];
+				
+				foreach ($pairs as $pair)
+					$output[$pair['symbol']] = $this->prepTicker ($pair);
+				
+				return $output;
 				
 			}
 			
