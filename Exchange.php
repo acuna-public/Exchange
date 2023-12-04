@@ -445,7 +445,9 @@
 			$this->fees = $this->getCloseFee ();
 			
 			$fees = ($this->getOpenFee () + $this->fees);
-			$fees = 0;
+			
+			$fees = ($this->balance * 4) / 100;
+			
 			if ($this->pnl > 0 and $this->pnl <= $fees)
 				$this->pnl = $this->roe = $this->roi = 0;
 			else
