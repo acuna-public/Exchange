@@ -60,7 +60,7 @@
 		
 		public $days = ['1m' => 1, '5m' => 2, '30m' => 10, '1h' => 20, '2h' => 499, '4h' => 120, '1d' => 1], $ratios = ['2h' => [1.2, 1.8]];
 		
-		public $flevel = 0, $rebate = 10, $ftype = self::FTYPE_USD, $feeModel = self::TAKER;
+		public $flevel = 0, $rebate = 10, $ftype = self::FTYPE_USD, $openMarketType = self::TAKER, $closeMarketType = self::TAKER;
 		
 		public $side = self::LONG, $marginType = self::ISOLATED, $market = self::SPOT;
 		
@@ -312,17 +312,16 @@
 		
 		function getROE () {
 			
-			$pnl = ($this->pnl * 100);
+			$roe = ($this->pnl * 100);
 			
 			$quantity = ($this->quantity * $this->entryPrice);
 			
 			if ($quantity > 0)
-				$pnl /= $quantity;
+				$roe /= $quantity;
 			else
-				//throw new \ExchangeException ('Quantity must be higher than 0');
-				$pnl = 0;
+				throw new \ExchangeException ('Quantity must be higher than 0');
 			
-			return $pnl;
+			return $roe;
 			
 		}
 		
@@ -446,42 +445,29 @@
 			
 			$fees = ($this->getOpenFee () + $this->fees);
 			
-			$fees = ($this->balance * 4) / 100;
-			
 			if ($this->pnl > 0 and $this->pnl <= $fees)
 				$this->pnl = $this->roe = $this->roi = 0;
-			else
-				$this->pnl -= $fees;
-			
-			if ($this->roi < -100) {
+			else {
 				
-				if ($this->marginType == self::ISOLATED) {
-					
-					if ($this->pnl < -$this->balance) {
-						
-						$this->pnl = -$this->balance;
-						$this->roi = -100;
-						
-					}
-					
-				} else {
-					
-					$percent = new \Percent ($this->roe);
-					
-					$percent->delim = $this->pnl;
-					
-					$diff = ($this->balanceAvailable - $this->pnl);
-					
-					if ($diff < 0) $this->pnl -= $diff;
-					
-					$this->roe = $percent->valueOf ($this->pnl);
-					$this->roi = $this->getROI ();
-					
-				}
+				if ($this->pnl > 0)
+					$this->pnl -= $fees;
+				elseif ($this->pnl < 0)
+					$this->pnl += $fees;
+				
+			}
+			
+			$balance = ($this->balance + $this->pnl);
+			
+			if ($balance < 0) {
+				
+				$this->pnl = -$this->balance;
+				$this->roe = $this->getROE ();
+				$this->roi = $this->getROI ();
 				
 			}
 			
 			$this->balance += $this->pnl;
+			
 			$this->walletBalance += $this->pnl;
 			
 			$this->balanceAvailable += $this->balance;
@@ -492,9 +478,9 @@
 			return (($balance * $percent) / 100);
 		}
 		
-		function getFeeRate () {
+		function getFeeRate ($marketType) {
 			
-			$value  = $this->feesRate[$this->market][$this->ftype][$this->flevel][($this->feeModel == self::MAKER ? 0 : 1)];
+			$value  = $this->feesRate[$this->market][$this->ftype][$this->flevel][($marketType == self::MAKER ? 0 : 1)];
 			$value -= (($value * $this->rebate) / 100);
 			
 			return $value;
@@ -502,11 +488,11 @@
 		}
 		
 		function getOpenFee () {
-			return ($this->getNotional () * $this->getFeeRate ()) / 100;
+			return ($this->getNotional () * $this->getFeeRate ($this->openMarketType)) / 100;
 		}
 		
 		function getCloseFee () {
-			return ($this->getNotional () * $this->getFeeRate ()) / 100;
+			return ($this->getNotional () * $this->getFeeRate ($this->closeMarketType)) / 100;
 		}
 		
 		function getBankruptcyPrice () {
@@ -761,6 +747,10 @@
 			
 			return $value;
 			
+		}
+		
+		function debug (...$data) {
+			debug ($this->side.': '.implode (', ', $data));
 		}
 		
 	}
