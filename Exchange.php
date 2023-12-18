@@ -394,7 +394,7 @@
 					
 					$min = $this->minQuantity ();
 					$max = $this->maxQuantity ();
-					debug ([$this->quantity, $min]);
+					
 					if ($min > 0 and $this->quantity < $min)
 						$this->quantity = $min;
 					elseif ($max > 0 and $this->quantity > $max)
