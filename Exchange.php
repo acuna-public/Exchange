@@ -394,7 +394,7 @@
 					
 					$min = $this->minQuantity ();
 					$max = $this->maxQuantity ();
-					debug ([$this->quantity, $min]);
+					
 					if ($min > 0 and $this->quantity < $min)
 						$this->quantity = $min;
 					elseif ($max > 0 and $this->quantity > $max)
@@ -441,20 +441,16 @@
 		
 		final function close () {
 			
+			$this->margin = (($this->quantity * $this->entryPrice) / $this->leverage);
+			
 			$this->fees = $this->getCloseFee ();
 			
 			$fees = ($this->getOpenFee () + $this->fees);
 			
 			if ($this->pnl > 0 and $this->pnl <= $fees)
 				$this->pnl = $this->roe = $this->roi = 0;
-			else {
-				
-				if ($this->pnl > 0)
-					$this->pnl -= $fees;
-				elseif ($this->pnl < 0)
-					$this->pnl += $fees;
-				
-			}
+			else
+				$this->pnl -= $fees;
 			
 			$balance = ($this->balance + $this->pnl);
 			
@@ -706,9 +702,9 @@
 		function setMode ($base, $quote) {}
 		function cancelOrderName ($base, $quote, $name) {}
 		
-		function openPosition ($base, $quote, $quantity, $data = []) {}
-		function closePosition ($base, $quote, $quantity, $data = []) {}
-		function decreasePosition ($base, $quote, $quantity, $data = []) {}
+		function openPosition ($base, $quote, $data = []) {}
+		function closePosition ($base, $quote, $data = []) {}
+		function decreasePosition ($base, $quote, $data = []) {}
 		
 		function timeframe ($timeframe) { // From cctx
 			

@@ -471,7 +471,7 @@
 			
 		}
 		
-		function openPosition ($base, $quote, $quantity, $order = []) {
+		function openPosition ($base, $quote, $order = []) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			

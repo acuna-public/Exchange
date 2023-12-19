@@ -676,7 +676,6 @@
 					'category' => $this->category ($order['quote']),
 					'orderType' => (isset ($order['price']) ? 'Limit' : 'Market'),
 					'side' => $side,
-					'qty' => $this->quantity ($order['quantity']),
 					'timeInForce' => 'GTC',
 					'reduceOnly' => ((isset ($order['close']) and $order['close']) ? 'true' : 'false'),
 					'closeOnTrigger' => 'false',
@@ -685,6 +684,11 @@
 					'slTriggerBy' => 'MarkPrice',
 					
 				];
+				
+				if (!isset ($order['quantity']))
+					$order['quantity'] = $this->quantity;
+				
+				$data['qty'] = $this->quantity ($order['quantity']);
 				
 				if (isset ($order['take_profit']))
 					$data['takeProfit'] = $this->price ($order['take_profit']);
@@ -711,32 +715,29 @@
 			
 		}
 		
-		function openPosition ($base, $quote, $quantity, $data = []) {
+		function openPosition ($base, $quote, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
-			$data['quantity'] = $quantity;
 			
 			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), __FUNCTION__);
 			
 		}
 		
-		function closePosition ($base, $quote, $quantity, $data = []) {
+		function closePosition ($base, $quote, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
-			$data['quantity'] = $quantity;
 			$data['close'] = true;
 			
 			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
 			
 		}
 		
-		function decreasePosition ($base, $quote, $quantity, $data = []) {
+		function decreasePosition ($base, $quote, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
-			$data['quantity'] = $quantity;
 			
 			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
 			
