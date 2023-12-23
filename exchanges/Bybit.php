@@ -643,21 +643,6 @@
 			
 		}
 		
-		protected function createBatchOrder ($orders, $func): array {
-			
-			$request = $this->getRequest ($func);
-			
-			$request->params = [
-				
-				'category' => $this->category ($orders[0]['quote']),
-				'request' => $orders,
-				
-			];
-			
-			return $request->connect ('v5/order/create-batch')['result']['list'];
-			
-		}
-		
 		protected function createTypeOrder (array $orders, string $side, string $func) {
 			
 			$list = [];
@@ -704,7 +689,16 @@
 				
 			}
 			
-			return $this->createBatchOrder ($list, $func);
+			$request = $this->getRequest ($func);
+			
+			$request->params = [
+				
+				'category' => $this->category ($orders[0]['quote']),
+				'request' => $orders,
+				
+			];
+			
+			return $request->connect ('v5/order/create-batch')['result']['list'];
 			
 		}
 		
