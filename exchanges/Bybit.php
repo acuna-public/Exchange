@@ -647,10 +647,13 @@
 			
 			$list = [];
 			
+			$request = $this->getRequest ($func);
+			
 			foreach ($orders as $order) {
 				
 				$data = [
 					
+					'category' => $this->category ($order['quote']),
 					'symbol' => $this->pair ($order['base'], $order['quote']),
 					'orderType' => (isset ($order['price']) ? 'Limit' : 'Market'),
 					'side' => $side,
@@ -685,20 +688,13 @@
 				else
 					$data['positionIdx'] = 0;
 				
-				$list[] = $data;
+				$request->params = $data;
+				
+				$list[] = $request->connect ('v5/order/create')['result'];
 				
 			}
 			
-			$request = $this->getRequest ($func);
-			
-			$request->params = [
-				
-				'category' => $this->category ($orders[0]['quote']),
-				'request' => $orders,
-				
-			];
-			
-			return $request->connect ('v5/order/create-batch')['result']['list'];
+			return $list;
 			
 		}
 		
