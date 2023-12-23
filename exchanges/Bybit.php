@@ -643,23 +643,18 @@
 			
 		}
 		
-		protected function createBatchOrder ($orders, $func) {
+		protected function createBatchOrder ($orders, $func): array {
 			
-			$output = [];
+			$request = $this->getRequest ($func);
 			
-			foreach ($orders as $order) {
+			$request->params = [
 				
-				$request = $this->getRequest ($func);
+				'category' => $this->category ($orders[0]['quote']),
+				'request' => $orders,
 				
-				$request->params = $order;
-				
-				$output[] = $request->connect ('v5/order/create')['result']['orderId'];
-				
-				sleep ($this->sleep);
-				
-			}
+			];
 			
-			return $output;
+			return $request->connect ('v5/order/create-batch')['result']['list'];
 			
 		}
 		
@@ -672,7 +667,6 @@
 				$data = [
 					
 					'symbol' => $this->pair ($order['base'], $order['quote']),
-					'category' => $this->category ($order['quote']),
 					'orderType' => (isset ($order['price']) ? 'Limit' : 'Market'),
 					'side' => $side,
 					'timeInForce' => 'GTC',
@@ -798,6 +792,32 @@
 				$request->params['position_idx'] = 0;
 			
 			return $request->connect ('private/linear/position/trading-stop')['result'];
+			
+		}
+		
+		function setTradingStop ($base, $quote, $data) {
+			
+			$request = $this->getRequest (__FUNCTION__);
+			
+			$request->params = [
+				
+				'category' => $this->category ($quote),
+				'symbol' => $this->pair ($base, $quote),
+				'side' => ($this->isLong () ? 'Buy' : 'Sell'),
+				'tp_trigger_by' => 'MarkPrice',
+				'sl_trigger_by' => 'MarkPrice',
+				
+			];
+			
+			foreach ($data as $key => $value)
+				$request->params[$key] = $value;
+			
+			if ($this->hedgeMode)
+				$request->params['positionIdx'] = ($this->isLong () ? 1 : 2);
+			else
+				$request->params['positionIdx'] = 0;
+			
+			return $request->connect ('v5/position/trading-stop')['result'];
 			
 		}
 		

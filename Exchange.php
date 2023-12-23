@@ -182,10 +182,10 @@
 		
 		function getInitialMargin () {
 			
-			if ($this->marginType == self::CROSS)
+			//if ($this->marginType == self::CROSS)
 				return (($this->quantity * $this->entryPrice) / $this->leverage);
-			else
-				return ($this->initialMarginRate / 100);
+			//else
+			//	return ($this->initialMarginRate / 100);
 			
 		}
 		
@@ -422,8 +422,13 @@
 							
 							$this->balanceAvailable = ($this->balanceAvailable - $this->openBalance);
 							
-							if ($this->marginType == self::ISOLATED)
+							if ($this->marginType == self::ISOLATED) {
+								
 								$this->extraMargin = ($this->balance - $this->margin);
+								
+								$this->balanceAvailable -= $this->extraMargin;
+								
+							}
 							
 							return true;
 							
@@ -441,7 +446,7 @@
 		
 		final function close () {
 			
-			$this->margin = (($this->quantity * $this->entryPrice) / $this->leverage);
+			$this->margin = $this->getInitialMargin ();
 			
 			$this->fees = $this->getCloseFee ();
 			
@@ -468,6 +473,10 @@
 			
 			$this->balanceAvailable += $this->balance;
 			
+		}
+		
+		function getExtraMargin () {
+			return ($this->balance - $this->getInitialMargin ());
 		}
 		
 		function getMargin () {
