@@ -149,17 +149,16 @@
 			
 			$summary = [];
 			
-			if ($prices = $this->pricesRequest (__FUNCTION__, $base, $quote, $data)->connect ('public/linear/mark-price-kline')['result'])
+			if ($prices = $this->pricesRequest (__FUNCTION__, $base, $quote, $data)->connect ('v5/market/mark-price-kline')['result']['list'])
 			foreach ($prices as $value)
 				$summary[] = [
 					
-					'low' => $value['low'],
-					'high' => $value['high'],
-					'open' => $value['open'],
-					'close' => $value['close'],
-					//'volume' => $value['volume'],
-					'date' => $value['start_at'],
-					'date_text' => $this->date ($value['start_at']),
+					'low' => $value[3],
+					'high' => $value[2],
+					'open' => $value[1],
+					'close' => $value[4],
+					'date' => ($value[0] / 1000),
+					'date_text' => $this->date (($value[0] / 1000)),
 					
 				];
 			
