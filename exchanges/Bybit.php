@@ -402,6 +402,8 @@
 			
 			$data = [];
 			
+			$request->showUrl = true;
+			
 			foreach ($request->connect ('v5/position/list')['result']['list'] as $pos) {
 				
 				if ($this->hedgeMode) {
@@ -1182,47 +1184,26 @@
 			
 		}
 		
+		function createSocket (): \Socket {
+			return new BybitSocket ();
+		}
+		
 	}
 	
-	class BybitRequest {
+	class BybitRequest extends \Request {
 		
 		public
 			$apiUrl = 'https://api.bybit.com',
 			$futuresUrl = 'https://api.bybit.com',
-			$streamsUrl = 'tls://stream.bybit.com',
 			
 			$testApiUrl = 'https://api-testnet.bybit.com',
-			$testFuturesUrl = 'https://api-testnet.bybit.com',
-			$testStreamsUrl = 'tls://testnet-dex.bybit.org';
-		
-		public
-			$params = [],
-			$method = self::POST,
-			$signed = true,
-			$debug = 0,
-			$errorCodes = [404],
-			$func,
-			$order;
-		
-		const GET = 'GET', POST = 'POST', PUT = 'PUT', DELETE = 'DELETE';
-		
-		protected $socket, $exchange;
-		
-		function __construct ($exchange, $func, $order = []) {
-			
-			$this->exchange = $exchange;
-			$this->func = $func;
-			$this->order = $order;
-			
-			//$this->socket = new \WebSocket (str_replace ('', rand (1, 17), $this->streamsUrl), 9443);
-			
-		}
+			$testFuturesUrl = 'https://api-testnet.bybit.com';
 		
 		function connect ($path) {
 			
 			$ch = curl_init ();
 			
-			if ($this->exchange->debug and $this->debug) {
+			if ($this->exchange->debug == 1 and $this->debug == 1) {
 				
 				if ($this->exchange->market == \Exchange::FUTURES)
 					$url = $this->testFuturesUrl;
@@ -1262,7 +1243,8 @@
 				
 			];
 			
-			//debug ($options[CURLOPT_URL]);
+			if ($this->exchange->debug == 2)
+				debug ($options[CURLOPT_URL]);
 			
 			if ($this->method == self::POST) {
 				
@@ -1488,14 +1470,92 @@
 			
 		}
 		
-		function socket ($key, $callback) {
+	}
+	
+	class BybitSocket extends \Socket {
+		
+		public
+			$streamsUrl = 'stream.bybit.com',
+			$testStreamsUrl = 'testnet-dex.bybit.org';
+		
+		function connect ($path): \Socket {
 			
-			$this->socket->path = 'ws/'.$key;
+			$this->url = $this->streamsUrl;
 			
-			$this->socket->open ();
+			$this->data = [
+				
+				'req_id' => 1,
+				'op' => 'subscribe',
+				'args' => [],
+				
+			];
 			
-			$this->socket->read ($callback);
+			foreach ($this->topics as $topic)
+				$this->data['args'][] = $this->topic ($topic);
+			
+			return parent::connect ($path);
 			
 		}
 		
-	}
+		function publicConnect (): ?\Socket {
+			return $this->connect ('v5/public/linear');
+		}
+		
+		function privateConnect (): ?\Socket {
+			return null;
+		}
+		
+		function topic ($topic) {
+			
+			switch ($topic['name']) {
+				
+				case 'kline':
+					return $topic['name'].'.'.$this->exchange->intervalChanges[$topic['interval']].'.'.$this->exchange->pair ($topic['base'], $topic['quote']);
+				
+				default:
+					return '';
+				
+			}
+			
+		}
+		
+		function ping () {
+			
+			$this->url = $this->streamsUrl;
+			
+			$this->data = ['req_id' => 1, 'op' => 'ping'];
+			
+			return parent::connect ('v5/public/linear');
+			
+		}
+		
+		function getPrice (): array {
+			
+			try {
+				
+				$data = json2array ($this->read ());
+				$price = $data['data'][0];
+				
+				return [
+					
+					'topic' => $data['topic'],
+					'low' => $price['low'],
+					'high' => $price['high'],
+					'open' => $price['open'],
+					'close' => $price['close'],
+					'volume' => $price['volume'],
+					'confirm' => $price['confirm'],
+					'date' => ($price['timestamp'] / 1000),
+					'date_text' => $this->exchange->date (($price['timestamp'] / 1000)),
+					
+				];
+				
+			} catch (\JsonException $e) {
+				
+			}
+			
+			return [];
+			
+		}
+		
+	}		

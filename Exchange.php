@@ -3,7 +3,7 @@
 	require 'ExchangeException.php';
 	
 	//require 'WebSocketException.php';
-	//require 'WebSocket.php';
+	require 'WebSocket.php';
 	
 	abstract class Exchange {
 		
@@ -56,7 +56,8 @@
 		
 		protected
 			$lastDate = 0,
-			$balances = [];
+			$balances = [],
+			$getPositions = false;
 		
 		public $days = ['1m' => 1, '5m' => 2, '30m' => 10, '1h' => 20, '2h' => 499, '4h' => 120, '1d' => 1], $ratios = ['2h' => [1.2, 1.8]];
 		
@@ -283,7 +284,12 @@
 		
 		function getPosition ($base, $quote) {
 			
-			if (!$this->positions) $this->positions = $this->getPositions ('', $quote);
+			if (!$this->getPositions) {
+				
+				$this->positions = $this->getPositions ('', $quote);
+				$this->getPositions = true;
+				
+			}
 			
 			if (isset ($this->positions[$this->pair ($base, $quote)])) {
 				
@@ -368,7 +374,7 @@
 			
 		}
 		
-		final function open () {
+		final function open ($base = '', $quote = '') {
 			
 			$this->pnl = $this->roe = $this->roi = $this->margin = $this->fees = $this->extraMargin = 0;
 			
@@ -395,46 +401,48 @@
 					$min = $this->minQuantity ();
 					$max = $this->maxQuantity ();
 					
-					if ($min > 0 and $this->quantity < $min)
-						$this->quantity = $min;
-					elseif ($max > 0 and $this->quantity > $max)
-						$this->quantity = $max;
-					
-					$this->fees = $this->getOpenFee ();
-					
-					$margin = $this->margin;
-					
-					if ($this->quantity != $quantity) {
+					if ($this->quantity >= $min) {
 						
-						$percent = new \Percent ($this->quantity);
+						if ($max > 0 and $this->quantity > $max)
+							$this->quantity = $max;
 						
-						$percent->delim = $quantity;
+						$this->fees = $this->getOpenFee ();
 						
-						$this->margin = $percent->valueOf ($this->margin);
+						$margin = $this->margin;
 						
-						$margin -= $this->margin;
-						
-					}
-					
-					if ($margin >= 0) {
-						
-						if ($this->balanceAvailable >= $this->openBalance) {
+						if ($this->quantity != $quantity) {
 							
-							$this->balanceAvailable = ($this->balanceAvailable - $this->openBalance);
+							$percent = new \Percent ($this->quantity);
 							
-							if ($this->marginType == self::ISOLATED) {
-								
-								$this->extraMargin = ($this->balance - $this->margin);
-								
-								$this->balanceAvailable -= $this->extraMargin;
-								
-							}
+							$percent->delim = $quantity;
 							
-							return true;
+							$this->margin = $percent->valueOf ($this->margin);
+							
+							$margin -= $this->margin;
 							
 						}
 						
-					}
+						if ($margin >= 0) {
+							
+							if ($this->balanceAvailable >= $this->openBalance) {
+								
+								$this->balanceAvailable = ($this->balanceAvailable - $this->openBalance);
+								
+								if ($this->marginType == self::ISOLATED) {
+									
+									$this->extraMargin = ($this->balance - $this->margin);
+									
+									$this->balanceAvailable -= $this->extraMargin;
+									
+								}
+								
+								return true;
+								
+							}
+							
+						}
+						
+					} else debug ([$this->quantity, $min]);
 					
 				}
 				
@@ -740,6 +748,8 @@
 			$this->orders = [];
 			$this->balances = [];
 			
+			$this->getPositions = false;
+			
 		}
 		
 		function getMinMargin () {
@@ -756,6 +766,57 @@
 		
 		function debug (...$data) {
 			debug ($this->side.': '.implode (', ', $data));
+		}
+		
+		function createSocket (): ?\Socket {
+			return null;
+		}
+		
+	}
+	
+	abstract class Request {
+		
+		public
+			$params = [],
+			$method = self::POST,
+			$signed = true,
+			$debug = 0,
+			$errorCodes = [404],
+			$showUrl = false,
+			$func,
+			$order;
+		
+		const GET = 'GET', POST = 'POST', PUT = 'PUT', DELETE = 'DELETE';
+		
+		function __construct ($exchange, $func, $order = []) {
+			
+			$this->exchange = $exchange;
+			$this->func = $func;
+			$this->order = $order;
+			
+		}
+		
+	}
+	
+	abstract class Socket extends \WebSocket {
+		
+		public $func;
+		public \Exchange $exchange;
+		
+		public $data = [], $topics = [];
+		
+		abstract function ping ();
+		abstract function topic ($topic);
+		abstract function getPrice (): array;
+		abstract function publicConnect (): ?\Socket;
+		abstract function privateConnect (): ?\Socket;
+		
+		function connect ($path): \Socket {
+			
+			$this->debug = ($this->exchange->debug == 2 ? 1 : 0);
+			
+			return parent::connect ($path);
+			
 		}
 		
 	}
