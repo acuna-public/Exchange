@@ -101,6 +101,10 @@
 			
 		}
 		
+		function getSides () {
+			return ($this->hedgeMode ? [self::LONG, self::SHORT] : [self::LONG]);
+		}
+		
 		function isLong () {
 			return ($this->side == self::LONG);
 		}
@@ -147,16 +151,16 @@
 					if ($quote == 'USDT') {
 						
 						if ($this->isLong ())
-							$price *= (1 - $this->getInitialMargin () + $this->getMaintenanceMargin ()) - ($this->extraMargin / $this->quantity);
+							$price *= (1 - $this->margin + $this->getMaintenanceMargin ()) - ($this->extraMargin / $this->quantity);
 						else
-							$price *= (1 + $this->getInitialMargin () - $this->getMaintenanceMargin ()) + ($this->extraMargin / $this->quantity);
+							$price *= (1 + $this->margin - $this->getMaintenanceMargin ()) + ($this->extraMargin / $this->quantity);
 						
 					} elseif ($quote == 'USDC') {
 						
 						if ($this->isLong ())
-							$price += (($this->getInitialMargin () + $this->extraMargin - $this->getMaintenanceMargin ()) / $this->quantity);
+							$price += (($this->margin + $this->extraMargin - $this->getMaintenanceMargin ()) / $this->quantity);
 						else
-							$price -= (($this->getInitialMargin () + $this->extraMargin - $this->getMaintenanceMargin ()) / $this->quantity);
+							$price -= (($this->margin + $this->extraMargin - $this->getMaintenanceMargin ()) / $this->quantity);
 						
 					}
 					
@@ -317,18 +321,7 @@
 		}
 		
 		function getROE () {
-			
-			$roe = ($this->pnl * 100);
-			
-			$quantity = ($this->quantity * $this->entryPrice);
-			
-			if ($quantity > 0)
-				$roe /= $quantity;
-			else
-				throw new \ExchangeException ('Quantity must be higher than 0');
-			
-			return $roe;
-			
+			return ($this->pnl * 100) / ($this->quantity * $this->entryPrice);
 		}
 		
 		function getROI () {
@@ -371,6 +364,8 @@
 			$this->pnl = $this->getPNL ();
 			$this->roe = $this->getROE ();
 			$this->roi = $this->getROI ();
+			
+			$this->margin = $this->getInitialMargin ();
 			
 		}
 		
@@ -424,6 +419,24 @@
 						
 						if ($margin >= 0) {
 							
+							/*if ($this->balanceAvailable >= $this->openBalance) {
+								
+								if ($this->openBalance > $this->balanceAvailable)
+									$this->balanceAvailable -= $this->openBalance;
+								
+								if ($this->marginType == self::ISOLATED) {
+									
+									$this->extraMargin = ($this->balance - $this->margin);
+									
+									if ($this->extraMargin > $this->balanceAvailable)
+										$this->balanceAvailable -= $this->extraMargin;
+									
+								}
+								
+								return true;
+								
+							}*/
+							
 							if ($this->balanceAvailable >= $this->openBalance) {
 								
 								$this->balanceAvailable = ($this->balanceAvailable - $this->openBalance);
@@ -454,8 +467,6 @@
 		
 		final function close () {
 			
-			$this->margin = $this->getInitialMargin ();
-			
 			$this->fees = $this->getCloseFee ();
 			
 			$fees = ($this->getOpenFee () + $this->fees);
@@ -465,9 +476,7 @@
 			else
 				$this->pnl -= $fees;
 			
-			$balance = ($this->balance + $this->pnl);
-			
-			if ($balance < 0) {
+			if (($this->balance + $this->pnl) < 0) {
 				
 				$this->pnl = -$this->balance;
 				$this->roe = $this->getROE ();
@@ -484,7 +493,7 @@
 		}
 		
 		function getExtraMargin () {
-			return ($this->balance - $this->getInitialMargin ());
+			return ($this->balance - $this->margin);
 		}
 		
 		function getMargin () {

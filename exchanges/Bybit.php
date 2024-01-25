@@ -705,6 +705,9 @@
 			$data['base'] = $base;
 			$data['quote'] = $quote;
 			
+			if (!isset ($order['price']) and $this->openMarketType == self::MAKER)
+				$data['price'] = $this->entryPrice;
+			
 			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), __FUNCTION__);
 			
 		}
@@ -715,6 +718,9 @@
 			$data['quote'] = $quote;
 			$data['close'] = true;
 			
+			if (!isset ($order['price']) and $this->closeMarketType == self::MAKER)
+				$data['price'] = $this->markPrice;
+			
 			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
 			
 		}
@@ -723,6 +729,9 @@
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
+			
+			if (!isset ($order['price']) and $this->closeMarketType == self::MAKER)
+				$data['price'] = $this->markPrice;
 			
 			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
 			
