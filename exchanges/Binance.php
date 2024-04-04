@@ -71,9 +71,11 @@
 			
 		}
 		
-		protected function pricesRequest ($func, $base, $quote, array $data): BinanceRequest {
+		function getPrices (int $type, string $base, string $quote, array $data): array {
 			
-			$request = $this->getRequest ($func);
+			$summary = [];
+			
+			$request = $this->getRequest (__FUNCTION__);
 			
 			$request->params = [
 				
@@ -91,51 +93,35 @@
 			if (isset ($data['limit']))
 				$request->params['limit'] = $data['limit'];
 			
-			$request->market = BinanceRequest::FUTURES;
-			
 			$request->signed = false;
 			$request->debug = 0;
 			
-			return $request;
+			$market = $this->market;
 			
-		}
-		
-		function getPrices ($base, $quote, array $data): array {
+			$this->market = self::SPOT;
 			
-			$summary = [];
+			$prices = $request->connect (($this->market == self::FUTURES ? 'fapi' : 'api').'/v1/'.($type == self::PRICES_MARK ? 'markPriceKlines' : 'klines'));
 			
-			foreach ($this->pricesRequest (__FUNCTION__, $base, $quote, $data)->connect ('fapi/v1/klines') as $value)
+			$this->market = $market;
+			
+			if ($prices)
+			for ($i = end_key ($prices); $i >= 0; $i--) {
+				
+				$value = $prices[$i];
+				
 				$summary[] = [
 					
 					'open' => $value[1],
 					'high' => $value[2],
 					'low' => $value[3],
 					'close' => $value[4],
+					'date' => ($value[0] / 1000),
 					'volume' => $value[5],
-					'date' => ($value[0] / 1000),
 					'date_text' => $this->date ($value[0] / 1000),
 					
 				];
-			
-			return $summary;
-			
-		}
-		
-		function getMarkPrices ($base, $quote, array $data): array {
-			
-			$summary = [];
-			
-			foreach ($this->pricesRequest (__FUNCTION__, $base, $quote, $data)->connect ('fapi/v1/markPriceKlines') as $value)
-				$summary[] = [
-					
-					'date' => ($value[0] / 1000),
-					'date_text' => $this->date ($value[0] / 1000),
-					'low' => $value[3],
-					'high' => $value[2],
-					'open' => $value[1], // Покупка
-					'close' => $value[4], // Продажа
-					
-				];
+				
+			}
 			
 			return $summary;
 			
@@ -304,7 +290,7 @@
 			$request->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
-				'marginType' => $this->marginType,
+				'marginType' => !$this->crossMargin ? 'ISOLATED' : 'CROSS',
 				
 			];
 			
@@ -1059,7 +1045,6 @@
 		public
 			$params = [],
 			$method = self::GET,
-			$market,
 			$signed = true,
 			$debug = 1,
 			$errorCodes = [405],
@@ -1087,14 +1072,14 @@
 			
 			if ($this->exchange->debug and $this->debug) {
 				
-				if ($this->market == self::FUTURES)
+				if ($this->exchange->market == self::FUTURES)
 					$url = $this->testFuturesUrl;
 				else
 					$url = $this->testApiUrl;
 				
 			} else {
 				
-				if ($this->market == self::FUTURES)
+				if ($this->exchange->market == self::FUTURES)
 					$url = str_replace ('', rand (1, 3), $this->futuresUrl);
 				else
 					$url = str_replace ('', rand (1, 17), $this->apiUrl);
@@ -1169,20 +1154,20 @@
 			$options[CURLOPT_SSL_CIPHER_LIST] = 'TLSv1';
 			
 			if ($error = curl_error ($ch))
-				throw new \ExchangeException ($error, curl_errno ($ch), $options, $this->func);
+				throw new \ExchangeException ($this->exchange, $error, curl_errno ($ch), $options, $this->func);
 			elseif (in_array ($info['http_code'], $this->errorCodes))
-				throw new \ExchangeException (http_get_message ($info['http_code']), $info['http_code'], $options, $this->func);
+				throw new \ExchangeException ($this->exchange, http_get_message ($info['http_code']), $info['http_code'], $options, $this->func);
 			
 			$data = json_decode ($data, true);
 			
 			curl_close ($ch);
 			
 			if (isset ($data[0]['msg']) or (isset ($data[0]['code']) and $data[0]['code'] == 400))
-				throw new \ExchangeException ($data[0]['msg'], $data[0]['code'], $options, $this->func); // Типа ошибка
+				throw new \ExchangeException ($this->exchange, $data[0]['msg'], $data[0]['code'], $options, $this->func); // Типа ошибка
 			elseif (isset ($data['msg']) and !isset ($data['code']))
-				throw new \ExchangeException ($data['msg'], 0, $options, $this->func);
+				throw new \ExchangeException ($this->exchange, $data['msg'], 0, $options, $this->func);
 			elseif (isset ($data['msg']) and $data['code'] != 200)
-				throw new \ExchangeException ($data['msg'], $data['code'], $options, $this->func);
+				throw new \ExchangeException ($this->exchange, $data['msg'], $data['code'], $options, $this->func);
 			
 			return $data;
 			

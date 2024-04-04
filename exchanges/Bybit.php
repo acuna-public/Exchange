@@ -91,9 +91,9 @@
 			
 		}
 		
-		protected function pricesRequest ($func, $base, $quote, array $data): BybitRequest {
+		function getPrices (int $type, string $base, string $quote, array $data): array {
 			
-			$request = $this->getRequest ($func);
+			$request = $this->getRequest (__FUNCTION__);
 			
 			$request->method = BybitRequest::GET;
 			
@@ -106,30 +106,29 @@
 			];
 			
 			if (!isset ($data['limit']) or $data['limit'] <= 0)
-				$data['limit'] = 200;
+				$data['limit'] = 500;
 			
 			$request->params['limit'] = $data['limit'];
 			
-			if (isset ($data['start_time']))
-				$request->params['start'] = $data['start_time'];
+			if (isset ($data['start_time']) and $data['start_time']) {
+				
+				//$data['start_time'] -= $this->timeframe ($data['interval']);
+				$request->params['start'] = ($data['start_time'] * 1000);
+				//debug ([$this->date ($data['start_time'])]);
+			}
 			
-			if (isset ($data['end_time']))
-				$request->params['end'] = $data['end_time'];
+			if (isset ($data['end_time']) and $data['end_time'])
+				$request->params['end'] = ($data['end_time'] * 1000);
 			
 			$request->signed = false;
 			$request->debug = 0;
 			
-			return $request;
+			$output = [];
 			
-		}
-		
-		function getPrices ($base, $quote, array $data): array {
-			
-			$summary = [];
-			
-			if ($prices = $this->pricesRequest (__FUNCTION__, $base, $quote, $data)->connect ('v5/market/kline')['result']['list'])
-			foreach ($prices as $value)
-				$summary[] = [
+			if ($prices = $request->connect ('v5/market/'.($type == self::PRICES_MARK ? 'mark-price-kline' : 'kline'))['result']['list'])
+			foreach ($prices as $value) {
+				
+				$output[] = [
 					
 					'low' => $value[3],
 					'high' => $value[2],
@@ -140,29 +139,10 @@
 					'date_text' => $this->date (($value[0] / 1000)),
 					
 				];
+				
+			}
 			
-			return $summary;
-			
-		}
-		
-		function getMarkPrices ($base, $quote, array $data): array {
-			
-			$summary = [];
-			
-			if ($prices = $this->pricesRequest (__FUNCTION__, $base, $quote, $data)->connect ('v5/market/mark-price-kline')['result']['list'])
-			foreach ($prices as $value)
-				$summary[] = [
-					
-					'low' => $value[3],
-					'high' => $value[2],
-					'open' => $value[1],
-					'close' => $value[4],
-					'date' => ($value[0] / 1000),
-					'date_text' => $this->date (($value[0] / 1000)),
-					
-				];
-			
-			return $summary;
+			return $output;
 			
 		}
 		
@@ -361,7 +341,7 @@
 				
 				'symbol' => $this->pair ($base, $quote),
 				'category' => $this->category ($quote),
-				'tradeMode' => (($this->marginType == self::ISOLATED) ? 1 : 0),
+				'tradeMode' => (!$this->crossMargin ? 1 : 0),
 				'buyLeverage' => $longLeverage,
 				'sellLeverage' => $shortLeverage,
 				
@@ -705,8 +685,8 @@
 			$data['base'] = $base;
 			$data['quote'] = $quote;
 			
-			if (!isset ($order['price']) and $this->openMarketType == self::MAKER)
-				$data['price'] = $this->entryPrice;
+			if ($this->openMarketType == self::MAKER)
+				$data['price'] = (isset ($order['price']) ? $order['price'] : $this->entryPrice);
 			
 			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), __FUNCTION__);
 			
@@ -718,8 +698,8 @@
 			$data['quote'] = $quote;
 			$data['close'] = true;
 			
-			if (!isset ($order['price']) and $this->closeMarketType == self::MAKER)
-				$data['price'] = $this->markPrice;
+			if ($this->closeMarketType == self::MAKER)
+				$data['price'] = (isset ($order['price']) ? $order['price'] : $this->markPrice);
 			
 			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
 			
@@ -1074,10 +1054,10 @@
 			
 		}
 		
-		function getMarginType ($base, $quote) {
+		function crossMargin ($base, $quote): bool {
 			
 			$this->getPosition ($base, $quote);
-			return (!isset ($this->position['tradeMode']) or $this->position['tradeMode'] == 1 ? self::ISOLATED : self::CROSS);
+			return (isset ($this->position['tradeMode']) and $this->position['tradeMode'] == 0);
 			
 		}
 		
@@ -1295,18 +1275,18 @@
 			$options[CURLOPT_SSL_CIPHER_LIST] = 'TLSv1';
 			
 			if ($error = curl_error ($ch))
-				throw new \ExchangeException ($error, curl_errno ($ch), $options, $this->func);
+				throw new \ExchangeException ($this->exchange, $error, curl_errno ($ch), $options, $this->func);
 			elseif (in_array ($info['http_code'], $this->errorCodes))
-				throw new \ExchangeException (http_get_message ($info['http_code']).' ('.$options[CURLOPT_URL].')', $info['http_code'], $options, $this->func);
+				throw new \ExchangeException ($this->exchange, http_get_message ($info['http_code']).' ('.$options[CURLOPT_URL].')', $info['http_code'], $options, $this->func);
 			//debug ($data);
 			$data = json2array ($data);
 			
 			curl_close ($ch);
 			
 			if (isset ($data['ret_code']) and $data['ret_code'] != 0)
-				throw new \ExchangeException ($data['ret_msg'], $data['ret_code'], $options, $this->func);
+				throw new \ExchangeException ($this->exchange, $data['ret_msg'], $data['ret_code'], $options, $this->func);
 			elseif (isset ($data['retCode']) and $data['retCode'] != 0) // v5
-				throw new \ExchangeException ($data['retMsg'], $data['retCode'], $options, $this->func);
+				throw new \ExchangeException ($this->exchange, $data['retMsg'], $data['retCode'], $options, $this->func);
 			
 			return $data;
 			
@@ -1400,18 +1380,18 @@
 			$options[CURLOPT_SSL_CIPHER_LIST] = 'TLSv1';
 			
 			if ($error = curl_error ($ch))
-				throw new \ExchangeException ($error, curl_errno ($ch), $options, $this->func);
+				throw new \ExchangeException ($this->exchange, $error, curl_errno ($ch), $options, $this->func);
 			elseif (in_array ($info['http_code'], $this->errorCodes))
-				throw new \ExchangeException (http_get_message ($info['http_code']).' ('.$options[CURLOPT_URL].')', $info['http_code'], $options, $this->func);
+				throw new \ExchangeException ($this->exchange, http_get_message ($info['http_code']).' ('.$options[CURLOPT_URL].')', $info['http_code'], $options, $this->func);
 			
 			$data = json2array ($data);
 			
 			curl_close ($ch);
 			
 			if (isset ($data['ret_code']) and $data['ret_code'] != 0)
-				throw new \ExchangeException ($data['ret_msg'], $data['ret_code'], $options, $this->func);
+				throw new \ExchangeException ($this->exchange, $data['ret_msg'], $data['ret_code'], $options, $this->func);
 			elseif (isset ($data['retCode']) and $data['retCode'] != 0) // v5
-				throw new \ExchangeException ($data['retMsg'], $data['retCode'], $options, $this->func);
+				throw new \ExchangeException ($this->exchange, $data['retMsg'], $data['retCode'], $options, $this->func);
 			
 			return $data;
 			
@@ -1430,9 +1410,9 @@
 			$info = curl_getinfo ($ch);
 			
 			if ($error = curl_error ($ch))
-				throw new \ExchangeException ($error, curl_errno ($ch), $info, $this->func);
+				throw new \ExchangeException ($this->exchange, $error, curl_errno ($ch), $info, $this->func);
 			elseif ($info['http_code'] != 200)
-				throw new \ExchangeException ('Access denied', $info['http_code'], $info, $this->func);
+				throw new \ExchangeException ($this->exchange, 'Access denied', $info['http_code'], $info, $this->func);
 			
 			curl_close ($ch);
 			
@@ -1514,20 +1494,6 @@
 			return null;
 		}
 		
-		function topic ($topic) {
-			
-			switch ($topic['name']) {
-				
-				case 'kline':
-					return $topic['name'].'.'.$this->exchange->intervalChanges[$topic['interval']].'.'.$this->exchange->pair ($topic['base'], $topic['quote']);
-				
-				default:
-					return '';
-				
-			}
-			
-		}
-		
 		function ping () {
 			
 			$this->url = $this->streamsUrl;
@@ -1536,6 +1502,10 @@
 			
 			return parent::connect ('v5/public/linear');
 			
+		}
+		
+		function getPricesTopic (int $type, string $base, string $quote, array $data): string {
+			return 'kline.'.$this->intervalChanges[$data['interval']].'.'.$this->pair ($base, $quote);
 		}
 		
 		function getPrice (): array {
@@ -1553,7 +1523,7 @@
 					'open' => $price['open'],
 					'close' => $price['close'],
 					'volume' => $price['volume'],
-					'confirm' => $price['confirm'],
+					'closed' => $price['confirm'],
 					'date' => ($price['timestamp'] / 1000),
 					'date_text' => $this->exchange->date (($price['timestamp'] / 1000)),
 					
