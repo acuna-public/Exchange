@@ -514,11 +514,11 @@
 		}
 		
 		function getOpenFee () {
-			return ($this->entryPrice * $this->quantity * $this->getFeeRate ($this->openMarketType));
+			return ($this->entryPrice > 0 and $this->quantity > 0 ? ($this->entryPrice * $this->quantity * $this->getFeeRate ($this->openMarketType)) : 0);
 		}
 		
 		function getCloseFee () {
-			return ($this->markPrice * $this->quantity * $this->getFeeRate ($this->closeMarketType));
+			return ($this->markPrice > 0 and $this->quantity > 0 ? ($this->markPrice * $this->quantity * $this->getFeeRate ($this->closeMarketType)) : 0);
 		}
 		
 		function getBankruptcyPrice () {
