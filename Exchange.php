@@ -873,6 +873,10 @@
 		
 		public $data = [], $topics = [];
 		
+		function __construct (\Exchange $exchange) {
+			$this->exchange = $exchange;
+		}
+		
 		abstract function ping ();
 		abstract function getPrice (): array;
 		abstract function getPricesTopic (int $type, string $base, string $quote, array $data): string;

@@ -1180,7 +1180,7 @@
 		}
 		
 		function createSocket (): \Socket {
-			return new BybitSocket ();
+			return new BybitSocket ($this);
 		}
 		
 	}
@@ -1486,7 +1486,7 @@
 			];
 			
 			foreach ($this->topics as $topic)
-				$this->data['args'][] = $this->topic ($topic);
+				$this->data['args'][] = $topic;
 			
 			return parent::connect ($path);
 			
@@ -1511,7 +1511,7 @@
 		}
 		
 		function getPricesTopic (int $type, string $base, string $quote, array $data): string {
-			return 'kline.'.$this->intervalChanges[$data['interval']].'.'.$this->pair ($base, $quote);
+			return 'kline.'.$this->exchange->intervalChanges[$data['interval']].'.'.$this->exchange->pair ($base, $quote);
 		}
 		
 		function getPrice (): array {
