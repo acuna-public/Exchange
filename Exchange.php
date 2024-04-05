@@ -387,17 +387,17 @@
 		
 		function start ($base, $quote) {
 			
-			if ($this->leverage == 0)
-				$this->leverage = $this->getLeverage ($base, $quote);
+			//if ($this->leverage == 0)
+			//	$this->leverage = $this->getLeverage ($base, $quote);
+			
+			$this->openFee = $this->getOpenFee ();
+			$this->closeFee = $this->getCloseFee ();
 			
 		}
 		
 		function update ($base, $quote) {
 			
 			$this->grossPNL = ($this->getProfit ($this->entryPrice, $this->markPrice) * $this->quantity);
-			
-			$this->openFee = $this->getOpenFee ();
-			$this->closeFee = $this->getCloseFee ();
 			
 			$this->fees = ($this->openFee + $this->closeFee);
 			
