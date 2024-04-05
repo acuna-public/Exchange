@@ -496,15 +496,15 @@
 			
 			return [
 				
-				'base' => $symbol['base_currency'],
-				'quote' => $symbol['quote_currency'],
-				'leverage' => $symbol['leverage_filter']['max_leverage'],
+				'base' => $symbol['baseCoin'],
+				'quote' => $symbol['quoteCoin'],
+				'maxLeverage' => $symbol['leverageFilter']['maxLeverage'],
 				'price_precision' => $symbol2['priceFraction'],
 				'amount_precision' => $symbol2['lotFraction'],
-				'min_quantity' => $symbol['lot_size_filter']['min_trading_qty'],
-				'max_quantity' => $symbol['lot_size_filter']['max_trading_qty'],
-				'initial_margin_rate' => ($symbol2['baseInitialMarginRateE4'] / 100),
-				'maintenance_margin_rate' => ($symbol2['baseMaintenanceMarginRateE4'] / 100),
+				'minQuantity' => $symbol['lotSizeFilter']['minOrderQty'],
+				'maxQuantity' => $symbol['lotSizeFilter']['maxMktOrderQty'],
+				'initialMarginRate' => ($symbol2['baseInitialMarginRateE4'] / 100),
+				'maintenanceMarginRate' => ($symbol2['baseMaintenanceMarginRateE4'] / 100),
 				
 			];
 			
@@ -551,12 +551,18 @@
 			
 			$symbols = [];
 			
-			foreach ($request->connect ('v2/public/symbols')['result'] as $symbol) {
+			$request->params = [
 				
-				$pair = $this->pair ($symbol['base_currency'], $symbol['quote_currency']);
+				'category' => $this->category ($quote),
 				
-				if ($symbol['status'] == 'Trading')
-				if (!$quote or $symbol['quote_currency'] == $quote)
+			];
+			
+			foreach ($request->connect ('v5/market/instruments-info')['result']['list'] as $symbol) {
+				
+				$pair = $this->pair ($symbol['baseCoin'], $symbol['quoteCoin']);
+				
+				//if ($symbol['status'] == 'Trading')
+				if (!$quote or $symbol['quoteCoin'] == $quote)
 					$symbols[$pair] = $this->prepSymbol ($symbol, $symbols2[$pair]);
 				
 			}
