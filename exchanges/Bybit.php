@@ -756,7 +756,7 @@
 			
 		}
 		
-		function setTradingStop ($base, $quote, $data) {
+		function editPosition ($base, $quote, $data) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
