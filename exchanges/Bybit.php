@@ -306,7 +306,7 @@
 			else
 				$request->params['positionIdx'] = 0;
 			
-			return $request->connect ('v5/position/add-margin');
+			return $request->connect ('v5/position/add-margin')['result'];
 			
 		}
 		
@@ -756,32 +756,6 @@
 			
 		}
 		
-		function editPosition ($base, $quote, $data) {
-			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			$request->params = [
-				
-				'symbol' => $this->pair ($base, $quote),
-				'side' => ($this->isLong () ? 'Buy' : 'Sell'),
-				'tp_trigger_by' => 'MarkPrice',
-				'sl_trigger_by' => 'MarkPrice',
-				
-			];
-			
-			foreach ($data as $key => $value)
-				if ($key != 'name')
-				$request->params[$key] = $value;
-			
-			if ($this->hedgeMode)
-				$request->params['position_idx'] = ($this->isLong () ? 1 : 2);
-			else
-				$request->params['position_idx'] = 0;
-			
-			return $request->connect ('private/linear/position/trading-stop')['result'];
-			
-		}
-		
 		function setTradingStop ($base, $quote, $data) {
 			
 			$request = $this->getRequest (__FUNCTION__);
@@ -790,9 +764,8 @@
 				
 				'category' => $this->category ($quote),
 				'symbol' => $this->pair ($base, $quote),
-				'side' => ($this->isLong () ? 'Buy' : 'Sell'),
-				'tp_trigger_by' => 'MarkPrice',
-				'sl_trigger_by' => 'MarkPrice',
+				'tpTriggerBy' => 'MarkPrice',
+				'slTriggerBy' => 'MarkPrice',
 				
 			];
 			
