@@ -22,7 +22,7 @@
 		public
 			$marginPercent = 100,
 			$balancePercent = 100,
-			$prunedPercent = 95,
+			$prunedPercent = 99,
 			$leverage = 0,
 			$quantity = 0,
 			$balance = 0,
@@ -418,26 +418,22 @@
 				if ($this->marginPercent <= 0 or $this->marginPercent > 100)
 					$this->marginPercent = 100;
 				
+				if ($this->balancePercent <= 0 or $this->balancePercent > 100)
+					$this->balancePercent = 100;
+				
+				if ($this->prunedPercent <= 0 or $this->prunedPercent > 100)
+					$this->prunedPercent = 100;
+				
+				if ($this->balancePercent == 100)
+					$this->balancePercent = $this->prunedPercent;
+				
 				if ($this->margin <= 0) {
-					
-					if ($this->balancePercent <= 0 or $this->balancePercent > 100)
-						$this->balancePercent = 100;
 					
 					$percent = new \Percent ($this->openBalance);
 					$this->balance = $percent->valueOf ($this->balancePercent);
 					
 					$percent = new \Percent ($this->balance);
 					$this->margin = $percent->valueOf ($this->marginPercent);
-					
-				}
-				
-				if ($this->marginPercent == 100) {
-					
-					if ($this->prunedPercent <= 0 or $this->prunedPercent > 100)
-						$this->prunedPercent = 100;
-					
-					$percent = new \Percent ($this->margin);
-					$this->margin = $percent->valueOf ($this->prunedPercent);
 					
 				}
 				
@@ -469,9 +465,9 @@
 							
 						}
 						
+						//$this->debug ($this->balanceAvailable, $this->openBalance);
+						
 						if ($margin >= 0 and $this->balanceAvailable > 0 and $this->balanceAvailable >= $this->openBalance) {
-							
-							//$this->debug ($this->balanceAvailable, $this->openBalance);
 							
 							$this->balanceAvailable -= $this->openBalance;
 							
@@ -479,7 +475,7 @@
 							
 						}
 						
-					}// else debug ([$this->quantity, $min]);
+					} else $this->debug ($this->quantity, $min);
 					
 				}
 				
@@ -818,6 +814,7 @@
 		
 		function clean () {
 			
+			$this->position = [];
 			$this->positions = [];
 			$this->orders = [];
 			$this->balances = [];
