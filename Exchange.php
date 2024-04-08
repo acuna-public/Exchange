@@ -475,7 +475,7 @@
 							
 						}
 						
-					} else $this->debug ($this->quantity, $min);
+					}// else $this->debug ($this->quantity, $min);
 					
 				}
 				
