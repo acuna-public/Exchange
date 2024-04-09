@@ -382,9 +382,10 @@
 				
 				$output[$pos['symbol']][$side] = [
 					
-					'netPNL' => $pos['cumRealisedPnl'],
+					'netPNL' => $pos['curRealisedPnl'],
 					'grossPNL' => $pos['unrealisedPnl'],
 					'quantity' => $pos['size'],
+					'value' => $pos['positionValue'],
 					'initialMargin' => $pos['positionIM'],
 					'maitenanceMargin' => $pos['positionMM'],
 					'balance' => $pos['positionBalance'],
@@ -399,6 +400,7 @@
 					'reduceOnly' => $pos['isReduceOnly'],
 					'entryTime' => ($pos['createdTime'] / 1000),
 					'updatedTime' => ($pos['updatedTime'] / 1000),
+					//'test' => $pos,
 					
 				];
 				

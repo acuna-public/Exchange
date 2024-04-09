@@ -410,8 +410,6 @@
 			
 			$this->netPNL = 0;
 			
-			$this->debug ($this->openBalance);
-			
 			if ($this->openBalance > 0 and $this->balanceAvailable > 0) {
 				
 				if ($this->marginPercent <= 0 or $this->marginPercent > 100)
@@ -437,8 +435,6 @@
 				}
 				
 				$this->quantity = $this->getQuantity ();
-				
-				$this->debug (222, $this->quantity);
 				
 				$min = $this->minQuantity ();
 				$max = $this->maxQuantity ();
