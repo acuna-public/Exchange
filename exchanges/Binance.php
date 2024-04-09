@@ -1010,15 +1010,8 @@
 			return $this->getFuturesOpenOrders ($base, $quote)[0];
 		}
 		
-		function getPositionData ($position) {
-			return ['stop_loss' => $position['stopPrice']];
-		}
-		
-		function positionActive ($base, $quote): bool {
-			
-			$this->getPosition ($base, $quote);
-			return ($this->position['size'] > 0);
-			
+		function positionActive (): bool {
+			return ($this->position and $this->position['quantity'] > 0);
 		}
 		
 		function minQuantity () {

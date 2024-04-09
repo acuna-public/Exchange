@@ -61,8 +61,7 @@
 		protected
 			$grossPNL = 0, $netPNL = 0,
 			$lastDate = 0,
-			$balances = [],
-			$getPositions = false;
+			$balances = [];
 		
 		public $days = ['1m' => 1, '5m' => 2, '30m' => 10, '1h' => 20, '2h' => 499, '4h' => 120, '1d' => 1], $ratios = ['2h' => [1.2, 1.8]];
 		
@@ -308,27 +307,25 @@
 			
 		}
 		
-		function getPosition ($base, $quote) {
+		function getPositionData ($base, $quote) {
 			
-			if (!$this->getPositions) {
-				
-				$this->positions = $this->getPositions ('', $quote);
-				$this->getPositions = true;
-				
-			}
+			if (isset ($this->positions[$base.$quote]))
+				$this->position = $this->positions[$base.$quote][$this->getSide ()];
+			else
+				$this->position = [];
 			
-			if (isset ($this->positions[$this->pair ($base, $quote)])) {
-				
-				if ($this->isHedgeMode ()) {
-					
-					if (isset ($this->positions[$this->pair ($base, $quote)][$this->side]))
-						$this->position = $this->positions[$this->pair ($base, $quote)][$this->side];
-					else
-						$this->position = [];
-					
-				} else $this->position = $this->positions[$this->pair ($base, $quote)];
-				
-			}
+		}
+		
+		function setPositionData ($base, $quote, $data) {
+			$this->positions[$base.$quote][$this->getSide ()] = $data;
+		}
+		
+		function clean ($quote) {
+			
+			$this->balances = [];
+			
+			$this->orders = [];
+			$this->positions = $this->getPositions ('', $quote);
 			
 		}
 		
@@ -336,22 +333,22 @@
 			return $this->getTickerPrice ($base, $quote)[$this->pair ($base, $quote)];
 		}
 		
-		abstract function positionActive ($base, $quote): bool;
-		
-		function getGrossPNL () {
-			return $this->grossPNL;
-		}
+		abstract function positionActive (): bool;
 		
 		function getPNL () {
 			return $this->netPNL;
 		}
 		
-		function getROE () {
-			return ($this->netPNL * 100) / ($this->quantity * $this->entryPrice);
+		function getGrossPNL () {
+			return $this->grossPNL;
 		}
 		
-		function getROI () {
-			return ($this->getROE () * $this->leverage);
+		function getROE ($margin) {
+			return ($this->netPNL * 100) / (($this->quantity / $this->leverage) * $this->entryPrice);
+		}
+		
+		function getROI ($margin) {
+			return ($this->getROE ($margin) * $this->leverage);
 		}
 		
 		function getProfit ($entry, $exit) {
@@ -413,6 +410,8 @@
 			
 			$this->netPNL = 0;
 			
+			$this->debug ($this->openBalance);
+			
 			if ($this->openBalance > 0 and $this->balanceAvailable > 0) {
 				
 				if ($this->marginPercent <= 0 or $this->marginPercent > 100)
@@ -439,45 +438,43 @@
 				
 				$this->quantity = $this->getQuantity ();
 				
-				if ($this->quantity > 0 and $this->margin > 0) {
+				$this->debug (222, $this->quantity);
+				
+				$min = $this->minQuantity ();
+				$max = $this->maxQuantity ();
+				
+				if ($this->margin > 0 and $this->quantity >= $min) {
 					
-					$min = $this->minQuantity ();
-					$max = $this->maxQuantity ();
+					$quantity = $this->quantity;
 					
-					if ($this->quantity >= $min) {
-						
-						$quantity = $this->quantity;
-						
-						if ($max > 0 and $this->quantity > $max)
-							$this->quantity = $max;
-						
-						$margin = $this->margin;
-						
-						if ($this->quantity != $quantity) {
-							
-							$percent = new \Percent ($this->quantity);
-							
-							$percent->delim = $quantity;
-							
-							$this->margin = $percent->valueOf ($this->margin);
-							
-							$margin -= $this->margin;
-							
-						}
-						
-						//$this->debug ($this->balanceAvailable, $this->openBalance);
-						
-						if ($margin >= 0 and $this->balanceAvailable > 0 and $this->balanceAvailable >= $this->openBalance) {
-							
-							$this->balanceAvailable -= $this->openBalance;
-							
-							return true;
-							
-						}
-						
-					}// else $this->debug ($this->quantity, $min);
+					if ($max > 0 and $this->quantity > $max)
+						$this->quantity = $max;
 					
-				}
+					$margin = $this->margin;
+					
+					if ($this->quantity != $quantity) {
+						
+						$percent = new \Percent ($this->quantity);
+						
+						$percent->delim = $quantity;
+						
+						$this->margin = $percent->valueOf ($this->margin);
+						
+						$margin -= $this->margin;
+						
+					}
+					
+					//$this->debug ($this->balanceAvailable, $this->openBalance);
+					
+					if ($margin >= 0 and $this->balanceAvailable > 0 and $this->balanceAvailable >= $this->openBalance) {
+						
+						$this->balanceAvailable -= $this->openBalance;
+						
+						return true;
+						
+					}
+					
+				}// else $this->debug ($this->quantity, $min);
 				
 			}
 			
@@ -536,26 +533,12 @@
 			
 		}
 		
-		function getLeverage ($base, $quote) {
-			
-			$this->getPosition ($base, $quote);
-			return $this->position['leverage'];
-			
-		}
-		
 		function getRPRatio ($entryPrice, $takeProfit, $stopLoss) {
 			
 			$output  = $this->getProfit ($entryPrice, $stopLoss);
 			$output /= $this->getProfit ($takeProfit, $entryPrice);
 			
 			return $output;
-			
-		}
-		
-		function getEntryPrice ($base, $quote) {
-			
-			$this->getPosition ($base, $quote);
-			return $this->position['entry_price'];
 			
 		}
 		
@@ -606,7 +589,6 @@
 		function createFuturesTakeProfitOrder ($orders) {}
 		function createFuturesStopOrder ($orders) {} // TODO
 		function createFuturesTrailingStopOrder ($order) {}
-		function changePositionMargin ($base, $quote, $value) {}
 		
 		function getMarginType ($base, $quote) {}
 		
@@ -812,17 +794,6 @@
 			
 		}
 		
-		function clean () {
-			
-			$this->position = [];
-			$this->positions = [];
-			$this->orders = [];
-			$this->balances = [];
-			
-			$this->getPositions = false;
-			
-		}
-		
 		function getMinMargin () {
 			return ($this->entryPrice * ($this->minQuantity / $this->leverage));
 		}
@@ -885,7 +856,7 @@
 		}
 		
 		abstract function ping ();
-		abstract function getPrice (): array;
+		abstract function getPrice ($start): array;
 		abstract function getPricesTopic (int $type, string $base, string $quote, array $data): string;
 		abstract function publicConnect (): ?\Socket;
 		abstract function privateConnect (): ?\Socket;

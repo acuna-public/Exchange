@@ -289,27 +289,6 @@
 			
 		}
 		
-		function changePositionMargin ($base, $quote, $value) {
-			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			$request->params = [
-				
-				'symbol' => $this->pair ($base, $quote),
-				'category' => $this->category ($quote),
-				'margin' => round ($value, 4),
-				
-			];
-			
-			if ($this->hedgeMode)
-				$request->params['positionIdx'] = ($this->isLong () ? 1 : 2);
-			else
-				$request->params['positionIdx'] = 0;
-			
-			return $request->connect ('v5/position/add-margin')['result'];
-			
-		}
-		
 		function setMode ($base, $quote) {
 			
 			$request = $this->getRequest (__FUNCTION__);
@@ -317,7 +296,7 @@
 			$request->params = [
 				
 				'category' => $this->category ($quote),
-				'mode' => ($this->hedgeMode ? 3 : 0),
+				'mode' => ($this->isHedgeMode () ? 3 : 0),
 				
 			];
 			
@@ -364,14 +343,20 @@
 		}
 		
 		function getPositions ($base = '', $quote = '') {
+			return $this->_getPositions ($base, $quote, __FUNCTION__);
+		}
+		
+		function _getPositions ($base, $quote, $func, $output = [], $cursor = ''): array {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$request = $this->getRequest ($func);
 			
 			$request->method = BybitRequest::GET;
 			
 			$request->params = [
 				
 				'category' => $this->category ($quote),
+				'cursor' => $cursor,
+				'limit' => 200,
 				
 			];
 			
@@ -380,31 +365,49 @@
 			else
 				$request->params['settleCoin'] = $quote;
 			
-			$data = [];
-			
 			$request->showUrl = true;
 			
-			foreach ($request->connect ('v5/position/list')['result']['list'] as $pos) {
+			$data = $request->connect ('v5/position/list')['result'];
+			
+			foreach ($data['list'] as $pos) {
 				
-				if ($this->hedgeMode) {
+				if ($pos['positionIdx'] != 0) {
 					
-					if ($base and $quote)
-						$data[$this->pair ($base, $quote)][($pos['side'] == 'Buy' ? self::LONG : self::SHORT)] = $pos;
+					if ($pos['positionIdx'] == 1)
+						$side = self::LONG;
 					else
-						$data[$pos['symbol']][($pos['side'] == 'Buy' ? self::LONG : self::SHORT)] = $pos;
+						$side = self::SHORT;
 					
-				} else {
+				} else $side = self::BOTH;
+				
+				$output[$pos['symbol']][$side] = [
 					
-					if ($base and $quote)
-						$data[$this->pair ($base, $quote)] = $pos;
-					else
-						$data[$pos['symbol']] = $pos;
+					'netPNL' => $pos['cumRealisedPnl'],
+					'grossPNL' => $pos['unrealisedPnl'],
+					'quantity' => $pos['size'],
+					'initialMargin' => $pos['positionIM'],
+					'maitenanceMargin' => $pos['positionMM'],
+					'balance' => $pos['positionBalance'],
+					'entryPrice' => ($quote == 'USDC' ? $pos['sessionAvgPrice'] : $pos['avgPrice']),
+					'markPrice' => $pos['markPrice'],
+					'liquidPrice' => $pos['liqPrice'],
+					'takeProfit' => $pos['takeProfit'],
+					'stopLoss' => $pos['stopLoss'],
+					'trailingStop' => $pos['trailingStop'],
+					'leverage' => $pos['leverage'],
+					'crossMargin' => ($pos['tradeMode'] == 0),
+					'reduceOnly' => $pos['isReduceOnly'],
+					'entryTime' => ($pos['createdTime'] / 1000),
+					'updatedTime' => ($pos['updatedTime'] / 1000),
 					
-				}
+				];
 				
 			}
 			
-			return $data;
+			if ($data['nextPageCursor'])
+				$output = $this->_getPositions ($base, $quote, $func, $output, $data['nextPageCursor']);
+			
+			return $output;
 			
 		}
 		
@@ -671,7 +674,7 @@
 				if (isset ($order['name']))
 					$data['orderLinkId'] = $order['name'];
 				
-				if ($this->hedgeMode)
+				if ($this->isHedgeMode ())
 					$data['positionIdx'] = ($this->isLong () ? 1 : 2);
 				else
 					$data['positionIdx'] = 0;
@@ -760,24 +763,51 @@
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
-			$request->params = [
+			if (isset ($data['takeProfit']) or isset ($data['stopLoss']))
+			if ($data['takeProfit'] > 0 or $data['stopLoss'] > 0) {
 				
-				'category' => $this->category ($quote),
-				'symbol' => $this->pair ($base, $quote),
-				'tpTriggerBy' => 'MarkPrice',
-				'slTriggerBy' => 'MarkPrice',
+				$request->params = [
+					
+					'category' => $this->category ($quote),
+					'symbol' => $this->pair ($base, $quote),
+					'tpTriggerBy' => 'MarkPrice',
+					'slTriggerBy' => 'MarkPrice',
+					
+				];
 				
-			];
+				if ($data['takeProfit'])
+					$request->params['takeProfit'] = $data['takeProfit'];
+				
+				if ($data['stopLoss'])
+					$request->params['stopLoss'] = $data['stopLoss'];
+				
+				if ($this->isHedgeMode ())
+					$request->params['positionIdx'] = ($this->isLong () ? 1 : 2);
+				else
+					$request->params['positionIdx'] = 0;
+				
+				$request->connect ('v5/position/trading-stop');
+				
+			}
 			
-			foreach ($data as $key => $value)
-				$request->params[$key] = $value;
-			
-			if ($this->hedgeMode)
-				$request->params['positionIdx'] = ($this->isLong () ? 1 : 2);
-			else
-				$request->params['positionIdx'] = 0;
-			
-			return $request->connect ('v5/position/trading-stop')['result'];
+			if (isset ($data['margin']) and $data['margin'] != 0) {
+				
+				$request->params = [
+					
+					'symbol' => $this->pair ($base, $quote),
+					'category' => $this->category ($quote),
+					'margin' => round ($data['margin'], 4),
+					
+				];
+				
+				if ($this->isHedgeMode ())
+					$request->params['positionIdx'] = ($this->isLong () ? 1 : 2);
+				else
+					$request->params['positionIdx'] = 0;
+				
+				return $request->connect ('v5/position/add-margin')['result'];
+				
+			}
 			
 		}
 		
@@ -1022,26 +1052,12 @@
 			return ['price' => $order['base_price']];
 		}
 		
-		function getPositionData ($position) {
-			return $position;
+		function positionActive (): bool {
+			return ($this->position and $this->position['quantity'] > 0);
 		}
 		
-		function positionActive ($base, $quote): bool {
-			
-			$this->getPosition ($base, $quote);
-			return (isset ($this->position['size']) and $this->position['size'] > 0);
-			
-		}
-		
-		function crossMargin ($base, $quote): bool {
-			
-			$this->getPosition ($base, $quote);
-			return (isset ($this->position['tradeMode']) and $this->position['tradeMode'] == 0);
-			
-		}
-		
-		function getAdditionalMargin ($stopPrice) {
-			return round (parent::getAdditionalMargin ($stopPrice), 4);
+		function isCrossMargin (): bool {
+			return ($this->crossMargin and $this->position and $this->position['crossMargin']);
 		}
 		
 		function withdraw ($coin, $address, $chain, $amount, $data = []): array {
@@ -1487,11 +1503,17 @@
 			return 'kline.'.$this->exchange->intervalChanges[$data['interval']].'.'.$this->exchange->pair ($base, $quote);
 		}
 		
-		function getPrice (): array {
+		function getPrice ($start): array {
 			
 			try {
 				
-				$data = json2array ($this->read ());
+				$con = $this->read ();
+				
+				if ($start)
+					$con = explode ("\r\n\r\n", $con)[1];
+				
+				$data = json2array ($con);
+				
 				$price = $data['data'][0];
 				
 				return [
@@ -1509,10 +1531,8 @@
 				];
 				
 			} catch (\JsonException $e) {
-				
+				return [];
 			}
-			
-			return [];
 			
 		}
 		
