@@ -292,16 +292,12 @@
 		
 		abstract function getPrices (int $type, string $base, string $quote, array $data): array;
 		
-		protected abstract function getBalances ($type, $quote = ''): array;
-		
-		function getFuturesBalance ($type, $quote = '') {
-			return $this->getBalance ($type, $quote);
-		}
+		protected abstract function getBalances ($quote = ''): array;
 		
 		final function getBalance ($type, $quote = '') {
 			
 			if (!$this->balances)
-				$this->balances = $this->getBalances ($type, $quote);
+				$this->balances = $this->getBalances ($quote);
 			
 			return $this->balances[$quote][$type];
 			

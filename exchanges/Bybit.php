@@ -211,7 +211,7 @@
 			
 		}
 		
-		protected function getBalances ($type, $quote = ''): array {
+		protected function getBalances ($quote = ''): array {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			

@@ -215,9 +215,7 @@
 			
 		}
 		
-		protected function getBalances ($type, $quote = ''): array {
-			
-			$balances = [];
+		protected function getBalances ($quote = ''): array {
 			
 			$types = [
 				
@@ -226,8 +224,11 @@
 				
 			];
 			
+			$balances = [];
+			
 			foreach ($this->request ('api/v3/account')['balances'] as $data)
-				$balances[$data['asset']] = $data[$types[$type]];
+				foreach ($types as $name => $value)
+					$balances[$data['asset']][$name] = $data[$value];
 			
 			return $balances;
 			
