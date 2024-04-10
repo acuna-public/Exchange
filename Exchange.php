@@ -344,7 +344,13 @@
 		}
 		
 		function getROE ($margin) {
-			return ($this->netPNL * 100) / (($this->quantity / $this->leverage) * $this->entryPrice);
+			
+			$percent = new \Percent ($this->getPNL ());
+			
+			$percent->delim = $margin;
+			
+			return $percent->valueOf (100);
+			
 		}
 		
 		function getROI ($margin) {
