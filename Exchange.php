@@ -38,6 +38,7 @@
 			$maintenanceMarginRate = 0;
 		
 		public
+			$grossPNL = 0,
 			$margin = 0,
 			$extraMargin = 0,
 			$liquidPrice = 0,
@@ -59,7 +60,6 @@
 			$curChanges = [];
 		
 		protected
-			$grossPNL = 0, $netPNL = 0,
 			$lastDate = 0,
 			$balances = [];
 		
@@ -335,37 +335,6 @@
 		
 		abstract function positionActive (): bool;
 		
-		function getPNL () {
-			return $this->netPNL;
-		}
-		
-		function getGrossPNL () {
-			return $this->grossPNL;
-		}
-		
-		function getROE ($margin) {
-			
-			$percent = new \Percent ($this->getPNL ());
-			
-			$percent->delim = $margin;
-			
-			return $percent->valueOf (100);
-			
-		}
-		
-		function getROI ($margin) {
-			return ($this->getROE ($margin) * $this->leverage);
-		}
-		
-		function getProfit ($entry, $exit) {
-			
-			if ($this->isLong ())
-				return ($exit - $entry);
-			else
-				return ($entry - $exit);
-			
-		}
-		
 		function getQuantity () {
 			
 			if ($this->entryPrice > 0)
@@ -388,6 +357,37 @@
 			
 		}*/
 		
+		function getGrossPNL () {
+			return $this->grossPNL;
+		}
+		
+		function getPNL () {
+			return ($this->grossPNL - $this->fees);
+		}
+		
+		function getROE ($pnl, $margin) {
+			
+			$percent = new \Percent ($pnl);
+			
+			$percent->delim = $margin;
+			
+			return $percent->valueOf (100);
+			
+		}
+		
+		function getROI ($pnl, $margin) {
+			return ($this->getROE ($pnl, $margin) * $this->leverage);
+		}
+		
+		function getProfit ($entry, $exit) {
+			
+			if ($this->isLong ())
+				return ($exit - $entry);
+			else
+				return ($entry - $exit);
+			
+		}
+		
 		function start ($base, $quote) {
 			
 			//if ($this->leverage == 0)
@@ -404,8 +404,6 @@
 			
 			$this->fees = ($this->openFee + $this->closeFee);
 			
-			$this->netPNL = ($this->grossPNL - $this->fees);
-			
 			$this->margin = $this->getInitialMargin ();
 			$this->extraMargin = $this->getExtraMargin ();
 			$this->liquidPrice = $this->getLiquidationPrice ($quote);
@@ -413,8 +411,6 @@
 		}
 		
 		final function open () {
-			
-			$this->netPNL = 0;
 			
 			if ($this->openBalance > 0 and $this->balanceAvailable > 0) {
 				
@@ -486,9 +482,9 @@
 		
 		final function close () {
 			
-			$this->margin += $this->netPNL;
-			$this->balance += $this->netPNL;
-			$this->walletBalance += $this->netPNL;
+			$this->margin += $this->getPNL ();
+			$this->balance += $this->getPNL ();
+			$this->walletBalance += $this->getPNL ();
 			
 			if ($this->balance < 0)
 				$this->balance = 0;
