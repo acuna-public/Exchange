@@ -382,6 +382,7 @@
 				
 				$output[$pos['symbol']][$side] = [
 					
+					'side' => ($pos['side'] == 'Buy' ? self::LONG : self::SHORT),
 					'netPNL' => (float) $pos['curRealisedPnl'],
 					'grossPNL' => (float) $pos['unrealisedPnl'],
 					'quantity' => (float) $pos['size'],
@@ -636,58 +637,50 @@
 			
 		}
 		
-		protected function createTypeOrder (array $orders, string $side, string $func) {
-			
-			$list = [];
+		protected function createTypeOrder (string $symbol, array $order, string $side, string $func) {
 			
 			$request = $this->getRequest ($func);
+		
+			$data = [
+				
+				'category' => $this->category ($order['quote']),
+				'symbol' => $symbol,
+				'orderType' => (isset ($order['price']) ? 'Limit' : 'Market'),
+				'side' => $side,
+				'timeInForce' => 'GTC',
+				'reduceOnly' => ((isset ($order['close']) and $order['close']) ? 'true' : 'false'),
+				'closeOnTrigger' => 'false',
+				'triggerBy' => 'MarkPrice',
+				'tpTriggerBy' => 'MarkPrice',
+				'slTriggerBy' => 'MarkPrice',
+				
+			];
 			
-			foreach ($orders as $order) {
-				
-				$data = [
-					
-					'category' => $this->category ($order['quote']),
-					'symbol' => $this->pair ($order['base'], $order['quote']),
-					'orderType' => (isset ($order['price']) ? 'Limit' : 'Market'),
-					'side' => $side,
-					'timeInForce' => 'GTC',
-					'reduceOnly' => ((isset ($order['close']) and $order['close']) ? 'true' : 'false'),
-					'closeOnTrigger' => 'false',
-					'triggerBy' => 'MarkPrice',
-					'tpTriggerBy' => 'MarkPrice',
-					'slTriggerBy' => 'MarkPrice',
-					
-				];
-				
-				if (!isset ($order['quantity']))
-					$order['quantity'] = $this->quantity;
-				
-				$data['qty'] = $this->quantity ($order['quantity']);
-				
-				if (isset ($order['take_profit']))
-					$data['takeProfit'] = $this->price ($order['take_profit']);
-				
-				if (isset ($order['stop_loss']))
-					$data['stopLoss'] = $this->price ($order['stop_loss']);
-				
-				if (isset ($order['price']))
-					$data['price'] = $this->price ($order['price']);
-				
-				if (isset ($order['name']))
-					$data['orderLinkId'] = $order['name'];
-				
-				if ($this->isHedgeMode ())
-					$data['positionIdx'] = ($this->isLong () ? 1 : 2);
-				else
-					$data['positionIdx'] = 0;
-				
-				$request->params = $data;
-				
-				$list[] = $request->connect ('v5/order/create')['result'];
-				
-			}
+			if (!isset ($order['quantity']))
+				$order['quantity'] = $this->quantity;
 			
-			return $list;
+			$data['qty'] = $this->quantity ($order['quantity']);
+			
+			if (isset ($order['take_profit']))
+				$data['takeProfit'] = $this->price ($order['take_profit']);
+			
+			if (isset ($order['stop_loss']))
+				$data['stopLoss'] = $this->price ($order['stop_loss']);
+			
+			if (isset ($order['price']))
+				$data['price'] = $this->price ($order['price']);
+			
+			if (isset ($order['name']))
+				$data['orderLinkId'] = $order['name'];
+			
+			if ($this->isHedgeMode ())
+				$data['positionIdx'] = ($this->isLong () ? 1 : 2);
+			else
+				$data['positionIdx'] = 0;
+			
+			$request->params = $data;
+			
+			return $request->connect ('v5/order/create')['result'];
 			
 		}
 		
@@ -697,9 +690,9 @@
 			$data['quote'] = $quote;
 			
 			if ($this->openMarketType == self::MAKER)
-				$data['price'] = (isset ($order['price']) ? $order['price'] : $this->entryPrice);
+				$data['price'] = (isset ($data['price']) ? $data['price'] : $this->entryPrice);
 			
-			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Buy' : 'Sell'), __FUNCTION__);
+			return $this->createTypeOrder ($this->pair ($data['base'], $data['quote']), $data, ($this->isLong () ? 'Buy' : 'Sell'), __FUNCTION__);
 			
 		}
 		
@@ -710,9 +703,23 @@
 			$data['close'] = true;
 			
 			if ($this->closeMarketType == self::MAKER)
-				$data['price'] = (isset ($order['price']) ? $order['price'] : $this->markPrice);
+				$data['price'] = (isset ($data['price']) ? $data['price'] : $this->markPrice);
 			
-			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
+			return $this->createTypeOrder ($this->pair ($data['base'], $data['quote']), $data, ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
+			
+		}
+		
+		function closeAllPositions ($quote = '') {
+			
+			foreach ($this->positions as $symbol => $side)
+			foreach ($side as $data) {
+				
+				$data['close'] = true;
+				$data['quote'] = $quote;
+				
+				$this->createTypeOrder ($symbol, $data, ($data['side'] == self::LONG ? 'Sell' : 'Buy'), __FUNCTION__);
+				
+			}
 			
 		}
 		
@@ -721,10 +728,7 @@
 			$data['base'] = $base;
 			$data['quote'] = $quote;
 			
-			if (!isset ($order['price']) and $this->closeMarketType == self::MAKER)
-				$data['price'] = $this->markPrice;
-			
-			return $this->createTypeOrder ([$data], ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
+			return $this->createTypeOrder ($this->pair ($data['base'], $data['quote']), $data, ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
 			
 		}
 		

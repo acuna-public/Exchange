@@ -756,6 +756,7 @@
 		function openPosition ($base, $quote, $data = []) {}
 		function closePosition ($base, $quote, $data = []) {}
 		function decreasePosition ($base, $quote, $data = []) {}
+		function closeAllPositions ($data = []) {}
 		
 		function timeframe ($timeframe) { // From cctx
 			
