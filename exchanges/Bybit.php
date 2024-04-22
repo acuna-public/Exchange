@@ -130,11 +130,11 @@
 				
 				$output[] = [
 					
-					'low' => $value[3],
-					'high' => $value[2],
-					'open' => $value[1],
-					'close' => $value[4],
-					'volume' => $value[5],
+					'low' => (float) $value[3],
+					'high' => (float) $value[2],
+					'open' => (float) $value[1],
+					'close' => (float) $value[4],
+					'volume' => (float) $value[5],
 					'date' => ($value[0] / 1000),
 					'date_text' => $this->date (($value[0] / 1000)),
 					
@@ -1525,11 +1525,11 @@
 				return [
 					
 					'topic' => $data['topic'],
-					'low' => $price['low'],
-					'high' => $price['high'],
-					'open' => $price['open'],
-					'close' => $price['close'],
-					'volume' => $price['volume'],
+					'low' => (float) $price['low'],
+					'high' => (float) $price['high'],
+					'open' => (float) $price['open'],
+					'close' => (float) $price['close'],
+					'volume' => (float) $price['volume'],
 					'closed' => $price['confirm'],
 					'date' => ($price['timestamp'] / 1000),
 					'date_text' => $this->exchange->date (($price['timestamp'] / 1000)),

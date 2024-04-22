@@ -30,6 +30,7 @@
 			$markPrice = 0,
 			$minQuantity = 0,
 			$maxQuantity = 0,
+			$minValue = 0,
 			$balanceAvailable = 0,
 			$initialMarginRate = 0,
 			$maintenanceMarginRate = 0;
@@ -431,15 +432,14 @@
 				
 				$this->quantity = $this->getQuantity ();
 				
-				$min = $this->minQuantity ();
-				$max = $this->maxQuantity ();
-				
-				if ($this->margin > 0 and $this->quantity >= $min) {
+				if ($this->margin > 0)
+				if ($this->quantity >= $this->minQuantity)
+				if ($this->getNotional () >= $this->minValue) {
 					
 					$quantity = $this->quantity;
 					
-					if ($max > 0 and $this->quantity > $max)
-						$this->quantity = $max;
+					if ($this->maxQuantity > 0 and $this->quantity > $this->maxQuantity)
+						$this->quantity = $this->maxQuantity;
 					
 					$margin = $this->margin;
 					
@@ -465,7 +465,7 @@
 						
 					}
 					
-				}// else $this->debug ($this->quantity, $min);
+				}// else $this->debug ($this->quantity, $this->minQuantity);
 				
 			}
 			
@@ -740,14 +740,6 @@
 				
 			} while ($prices and $data['start_time'] <= $end);
 			
-		}
-		
-		function minQuantity () {
-			return $this->minQuantity;
-		}
-		
-		function maxQuantity () {
-			return $this->maxQuantity;
 		}
 		
 		function setMode ($base, $quote) {}
