@@ -339,7 +339,7 @@
 		}
 		
 		function getNotional () {
-			return ($this->margin * $this->leverage);
+			return $this->quoteRound ($this->margin * $this->leverage);
 		}
 		
 		/*function setLeverage ($leverage) {
@@ -433,37 +433,40 @@
 				$this->quantity = $this->getQuantity ();
 				
 				if ($this->margin > 0)
-				if ($this->quantity >= $this->minQuantity)
-				if ($this->getNotional () >= $this->minValue) {
+				if ($this->quantity >= $this->minQuantity) {
 					
-					$quantity = $this->quantity;
-					
-					if ($this->maxQuantity > 0 and $this->quantity > $this->maxQuantity)
-						$this->quantity = $this->maxQuantity;
-					
-					$margin = $this->margin;
-					
-					if ($this->quantity != $quantity) {
+					if ($this->getNotional () >= $this->minValue) {
 						
-						$percent = new \Percent ($this->quantity);
+						$quantity = $this->quantity;
 						
-						$percent->delim = $quantity;
+						if ($this->maxQuantity > 0 and $this->quantity > $this->maxQuantity)
+							$this->quantity = $this->maxQuantity;
 						
-						$this->margin = $percent->valueOf ($this->margin);
+						$margin = $this->margin;
 						
-						$margin -= $this->margin;
+						if ($this->quantity != $quantity) {
+							
+							$percent = new \Percent ($this->quantity);
+							
+							$percent->delim = $quantity;
+							
+							$this->margin = $percent->valueOf ($this->margin);
+							
+							$margin -= $this->margin;
+							
+						}
 						
-					}
-					
-					//$this->debug ($this->balanceAvailable, $this->openBalance);
-					
-					if ($margin >= 0 and $this->balanceAvailable > 0 and $this->balanceAvailable >= $this->openBalance) {
+						//$this->debug ($this->balanceAvailable, $this->openBalance);
 						
-						$this->balanceAvailable -= $this->openBalance;
+						if ($margin >= 0 and $this->balanceAvailable > 0 and $this->balanceAvailable >= $this->openBalance) {
+							
+							$this->balanceAvailable -= $this->openBalance;
+							
+							return true;
+							
+						}
 						
-						return true;
-						
-					}
+					} else throw new \ExchangeException ($this, 'Position value must be more than '.$this->minValue.'. Current value: '.$this->getNotional ());
 					
 				}// else $this->debug ($this->quantity, $this->minQuantity);
 				
@@ -622,15 +625,30 @@
 		}
 		
 		function amount ($amount) {
-			return round ($amount, $this->amount);
+			
+			if ($this->amount > 0)
+				$amount = pos_round ($amount, $this->amount);
+			
+			return $amount;
+			
 		}
 		
 		function price ($price) {
-			return round ($price, $this->basePrecision);
+			
+			if ($this->basePrecision > 0)
+				$price = pos_round ($price, $this->basePrecision);
+			
+			return $price;
+			
 		}
 		
 		function quoteRound ($price) {
-			return round ($price, $this->quotePrecision);
+			
+			if ($this->quotePrecision > 0)
+				$price = pos_round ($price, $this->quotePrecision);
+			
+			return $price;
+			
 		}
 		
 		function date ($date) {
