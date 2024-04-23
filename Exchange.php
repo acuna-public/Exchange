@@ -627,7 +627,7 @@
 		function amount ($amount) {
 			
 			if ($this->amount > 0)
-				$amount = pos_round ($amount, $this->amount);
+				$amount = round ($amount, $this->amount);
 			
 			return $amount;
 			
@@ -636,7 +636,7 @@
 		function price ($price) {
 			
 			if ($this->basePrecision > 0)
-				$price = pos_round ($price, $this->basePrecision);
+				$price = round ($price, $this->basePrecision);
 			
 			return $price;
 			
@@ -645,7 +645,7 @@
 		function quoteRound ($price) {
 			
 			if ($this->quotePrecision > 0)
-				$price = pos_round ($price, $this->quotePrecision);
+				$price = round ($price, $this->quotePrecision);
 			
 			return $price;
 			
