@@ -12,7 +12,7 @@
 			$sleep = 0;
 		
 		public
-			$amount = 3,
+			$amount = 0,
 			$precision = 2,
 			$quotePrecision = 2;
 		
@@ -359,7 +359,7 @@
 			return ($this->grossPNL - $this->fees);
 		}
 		
-		function getROE ($pnl, $margin) {
+		function getROI ($pnl, $margin) {
 			
 			$percent = new \Percent ($pnl);
 			
@@ -369,8 +369,8 @@
 			
 		}
 		
-		function getROI ($pnl, $margin) {
-			return ($this->getROE ($pnl, $margin) * $this->leverage);
+		function getROE ($pnl, $margin) {
+			return ($this->getROI ($pnl, $margin) / $this->leverage);
 		}
 		
 		function getProfit ($entry, $exit) {
@@ -686,7 +686,7 @@
 		}
 		
 		protected function quantity ($quantity) {
-			return $quantity;
+			return $this->amount ($quantity);
 		}
 		
 		function getAllPrices (int $type, string $base, string $quote, array $data, $callback) {
