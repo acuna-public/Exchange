@@ -640,7 +640,7 @@
 		protected function createTypeOrder (string $symbol, array $order, string $side, string $func) {
 			
 			$request = $this->getRequest ($func);
-		
+			
 			$data = [
 				
 				'category' => $this->category ($order['quote']),
@@ -660,7 +660,7 @@
 				$order['quantity'] = $this->quantity;
 			
 			$data['qty'] = $this->quantity ($order['quantity']);
-			
+			$this->debug ($data['qty']);
 			if (isset ($order['take_profit']))
 				$data['takeProfit'] = $this->price ($order['take_profit']);
 			

@@ -681,9 +681,7 @@
 			
 		}
 		
-		function setPairFuturesHedgeMod ($base, $quote) {
-			
-		}
+		function setPairFuturesHedgeMode ($base, $quote) {}
 		
 		protected function quantity ($quantity) {
 			return $this->amount ($quantity);
