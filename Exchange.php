@@ -625,30 +625,15 @@
 		}
 		
 		function amount ($amount) {
-			
-			if ($this->amount > 0)
-				$amount = round ($amount, $this->amount);
-			
-			return $amount;
-			
+			return round ($amount, $this->amount);
 		}
 		
 		function price ($price) {
-			
-			if ($this->basePrecision > 0)
-				$price = round ($price, $this->basePrecision);
-			
-			return $price;
-			
+			return round ($price, $this->basePrecision);
 		}
 		
 		function quoteRound ($price) {
-			
-			if ($this->quotePrecision > 0)
-				$price = round ($price, $this->quotePrecision);
-			
-			return $price;
-			
+			return round ($price, $this->quotePrecision);
 		}
 		
 		function date ($date) {
