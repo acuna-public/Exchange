@@ -262,8 +262,6 @@
 			
 		}
 		
-		function setMarginType ($base, $quote, $longLeverage = 0, $shortLeverage = 0) {}
-		
 		function liquidPricePercent () {
 			
 			$price = ($this->liquidPrice - $this->entryPrice);
@@ -303,15 +301,15 @@
 		
 		function getPositionData ($base, $quote) {
 			
-			if (isset ($this->positions[$base.$quote]))
-				$this->position = $this->positions[$base.$quote][$this->getSide ()];
+			if (isset ($this->positions[$this->pair ($base, $quote)]))
+				$this->position = $this->positions[$this->pair ($base, $quote)][$this->getSide ()];
 			else
 				$this->position = [];
 			
 		}
 		
 		function setPositionData ($base, $quote, $data) {
-			$this->positions[$base.$quote][$this->getSide ()] = $data;
+			$this->positions[$this->pair ($base, $quote)][$this->getSide ()] = $data;
 		}
 		
 		function clean ($quote) {
@@ -536,6 +534,10 @@
 			
 		}
 		
+		function setLeverage ($leverage) {
+			$this->leverage = $leverage;
+		}
+		
 		function toPoint () {
 			return (1 / pow (10, $this->basePrecision));
 		}
@@ -556,7 +558,6 @@
 		
 		function editPosition ($base, $quote, $data) {}
 		
-		function setLeverage ($base, $quote, $leverage) {}
 		function setFuturesMarginType ($base, $quote, $longLeverage = 10, $shortLeverage = 10) {}
 		
 		function getPositions ($base = '', $quote = '') {}

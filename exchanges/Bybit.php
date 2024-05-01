@@ -227,6 +227,7 @@
 			
 			$types = [
 				
+				self::BALANCE_EQUITY => 'equity',
 				self::BALANCE_TOTAL => 'walletBalance',
 				self::BALANCE_AVAILABLE => 'availableToWithdraw',
 				
@@ -261,23 +262,6 @@
 			
 		}
 		
-		function setLeverage ($base, $quote, $leverage) {
-			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			$request->params = [
-				
-				'symbol' => $this->pair ($base, $quote),
-				'category' => $this->category ($quote),
-				'buyLeverage' => $leverage,
-				'sellLeverage' => $leverage,
-				
-			];
-			
-			return $request->connect ('v5/position/set-leverage')['result'];
-			
-		}
-		
 		protected function category ($quote) {
 			
 			if ($this->market == self::SPOT)
@@ -309,27 +293,6 @@
 			
 		}
 		
-		function setMarginType ($base, $quote, $longLeverage = 0, $shortLeverage = 0) {
-			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			if (!$longLeverage) $longLeverage = 10;
-			if (!$shortLeverage) $shortLeverage = 10;
-			
-			$request->params = [
-				
-				'symbol' => $this->pair ($base, $quote),
-				'category' => $this->category ($quote),
-				'tradeMode' => (!$this->crossMargin ? 1 : 0),
-				'buyLeverage' => $longLeverage,
-				'sellLeverage' => $shortLeverage,
-				
-			];
-			
-			return $request->connect ('v5/position/switch-isolated')['result'];
-			
-		}
-		
 		protected function prepPos ($data) {
 			
 			return [
@@ -346,7 +309,7 @@
 			return $this->_getPositions ($base, $quote, __FUNCTION__);
 		}
 		
-		function _getPositions ($base, $quote, $func, $output = [], $cursor = ''): array {
+		protected function _getPositions ($base, $quote, $func, $output = [], $cursor = ''): array {
 			
 			$request = $this->getRequest ($func);
 			
@@ -796,6 +759,40 @@
 				
 			}
 			
+			if ((isset ($data['longLeverage']) and $data['longLeverage'] != 0) or (isset ($data['shortLeverage']) and $data['shortLeverage'] != 0)) {
+				
+				$request->params = [
+					
+					'symbol' => $this->pair ($base, $quote),
+					'category' => $this->category ($quote),
+					'buyLeverage' => $data['longLeverage'],
+					'sellLeverage' => $data['shortLeverage'],
+					
+				];
+				
+				$request->connect ('v5/position/set-leverage');
+				
+			}
+			
+			if (isset ($data['crossMargin'])) {
+				
+				if (!isset ($data['longLeverage'])) $data['longLeverage'] = $this->leverage;
+				if (!isset ($data['shortLeverage'])) $data['shortLeverage'] = $this->leverage;
+				
+				$request->params = [
+					
+					'symbol' => $this->pair ($base, $quote),
+					'category' => $this->category ($quote),
+					'tradeMode' => ($data['crossMargin'] ? 0 : 1),
+					'buyLeverage' => $data['longLeverage'],
+					'sellLeverage' => $data['shortLeverage'],
+					
+				];
+				
+				$request->connect ('v5/position/switch-isolated');
+				
+			}
+			
 			if (isset ($data['margin']) and $data['margin'] != 0) {
 				
 				$request->params = [
@@ -811,7 +808,7 @@
 				else
 					$request->params['positionIdx'] = 0;
 				
-				return $request->connect ('v5/position/add-margin')['result'];
+				$request->connect ('v5/position/add-margin');
 				
 			}
 			
