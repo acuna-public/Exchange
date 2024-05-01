@@ -359,6 +359,10 @@
 			return ($this->grossPNL - $this->fees);
 		}
 		
+		function getROE ($pnl, $margin) {
+			return ($this->getROI ($pnl, $margin) / $this->leverage);
+		}
+		
 		function getROI ($pnl, $margin) {
 			
 			$percent = new \Percent ($pnl);
@@ -367,10 +371,6 @@
 			
 			return $percent->valueOf (100);
 			
-		}
-		
-		function getROE ($pnl, $margin) {
-			return ($this->getROI ($pnl, $margin) / $this->leverage);
 		}
 		
 		function getProfit ($entry, $exit) {
