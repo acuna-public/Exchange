@@ -65,7 +65,7 @@
 		
 		public
 			$flevel = 0,
-			$rebate = 10,
+			$rebate = [self::SPOT => 0, self::FUTURES => 0],
 			$ftype = self::FTYPE_USD,
 			$openMarketType = self::TAKER,
 			$closeMarketType = self::TAKER,
@@ -492,7 +492,7 @@
 			$value = $this->feesRate[$this->market][$this->ftype][$this->flevel][($marketType == self::MAKER ? 0 : 1)];
 			
 			$percent = new \Percent ($value);
-			$value -= $percent->valueOf ($this->rebate);
+			$value -= $percent->valueOf ($this->rebate[$this->market]);
 			
 			return ($value / 100);
 			
