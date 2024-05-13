@@ -31,6 +31,18 @@
 				
 			],
 			
+			self::SPOT => [
+				
+				[0.1, 0.1],
+				[0.08, 0.0675],
+				[0.0775, 0.065],
+				[0.075, 0.0625],
+				[0.06, 0.05],
+				[0.05, 0.04],
+				[0.045, 0.03],
+				
+			],
+			
 		];
 		
 		public $curChanges = [
@@ -793,7 +805,10 @@
 				
 			}
 			
-			if (isset ($data['margin']) and $data['margin'] != 0) {
+			if (!isset ($data['margin']) and $this->extraMargin != 0)
+				$data['margin'] = $this->extraMargin;
+			
+			if ($data['margin'] != 0) {
 				
 				$request->params = [
 					

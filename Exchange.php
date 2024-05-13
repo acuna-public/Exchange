@@ -1,6 +1,7 @@
 <?php
 	
 	require 'ExchangeException.php';
+	require 'Calculator.php';
 	
 	abstract class Exchange {
 		
@@ -71,6 +72,9 @@
 			$closeMarketType = self::TAKER,
 			$hedgeMode = false,
 			$crossMargin = true;
+			
+		public
+			\Exchange\Calculator $calculator;
 		
 		public $side = self::LONG, $market = self::SPOT;
 		
@@ -91,6 +95,10 @@
 			'y' => 'years',
 			
 		];
+		
+		function __construct () {
+			$this->calculator = new \Exchange\Calculator ();
+		}
 		
 		abstract function getName ();
 		abstract function getTitle ();
@@ -327,6 +335,10 @@
 		
 		abstract function positionActive (): bool;
 		
+		function getNotional () {
+			return ($this->margin * $this->leverage);
+		}
+		
 		function getQuantity () {
 			
 			if ($this->entryPrice > 0)
@@ -336,18 +348,11 @@
 			
 		}
 		
-		function getNotional () {
-			return $this->quoteRound ($this->margin * $this->leverage);
-		}
-		
-		/*function setLeverage ($leverage) {
+		function setLeverage () {
 			
 			$this->leverage = $leverage;
 			
-			if ($this->leverage <= 1)
-				throw new \ExchangeException ($this, 'Leverage must be higher than 0');
-			
-		}*/
+		}
 		
 		function getGrossPNL () {
 			return $this->grossPNL;
@@ -380,97 +385,93 @@
 			
 		}
 		
-		function start ($base, $quote) {
-			
-			//if ($this->leverage == 0)
-			//	$this->leverage = $this->getLeverage ($base, $quote);
-			
-			$this->openFee = $this->getOpenFee ();
-			$this->closeFee = $this->getCloseFee ();
-			
-		}
-		
-		function update ($base, $quote) {
-			
-			$this->grossPNL = ($this->getProfit ($this->entryPrice, $this->markPrice) * $this->quantity);
-			
-			$this->fees = ($this->openFee + $this->closeFee);
-			
-			$this->margin = $this->getInitialMargin ();
-			$this->extraMargin = $this->getExtraMargin ();
-			$this->liquidPrice = $this->getLiquidationPrice ($quote);
-			
-		}
-		
 		final function open () {
 			
 			if ($this->openBalance > 0 and $this->balanceAvailable > 0) {
 				
-				if ($this->marginPercent <= 0 or $this->marginPercent > 100)
-					$this->marginPercent = 100;
-				
-				if ($this->balancePercent <= 0 or $this->balancePercent > 100)
-					$this->balancePercent = 100;
-				
-				if ($this->prunedPercent <= 0 or $this->prunedPercent > 100)
-					$this->prunedPercent = 100;
-				
-				if ($this->balancePercent == 100)
-					$this->balancePercent = $this->prunedPercent;
-				
 				if ($this->margin <= 0) {
+					
+					if ($this->prunedPercent <= 0 or $this->prunedPercent > 100)
+						$this->prunedPercent = 100;
+					
+					if ($this->balancePercent <= 0 or $this->balancePercent >= 100)
+						$this->balancePercent = $this->prunedPercent;
 					
 					$percent = new \Percent ($this->openBalance);
 					$this->balance = $percent->valueOf ($this->balancePercent);
+					
+					if ($this->marginPercent <= 0 or $this->marginPercent > 100)
+						$this->marginPercent = 100;
 					
 					$percent = new \Percent ($this->balance);
 					$this->margin = $percent->valueOf ($this->marginPercent);
 					
 				}
 				
-				$this->quantity = $this->getQuantity ();
-				
-				if ($this->margin > 0)
-				if ($this->quantity >= $this->minQuantity) {
+				if ($this->margin > 0) {
 					
-					if ($this->getNotional () >= $this->minValue) {
-						
-						$quantity = $this->quantity;
-						
-						if ($this->maxQuantity > 0 and $this->quantity > $this->maxQuantity)
-							$this->quantity = $this->maxQuantity;
-						
-						$margin = $this->margin;
-						
-						if ($this->quantity != $quantity) {
-							
-							$percent = new \Percent ($this->quantity);
-							
-							$percent->delim = $quantity;
-							
-							$this->margin = $percent->valueOf ($this->margin);
-							
-							$margin -= $this->margin;
-							
-						}
-						
-						//$this->debug ($this->balanceAvailable, $this->openBalance);
-						
-						if ($margin >= 0 and $this->balanceAvailable > 0 and $this->balanceAvailable >= $this->openBalance) {
-							
-							$this->balanceAvailable -= $this->openBalance;
-							
-							return true;
-							
-						}
-						
-					} else throw new \ExchangeException ($this, 'Position value must be more than '.$this->minValue.'. Current value: '.$this->getNotional ());
+					$this->entryPrice = $this->markPrice;
 					
-				}// else $this->debug ($this->quantity, $this->minQuantity);
+					$this->quantity = $this->getQuantity ();
+					
+					if ($this->quantity >= $this->minQuantity) {
+						
+						if ($this->getNotional () >= $this->minValue) {
+							
+							$quantity = $this->quantity;
+							
+							if ($this->maxQuantity > 0 and $this->quantity > $this->maxQuantity)
+								$this->quantity = $this->maxQuantity;
+							
+							$margin = $this->margin;
+							
+							if ($this->quantity != $quantity) {
+								
+								$percent = new \Percent ($this->quantity);
+								
+								$percent->delim = $quantity;
+								
+								$this->margin = $percent->valueOf ($this->margin);
+								
+								$margin -= $this->margin;
+								
+							}
+							
+							//$this->debug ($this->balanceAvailable, $this->openBalance);
+							
+							if ($margin >= 0 and $this->balanceAvailable > 0 and $this->balanceAvailable >= $this->openBalance) {
+								
+								$this->balanceAvailable -= $this->openBalance;
+								
+								return true;
+								
+							}
+							
+						} else throw new \ExchangeException ($this, 'Position value must be more than '.$this->minValue.'. Current value: '.$this->quoteRound ($this->getNotional ()));
+						
+					}// else $this->debug ($this->quantity, $this->minQuantity);
+					
+				}
 				
 			}
 			
 			return false;
+			
+		}
+		
+		function update ($base, $quote) {
+			
+			$this->openFee = $this->getOpenFee ();
+			$this->closeFee = $this->getCloseFee ();
+			
+			$this->grossPNL = ($this->getProfit ($this->entryPrice, $this->markPrice) * $this->quantity);
+			
+			$this->fees = ($this->openFee + $this->closeFee);
+			
+			$this->leverage = $this->getLeverage ();
+			$this->margin = $this->getInitialMargin ();
+			$this->extraMargin = $this->getExtraMargin ();
+			$this->liquidPrice = $this->getLiquidationPrice ($quote);
 			
 		}
 		
@@ -487,9 +488,23 @@
 			
 		}
 		
+		function getLeverage () {
+			
+			if ($this->market == self::SPOT)
+				return 1;
+			elseif ($this->leverage == 0)
+				return $this->position['leverage'];
+			else
+				return $this->leverage;
+			
+		}
+		
 		function getFeeRate ($marketType) {
 			
-			$value = $this->feesRate[$this->market][$this->ftype][$this->flevel][($marketType == self::MAKER ? 0 : 1)];
+			if ($this->market == self::FUTURES)
+				$value = $this->feesRate[$this->market][$this->ftype][$this->flevel][($marketType == self::TAKER ? 0 : 1)];
+			else
+				$value = $this->feesRate[$this->market][$this->flevel][($marketType == self::TAKER ? 0 : 1)];
 			
 			$percent = new \Percent ($value);
 			$value -= $percent->valueOf ($this->rebate[$this->market]);
@@ -532,10 +547,6 @@
 			
 			return $output;
 			
-		}
-		
-		function setLeverage ($leverage) {
-			$this->leverage = $leverage;
 		}
 		
 		function toPoint () {
