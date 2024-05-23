@@ -127,46 +127,6 @@
 			
 		}
 		
-		/*function createOrder ($type, $base, $quote, $price) {
-			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			$request->params = [
-				
-				'symbol' => $this->pair ($base, $quote),
-				'type' => 'LIMIT',
-				'side' => $type,
-				'quantity' => $this->quantity (),
-				'price' => $price,
-				'timeInForce' => 'GTC',
-				
-			];
-			
-			$request->method = BinanceRequest::POST;
-			
-			return $request->connect ('api/v3/order');
-			
-		}
-		
-		function createOrder ($type, $base, $quote) {
-			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			$request->params = [
-				
-				'symbol' => $this->pair ($base, $quote),
-				'type' => 'MARKET',
-				'side' => $type,
-				'quantity' => $this->quantity (),
-				
-			];
-			
-			$request->method = BinanceRequest::POST;
-			
-			return $request->connect ('api/v3/order');
-			
-		}*/
-		
 		function getOrders ($base, $quote) {
 			
 			$request = $this->getRequest (__FUNCTION__);
@@ -458,7 +418,7 @@
 			
 		}
 		
-		function openPosition ($base, $quote, $order = []) {
+		function createOrder ($base, $quote, $order = []) {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			
@@ -544,7 +504,7 @@
 				if (isset ($order['quantity']))
 					$data['quantity'] = $this->amount ($order['quantity']);
 				else
-					$data['closePosition'] = 'true';
+					$data['closeOrder'] = 'true';
 				
 				if (isset ($order['price']))
 					$data['price'] = $this->price ($order['price']);

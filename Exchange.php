@@ -6,21 +6,21 @@
 	abstract class Exchange {
 		
 		public
-			$debug = 0,
 			$timeOffset = 0,
 			$recvWindow = 60000, // 1 minute
-			$dateFormat = 'd.m.y H:i',
-			$sleep = 0;
+			$dateFormat = 'd.m.y H:i';
 		
 		public
+			$debug = 0,
 			$amount = 0,
 			$precision = 2,
-			$quotePrecision = 2;
+			$quotePrecision = 2,
+			$leveragePrecision = 2;
 		
 		public
 			$marginPercent = 100,
 			$balancePercent = 100,
-			$prunedPercent = 99,
+			$prunedPercent = 100,
 			$leverage = 0,
 			$quantity = 0,
 			$balance = 0,
@@ -31,7 +31,7 @@
 			$markPrice = 0,
 			$minQuantity = 0,
 			$maxQuantity = 0,
-			$minValue = 0,
+			$minValue = [self::SPOT => 0, self::FUTURES => 0],
 			$balanceAvailable = 0,
 			$initialMarginRate = 0,
 			$maintenanceMarginRate = 0;
@@ -81,7 +81,7 @@
 		const SPOT = 'SPOT', FUTURES = 'FUTURES';
 		const PRICES_INDEX = 1, PRICES_MARK = 2, PRICES_LAST = 3;
 		
-		const LONG = 'LONG', SHORT = 'SHORT', BOTH = 'BOTH', BUY = 'BUY', SELL = 'SELL', MAKER = 'MAKER', TAKER = 'TAKER', BALANCE_AVAILABLE = 'available', BALANCE_TOTAL = 'total', BALANCE_EQUITY = 'equity', FTYPE_USD = 'USD', FTYPE_COIN = 'COIN';
+		const LONG = 'LONG', SHORT = 'SHORT', BOTH = 'BOTH', BUY = 'BUY', SELL = 'SELL', MAKER = 'MAKER', TAKER = 'TAKER', BALANCE_AVAILABLE = 'available', BALANCE_TOTAL = 'total', BALANCE_EQUITY = 'equity', BALANCE_UPNL = 'upnl', FTYPE_USD = 'USD', FTYPE_COIN = 'COIN';
 		
 		static $PERPETUAL = 'PERPETUAL', $LEVERAGED = 'LEVERAGED', $BOTH = 'BOTH';
 		
@@ -168,11 +168,14 @@
 			
 		}
 		
-		protected function getExtraMargin () {
+		function getExtraMargin () {
 			
-			if (!$this->crossMargin and $this->marginPercent < 100)
+			if ($this->balance > 0 and !$this->crossMargin/* and $this->marginPercent < 100*/)
 				$extraMargin = ($this->balance - $this->margin);
 			else
+				$extraMargin = 0;
+			
+			if ($extraMargin < 0)
 				$extraMargin = 0;
 			
 			return $extraMargin;
@@ -183,25 +186,29 @@
 			return ($this->maintenanceMarginRate / 100);
 		}
 		
-		protected function getLiquidationPrice ($quote) {
+		function getLiquidationPrice ($quote) {
 			
-			if ($this->crossMargin or $quote == 'USDC') {
+			if ($this->market != self::SPOT) {
 				
-				if ($this->isLong ())
-					$price = $this->entryPrice - ((($this->margin + $this->extraMargin + $this->getInitialMargin ()) - $this->getMaintenanceMargin ()) / $this->quantity);
-				else
-					$price = $this->entryPrice + ((($this->margin + $this->extraMargin + $this->getInitialMargin ()) - $this->getMaintenanceMargin ()) / $this->quantity);
+				if ($this->crossMargin or $quote == 'USDC') {
+					
+					if ($this->isLong ())
+						$price = $this->entryPrice - ((($this->margin + $this->extraMargin + $this->margin) - $this->getMaintenanceMargin ()) / $this->quantity);
+					else
+						$price = $this->entryPrice + ((($this->margin + $this->extraMargin + $this->margin) - $this->getMaintenanceMargin ()) / $this->quantity);
+					
+				} else {
+					
+					if ($this->isLong ())
+						$price = $this->entryPrice * (1 - $this->initialMarginRate () + $this->getMaintenanceMargin ()) - ($this->extraMargin / $this->quantity);
+					else
+						$price = $this->entryPrice * (1 + $this->initialMarginRate () - $this->getMaintenanceMargin ()) + ($this->extraMargin / $this->quantity);
+					
+				}
 				
-			} else {
+				return $this->price ($price);
 				
-				if ($this->isLong ())
-					$price = $this->entryPrice * (1 - $this->initialMarginRate () + $this->getMaintenanceMargin ()) - ($this->extraMargin / $this->quantity);
-				else
-					$price = $this->entryPrice * (1 + $this->initialMarginRate () - $this->getMaintenanceMargin ()) + ($this->extraMargin / $this->quantity);
-				
-			}
-			
-			return $this->price ($price);
+			} else return 0;
 			
 		}
 		
@@ -216,10 +223,13 @@
 			
 		}
 		
-		protected function getInitialMargin () {
+		function getInitialMargin () {
 			
 			//if ($this->crossMargin)
-				return ($this->entryPrice * ($this->quantity / $this->leverage));
+				if ($this->entryPrice > 0)
+					return ($this->entryPrice * ($this->quantity / $this->leverage));
+				else
+					throw new \ExchangeException ($this, 'Price must be higher than 0');
 			//else
 			//	return ($this->initialMarginRate / 100);
 			
@@ -285,15 +295,6 @@
 			return ($this->getSustainableLoss () / $price);
 		}
 		
-		function getAdditionalMargin ($stopPrice) { // TODO
-			
-			if ($this->isLong ())
-				return ($this->getLiquidationPrice () * $this->quantity) - ($stopPrice * $this->quantity);
-			else
-				return ($stopPrice * $this->quantity) - ($this->getLiquidationPrice () * $this->quantity);
-			
-		}
-		
 		abstract function getPrices (int $type, string $base, string $quote, array $data): array;
 		
 		protected abstract function getBalances ($quote = ''): array;
@@ -320,6 +321,10 @@
 			$this->positions[$this->pair ($base, $quote)][$this->getSide ()] = $data;
 		}
 		
+		function leverageRound ($value) {
+			return round ($value, $this->leveragePrecision);
+		}
+		
 		function clean ($quote) {
 			
 			$this->balances = [];
@@ -340,12 +345,7 @@
 		}
 		
 		function getQuantity () {
-			
-			if ($this->entryPrice > 0)
-				return $this->amount ($this->getNotional () / $this->entryPrice);
-			else
-				throw new \ExchangeException ($this, 'Price must be higher than 0');
-			
+			return $this->amount ($this->getNotional () / $this->entryPrice);
 		}
 		
 		function setLeverage () {
@@ -389,6 +389,9 @@
 			
 			if ($this->openBalance > 0 and $this->balanceAvailable > 0) {
 				
+				if ($this->balanceAvailable < $this->openBalance)
+					$this->openBalance = $this->balanceAvailable;
+				
 				if ($this->margin <= 0) {
 					
 					if ($this->prunedPercent <= 0 or $this->prunedPercent > 100)
@@ -416,7 +419,7 @@
 					
 					if ($this->quantity >= $this->minQuantity) {
 						
-						if ($this->getNotional () >= $this->minValue) {
+						if ($this->getNotional () >= $this->minValue[$this->market]) {
 							
 							$quantity = $this->quantity;
 							
@@ -439,15 +442,15 @@
 							
 							//$this->debug ($this->balanceAvailable, $this->openBalance);
 							
-							if ($margin >= 0 and $this->balanceAvailable > 0 and $this->balanceAvailable >= $this->openBalance) {
+							if ($margin >= 0 and $this->balanceAvailable > 0) {
 								
 								$this->balanceAvailable -= $this->openBalance;
 								
-								return true;
+								return ($this->balanceAvailable >= 0);
 								
 							}
 							
-						} else throw new \ExchangeException ($this, 'Position value must be more than '.$this->minValue.'. Current value: '.$this->quoteRound ($this->getNotional ()));
+						}// else throw new \ExchangeException ($this, 'Position value must be more than '.$this->minValue[$this->market].'. Current value: '.$this->quoteRound ($this->getNotional ()));
 						
 					}// else $this->debug ($this->quantity, $this->minQuantity);
 					
@@ -459,7 +462,7 @@
 			
 		}
 		
-		function update ($base, $quote) {
+		final function update ($base, $quote) {
 			
 			$this->openFee = $this->getOpenFee ();
 			$this->closeFee = $this->getCloseFee ();
@@ -468,14 +471,13 @@
 			
 			$this->fees = ($this->openFee + $this->closeFee);
 			
-			$this->leverage = $this->getLeverage ();
 			$this->margin = $this->getInitialMargin ();
 			$this->extraMargin = $this->getExtraMargin ();
 			$this->liquidPrice = $this->getLiquidationPrice ($quote);
-			
+			//$this->debug ($this->quantity, $this->margin, $this->balance, $this->extraMargin, $this->liquidPrice);
 		}
 		
-		final function close () {
+		final function fix () {
 			
 			$this->margin += $this->getPNL ();
 			$this->balance += $this->getPNL ();
@@ -483,6 +485,12 @@
 			
 			if ($this->balance < 0)
 				$this->balance = 0;
+			
+		}
+		
+		final function close () {
+			
+			$this->fix ();
 			
 			$this->balanceAvailable += $this->balance;
 			
@@ -492,7 +500,7 @@
 			
 			if ($this->market == self::SPOT)
 				return 1;
-			elseif ($this->leverage == 0)
+			elseif ($this->leverage <= 0)
 				return $this->position['leverage'];
 			else
 				return $this->leverage;
@@ -562,8 +570,6 @@
 			
 		}
 		
-		function createOrder ($type, $base, $quote, $price) {} // TODO
-		
 		abstract function getOrders ($base, $quote);
 		abstract function getOrderInfo ($id);
 		
@@ -573,21 +579,8 @@
 		
 		function getPositions ($base = '', $quote = '') {}
 		
-		function isOrderStopLoss ($order) {
-			return false;
-		}
-		
-		function orderId ($order) {
-		}
-		
-		function orderName ($order) {
-			return $this->orderId ($order);
-		}
-		
 		abstract function getTrades ($base, $quote);
 		abstract function getSymbols ($quote = '');
-		abstract function isOrderTakeProfit ($order);
-		abstract function orderCreateDate ($order);
 		abstract function cancelOrders ($base = '', $quote = '', $filter = '');
 		
 		function getFuturesOpenOrders ($base, $quote) {}
@@ -599,10 +592,6 @@
 		function getMarginType ($base, $quote) {}
 		
 		function cancelFuturesOrders ($base, $quote, array $ids) {}
-		
-		function futuresOrderCreateDate ($order) {
-			return $this->orderCreateDate ($order);
-		}
 		
 		function cancelFuturesOrdersNames ($base, $quote, array $ids) {
 			return [];
@@ -758,9 +747,9 @@
 		function setMode ($base, $quote) {}
 		function cancelOrderName ($base, $quote, $name) {}
 		
-		function openPosition ($base, $quote, $data = []) {}
-		function closePosition ($base, $quote, $data = []) {}
-		function decreasePosition ($base, $quote, $data = []) {}
+		function createOrder ($base, $quote, $data = []) {}
+		function closeOrder ($base, $quote, $data = []) {}
+		function decreaseOrder ($base, $quote, $data = []) {}
 		function closeAllPositions ($data = []) {}
 		
 		function timeframe ($timeframe) { // From cctx
@@ -807,7 +796,7 @@
 			return '';
 		}
 		
-		function createSocket (): ?\Socket {
+		function createSocket (): ?\Exchange\Socket {
 			return null;
 		}
 		
@@ -815,15 +804,11 @@
 			return debug ($this->date ($this->markDate).': '.$this->pair ($this->base, $this->quote).$this->side.': '.array2json ($data));
 		}
 		
-	}
-	
-	abstract class Request {
-		
 		public
 			$params = [],
 			$method = self::POST,
 			$signed = true,
-			$debug = 0,
+			//$debug = 0,
 			$errorCodes = [404],
 			$showUrl = false,
 			$func,
@@ -831,38 +816,42 @@
 		
 		const GET = 'GET', POST = 'POST', PUT = 'PUT', DELETE = 'DELETE';
 		
-		function __construct ($exchange, $func, $order = []) {
+		protected function time () {
 			
-			$this->exchange = $exchange;
-			$this->func = $func;
-			$this->order = $order;
+			$ts = $this->milliseconds () + $this->timeOffset;
+			return number_format ($ts, 0, '.', '');
 			
 		}
 		
-	}
-	
-	abstract class Socket extends \WebSocket {
-		
-		public $func;
-		public \Exchange $exchange;
-		
-		public $data = [], $topics = [];
-		
-		function __construct (\Exchange $exchange) {
-			$this->exchange = $exchange;
+		public function milliseconds () {
+			
+			if (PHP_INT_SIZE == 4)
+				return $this->milliseconds32 ();
+			else
+				return $this->milliseconds64 ();
+			
 		}
 		
-		abstract function ping ();
-		abstract function getPrice ($start): array;
-		abstract function getPricesTopic (int $type, string $base, string $quote, array $data): string;
-		abstract function publicConnect (): ?\Socket;
-		abstract function privateConnect (): ?\Socket;
+		public function milliseconds32 () {
+			
+			list ($msec, $sec) = explode (' ', microtime ());
+			
+			return $sec.substr ($msec, 2, 3);
+			
+		}
 		
-		function connect ($path): \Socket {
+		public function milliseconds64 () {
 			
-			$this->debug = ($this->exchange->debug == 2 ? 1 : 0);
+			list ($msec, $sec) = explode (' ', microtime ());
 			
-			return parent::connect ($path);
+			return (int) ($sec . substr ($msec, 2, 3));
+			
+		}
+		
+		protected function signature () {
+			
+			ksort ($this->params);
+			return hash_hmac ('sha256', http_build_query ($this->params), $this->cred['secret']);
 			
 		}
 		

@@ -6,6 +6,18 @@
 		
 		public $feesRate = [
 			
+			self::SPOT => [
+				
+				[0.1, 0.1],
+				[0.08, 0.0675],
+				[0.0775, 0.065],
+				[0.075, 0.0625],
+				[0.06, 0.05],
+				[0.05, 0.04],
+				[0.045, 0.03],
+				
+			],
+			
 			self::FUTURES => [
 				
 				self::FTYPE_USD => [
@@ -22,24 +34,12 @@
 				
 				self::FTYPE_COIN => [
 					
-					[0.0100, 0.0500], // 30d BTC Volume Maker / Taker %
+					[0.0100, 0.0500],
 					[0.0080, 0.0450],
 					[0.0050, 0.0400],
 					[0.0030, 0.0300],
 					
 				],
-				
-			],
-			
-			self::SPOT => [
-				
-				[0.1, 0.1],
-				[0.08, 0.0675],
-				[0.0775, 0.065],
-				[0.075, 0.0625],
-				[0.06, 0.05],
-				[0.05, 0.04],
-				[0.045, 0.03],
 				
 			],
 			
@@ -92,24 +92,25 @@
 		
 		function timeOffset () {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
 			
-			$request->method = BybitRequest::GET;
-			$request->signed = false;
+			$this->method = self::GET;
+			$this->signed = false;
 			
-			$time = $request->connect ('v5/market/time')['result']['timeSecond'];
+			$time = $this->connect ('v5/market/time')['result']['timeSecond'];
 			
-			$this->timeOffset = ((number_format ($time, 0, '.', '') * 1000) - $request->milliseconds ());
+			$this->timeOffset = ((number_format ($time, 0, '.', '') * 1000) - $this->milliseconds ());
 			
 		}
 		
 		function getPrices (int $type, string $base, string $quote, array $data): array {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
 			
-			$request->method = BybitRequest::GET;
+			$this->method = self::GET;
+			$this->signed = false;
 			
-			$request->params = [
+			$this->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
 				'category' => $this->category ($quote),
@@ -120,24 +121,24 @@
 			if (!isset ($data['limit']) or $data['limit'] <= 0)
 				$data['limit'] = 500;
 			
-			$request->params['limit'] = $data['limit'];
+			$this->params['limit'] = $data['limit'];
 			
 			if (isset ($data['start_time']) and $data['start_time']) {
 				
 				//$data['start_time'] -= $this->timeframe ($data['interval']);
-				$request->params['start'] = ($data['start_time'] * 1000);
+				$this->params['start'] = ($data['start_time'] * 1000);
 				//debug ([$this->date ($data['start_time'])]);
 			}
 			
 			if (isset ($data['end_time']) and $data['end_time'])
-				$request->params['end'] = ($data['end_time'] * 1000);
+				$this->params['end'] = ($data['end_time'] * 1000);
 			
-			$request->signed = false;
-			$request->debug = 0;
+			$this->signed = false;
+			$this->debug = 0;
 			
 			$output = [];
 			
-			if ($prices = $request->connect ('v5/market/'.($type == self::PRICES_MARK ? 'mark-price-kline' : 'kline'))['result']['list'])
+			if ($prices = $this->connect ('v5/market/'.($type == self::PRICES_MARK ? 'mark-price-kline' : 'kline'))['result']['list'])
 			foreach ($prices as $value) {
 				
 				$output[] = [
@@ -158,42 +159,6 @@
 			
 		}
 		
-		/*function createOrder ($type, $base, $quote, $price) {
-			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			$request->params = [
-				
-				'symbol' => $this->pair ($base, $quote),
-				'type' => 'LIMIT',
-				'side' => $type,
-				'quantity' => $this->quantity (),
-				'price' => $price,
-				'timeInForce' => 'GTC',
-				
-			];
-			
-			return $request->connect ('api/v3/order');
-			
-		}
-		
-		function createOrder ($type, $base, $quote) {
-			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			$request->params = [
-				
-				'symbol' => $this->pair ($base, $quote),
-				'type' => 'MARKET',
-				'side' => $type,
-				'quantity' => $this->quantity (),
-				
-			];
-			
-			return $request->connect ('api/v3/order');
-			
-		}*/
-		
 		function orderData ($order) {
 			
 			return [
@@ -209,45 +174,48 @@
 		
 		function getOrderInfo ($id) {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
 			
-			$request->method = BybitRequest::GET;
+			$this->method = self::GET;
+			$this->signed = false;
 			
-			$request->params = [
+			$this->params = [
 				
 				'orderId' => $id,
 				
 			];
 			
-			return $this->orderData ($request->connect ('v3/order'));
+			return $this->orderData ($this->connect ('v3/order'));
 			
 		}
 		
 		protected function getBalances ($quote = ''): array {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
 			
-			$request->method = BybitRequest::GET;
+			$this->method = self::GET;
+			$this->signed = true;
 			
-			$request->params = [
+			$this->params = [
 				
 				'accountType' => ($this->market == self::SPOT ? 'SPOT' : 'CONTRACT'),
 				
 			];
 			
-			if ($quote) $request->params['coin'] = $quote;
+			if ($quote) $this->params['coin'] = $quote;
 			
 			$types = [
 				
 				self::BALANCE_EQUITY => 'equity',
 				self::BALANCE_TOTAL => 'walletBalance',
 				self::BALANCE_AVAILABLE => 'availableToWithdraw',
+				self::BALANCE_UPNL => 'unrealisedPnl',
 				
 			];
 			
 			$balance = [];
 			
-			foreach ($request->connect ('v5/account/wallet-balance')['result']['list'][0]['coin'] as $coin) {
+			foreach ($this->connect ('v5/account/wallet-balance')['result']['list'][0]['coin'] as $coin) {
 				
 				$balance[$coin['coin']] = [];
 				
@@ -262,15 +230,17 @@
 		
 		function getAnnouncements ($data = []) {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
 			
-			$request->method = BybitRequest::GET;
-			$request->signed = false;
+			$this->method = self::GET;
+			$this->signed = false;
+			
+			$this->params = [];
 			
 			foreach ($data as $key => $value)
-				$request->params[$key] = $value;
+				$this->params[$key] = $value;
 			
-			return $request->connect ('v5/announcements/index')['result']['list'];
+			return $this->connect ('v5/announcements/index')['result']['list'];
 			
 		}
 		
@@ -287,21 +257,28 @@
 		
 		function setMode ($base, $quote) {
 			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			$request->params = [
+			/*if ($this->market != self::SPOT) {
 				
-				'category' => $this->category ($quote),
-				'mode' => ($this->isHedgeMode () ? 3 : 0),
+				$this->func = __FUNCTION__;
 				
-			];
-			
-			if ($base)
-				$request->params['symbol'] = $this->pair ($base, $quote);
-			else
-				$request->params['coin'] = $quote;
-			
-			return $request->connect ('v5/position/switch-mode')['result'];
+				$this->method = self::POST;
+				$this->signed = false;
+				
+				$this->params = [
+					
+					'category' => $this->category ($quote),
+					'mode' => ($this->isHedgeMode () ? 3 : 0),
+					
+				];
+				
+				if ($base)
+					$this->params['symbol'] = $this->pair ($base, $quote);
+				else
+					$this->params['coin'] = $quote;
+				
+				return $this->connect ('v5/position/switch-mode')['result'];
+				
+			} else return [];*/
 			
 		}
 		
@@ -323,11 +300,12 @@
 		
 		protected function _getPositions ($base, $quote, $func, $output = [], $cursor = ''): array {
 			
-			$request = $this->getRequest ($func);
+			$this->func = $func;
 			
-			$request->method = BybitRequest::GET;
+			$this->method = self::GET;
+			$this->signed = true;
 			
-			$request->params = [
+			$this->params = [
 				
 				'category' => $this->category ($quote),
 				'cursor' => $cursor,
@@ -336,13 +314,13 @@
 			];
 			
 			if ($base and $quote)
-				$request->params['symbol'] = $this->pair ($base, $quote);
+				$this->params['symbol'] = $this->pair ($base, $quote);
 			else
-				$request->params['settleCoin'] = $quote;
+				$this->params['settleCoin'] = $quote;
 			
-			$request->showUrl = true;
+			$this->showUrl = true;
 			
-			$data = $request->connect ('v5/position/list')['result'];
+			$data = $this->connect ('v5/position/list')['result'];
 			
 			foreach ($data['list'] as $pos) {
 				
@@ -389,116 +367,63 @@
 			
 		}
 		
-		function createUserStreamKey () {
-			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			$data = $request->connect ('api/v3/userDataStream');
-			$this->userKey = $data['listenKey'];
-			
-		}
-		
-		function updateUserStreamKey () {
-			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			$request->params = [
-				
-				'listenKey' => $this->userKey,
-				
-			];
-			
-			$request->method = BybitRequest::PUT;
-			
-			return $request->connect ('api/v3/userDataStream');
-			
-		}
-		
-		function userSocket ($callback) {
-			
-			$this->updateUserStreamKey ();
-			
-			$request = $this->getRequest (__FUNCTION__);
-			$request->socket ($this->userKey, $callback);
-			
-		}
-		
-		function futuresSocket ($callback) {
-			
-			$this->updateFuturesStreamKey ();
-			
-			$request = $this->getRequest (__FUNCTION__);
-			$request->socket ($this->futuresKey, $callback);
-			
-		}
-		
-		function createFuturesStreamKey () {
-			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			$data = $request->connect ('fapi/v1/listenKey');
-			$this->futuresKey = $data['listenKey'];
-			
-		}
-		
-		function updateFuturesStreamKey () {
-			
-			$request = $this->getRequest (__FUNCTION__);
-			
-			$request->params = [
-				
-				'listenKey' => $this->futuresKey,
-				
-			];
-			
-			$request->method = BybitRequest::PUT;
-			
-			return $request->connect ('v1/listenKey');
-			
-		}
-		
 		function getTrades ($base, $quote) {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
 			
-			$request->method = BybitRequest::GET;
+			$this->method = self::GET;
+			$this->signed = true;
 			
-			$request->params = [
+			$this->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
 				
 			];
 			
-			return $request->connect ('fapi/v1/userTrades');
+			return $this->connect ('fapi/v1/userTrades');
 			
 		}
 		
 		protected function prepSymbol ($symbol, $symbol2) {
 			
-			return [
+			$data = [
 				
 				'base' => $symbol['baseCoin'],
 				'quote' => $symbol['quoteCoin'],
-				'maxLeverage' => $symbol['leverageFilter']['maxLeverage'],
-				'price_precision' => $symbol2['priceFraction'],
-				'amount_precision' => $symbol2['lotFraction'],
-				'minQuantity' => $symbol['lotSizeFilter']['minOrderQty'],
-				'maxQuantity' => $symbol['lotSizeFilter']['maxMktOrderQty'],
+				'pricePrecision' => $symbol2['priceFraction'],
+				'amountPrecision' => $symbol2['lotFraction'],
 				'initialMarginRate' => ($symbol2['baseInitialMarginRateE4'] / 100),
 				'maintenanceMarginRate' => ($symbol2['baseMaintenanceMarginRateE4'] / 100),
+				'minQuantity' => $symbol['lotSizeFilter']['minOrderQty'],
+				'maxQuantity' => $symbol['lotSizeFilter']['maxOrderQty'],
 				
 			];
+			
+			if ($this->market == self::SPOT) {
+				
+				$data['minValue'] = $symbol['lotSizeFilter']['minOrderAmt'];
+				
+			} else {
+				
+				$data['minValue'] = $symbol['lotSizeFilter']['minNotionalValue'];
+				
+				$data['minLeverage'] = $symbol['leverageFilter']['minLeverage'];
+				$data['maxLeverage'] = $symbol['leverageFilter']['maxLeverage'];
+				
+			}
+			
+			return $data;
 			
 		}
 		
 		function getSymbols ($quote = '') {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
 			
-			$request->method = BybitRequest::GET;
-			$request->signed = false;
+			$this->method = self::GET;
+			$this->signed = false;
 			
-			$data = $request->connect2 ('https://api2.bybit.com/contract/v5/product/dynamic-symbol-list?filter=all');
+			$data = $this->connect2 ('https://api2.bybit.com/contract/v5/product/dynamic-symbol-list?filter=all');
 			
 			$symbols2 = [];
 			
@@ -510,8 +435,9 @@
 						
 						$pair = $this->pair ($symbol['baseCurrency'], $symbol['coinName']);
 						
-						if ((!$quote or $symbol['coinName'] == $quote) and $symbol['contractStatus'] == 'Trading')
-							$symbols2[$pair] = $symbol;
+						if (!$quote or $symbol['coinName'] == $quote)
+							if ($symbol['contractStatus'] == 'Trading')
+								$symbols2[$pair] = $symbol;
 						
 					}
 					
@@ -521,8 +447,9 @@
 						
 						$pair = $this->pair ($symbol['baseCurrency'], $symbol['quoteCurrency']);
 						
-						if ((!$quote or $symbol['quoteCurrency'] == $quote) and $symbol['contractStatus'] == 'Trading')
-							$symbols2[$pair] = $symbol;
+						if (!$quote or $symbol['quoteCurrency'] == $quote)
+							if ($symbol['contractStatus'] == 'Trading')
+								$symbols2[$pair] = $symbol;
 						
 					}
 					
@@ -532,20 +459,23 @@
 			
 			$symbols = [];
 			
-			$request->params = [
+			$this->params = [
 				
 				'category' => $this->category ($quote),
 				
 			];
 			
-			foreach ($request->connect ('v5/market/instruments-info')['result']['list'] as $symbol) {
+			$list = $this->connect ('v5/market/instruments-info')['result']['list'];
+			
+			foreach ($list as $symbol) {
 				
 				$pair = $this->pair ($symbol['baseCoin'], $symbol['quoteCoin']);
 				
 				//if ($symbol['status'] == 'Trading')
 				if (!$quote or $symbol['quoteCoin'] == $quote)
-					$symbols[$pair] = $this->prepSymbol ($symbol, $symbols2[$pair]);
-				
+					if (isset ($symbols2[$pair]))
+						$symbols[$pair] = $this->prepSymbol ($symbol, $symbols2[$pair]);
+					
 			}
 			
 			return $symbols;
@@ -554,20 +484,20 @@
 		
 		function getSymbols2 ($quote = '') {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
 			
-			$request->params = [
+			$this->params = [
 				
 				'category' => $this->category ($quote),
 				
 			];
 			
-			$request->method = BybitRequest::GET;
-			$request->signed = false;
+			$this->method = self::GET;
+			$this->signed = false;
 			
 			$symbols = [];
 			
-			foreach ($request->connect ('v5/market/instruments-info')['result']['list'] as $symbol) {
+			foreach ($this->connect ('v5/market/instruments-info')['result']['list'] as $symbol) {
 				
 				$pair = $this->pair ($symbol['baseCoin'], $symbol['quoteCoin']);
 				
@@ -593,28 +523,32 @@
 		
 		function getOrders ($base = '', $quote = '') {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
 			
-			$request->method = BybitRequest::GET;
+			$this->method = self::GET;
+			$this->signed = true;
 			
-			$request->params = [
+			$this->params = [
 				
 				'category' => $this->category ($quote),
 				
 			];
 			
 			if ($base and $quote)
-				$request->params['symbol'] = $this->pair ($base, $quote);
+				$this->params['symbol'] = $this->pair ($base, $quote);
 			else
-				$request->params['settleCoin'] = $quote;
+				$this->params['settleCoin'] = $quote;
 			
-			return $request->connect ('v5/order/realtime')['result']['list'];
+			return $this->connect ('v5/order/realtime')['result']['list'];
 			
 		}
 		
 		protected function createTypeOrder (string $symbol, array $order, string $side, string $func) {
 			
-			$request = $this->getRequest ($func);
+			$this->func = __FUNCTION__;
+			
+			$this->method = self::POST;
+			$this->signed = true;
 			
 			$data = [
 				
@@ -624,7 +558,7 @@
 				'side' => $side,
 				'timeInForce' => 'GTC',
 				'reduceOnly' => ((isset ($order['close']) and $order['close']) ? 'true' : 'false'),
-				'closeOnTrigger' => 'false',
+				//'closeOnTrigger' => ((isset ($order['close']) and $order['close']) ? 'true' : 'false'),
 				'triggerBy' => 'MarkPrice',
 				'tpTriggerBy' => 'MarkPrice',
 				'slTriggerBy' => 'MarkPrice',
@@ -653,13 +587,13 @@
 			else
 				$data['positionIdx'] = 0;
 			
-			$request->params = $data;
+			$this->params = $data;
 			
-			return $request->connect ('v5/order/create')['result'];
+			return $this->connect ('v5/order/create')['result'];
 			
 		}
 		
-		function openPosition ($base, $quote, $data = []) {
+		function createOrder ($base, $quote, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
@@ -667,15 +601,30 @@
 			if ($this->openMarketType == self::MAKER)
 				$data['price'] = (isset ($data['price']) ? $data['price'] : $this->entryPrice);
 			
+			if ($this->market == self::SPOT)
+				$data['marketUnit'] = 'baseCoin';
+			
 			return $this->createTypeOrder ($this->pair ($data['base'], $data['quote']), $data, ($this->isLong () ? 'Buy' : 'Sell'), __FUNCTION__);
 			
 		}
 		
-		function closePosition ($base, $quote, $data = []) {
+		function closeOrder ($base, $quote, $data = []) {
 			
 			$data['base'] = $base;
 			$data['quote'] = $quote;
 			$data['close'] = true;
+			
+			if ($this->market == self::SPOT)
+				$data['marketUnit'] = 'quoteCoin';
+			
+			return $this->createTypeOrder ($this->pair ($data['base'], $data['quote']), $data, ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
+			
+		}
+		
+		function decreaseOrder ($base, $quote, $data = []) {
+			
+			$data['base'] = $base;
+			$data['quote'] = $quote;
 			
 			if ($this->closeMarketType == self::MAKER)
 				$data['price'] = (isset ($data['price']) ? $data['price'] : $this->markPrice);
@@ -698,18 +647,9 @@
 			
 		}
 		
-		function decreasePosition ($base, $quote, $data = []) {
-			
-			$data['base'] = $base;
-			$data['quote'] = $quote;
-			
-			return $this->createTypeOrder ($this->pair ($data['base'], $data['quote']), $data, ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
-			
-		}
-		
 		function editOrder ($base, $quote, $orders) {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
 			
 			$list = [];
 			
@@ -729,25 +669,33 @@
 				
 			}
 			
-			$request->params = [
+			$this->params = [
 				
 				'category' => $this->category ($quote),
 				'request' => $list,
 				
 			];
 			
-			return $request->connect ('v5/order/amend-batch')['result']['list'];
+			$this->method = self::POST;
+			$this->signed = true;
+			
+			return $this->connect ('v5/order/amend-batch')['result']['list'];
 			
 		}
 		
-		function editPosition ($base, $quote, $data) {
+		function editPosition ($base, $quote, $data): array {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
+			
+			$this->method = self::POST;
+			$this->signed = true;
+			
+			$output = [];
 			
 			if (isset ($data['takeProfit']) or isset ($data['stopLoss']))
 			if ($data['takeProfit'] > 0 or $data['stopLoss'] > 0) {
 				
-				$request->params = [
+				$this->params = [
 					
 					'category' => $this->category ($quote),
 					'symbol' => $this->pair ($base, $quote),
@@ -757,101 +705,128 @@
 				];
 				
 				if ($data['takeProfit'])
-					$request->params['takeProfit'] = $data['takeProfit'];
+					$this->params['takeProfit'] = $data['takeProfit'];
 				
 				if ($data['stopLoss'])
-					$request->params['stopLoss'] = $data['stopLoss'];
+					$this->params['stopLoss'] = $data['stopLoss'];
 				
 				if ($this->isHedgeMode ())
-					$request->params['positionIdx'] = ($this->isLong () ? 1 : 2);
+					$this->params['positionIdx'] = ($this->isLong () ? 1 : 2);
 				else
-					$request->params['positionIdx'] = 0;
+					$this->params['positionIdx'] = 0;
 				
-				$request->connect ('v5/position/trading-stop');
-				
-			}
-			
-			if ((isset ($data['longLeverage']) and $data['longLeverage'] != 0) or (isset ($data['shortLeverage']) and $data['shortLeverage'] != 0)) {
-				
-				$request->params = [
-					
-					'symbol' => $this->pair ($base, $quote),
-					'category' => $this->category ($quote),
-					'buyLeverage' => $data['longLeverage'],
-					'sellLeverage' => $data['shortLeverage'],
-					
-				];
-				
-				$request->connect ('v5/position/set-leverage');
+				foreach ($this->connect ('v5/position/trading-stop')['result'] as $key => $value)
+					$output[$key] = $value;
 				
 			}
 			
-			if (isset ($data['crossMargin'])) {
+			if ($this->market != self::SPOT) {
 				
-				if (!isset ($data['longLeverage'])) $data['longLeverage'] = $this->leverage;
-				if (!isset ($data['shortLeverage'])) $data['shortLeverage'] = $this->leverage;
-				
-				$request->params = [
+				if (
+					(isset ($data['longLeverage']) and $data['longLeverage'] != 0) or
+					(isset ($data['shortLeverage']) and $data['shortLeverage'] != 0) or
+					(isset ($data['leverage']) and $data['leverage'] != 0)
+				) {
 					
-					'symbol' => $this->pair ($base, $quote),
-					'category' => $this->category ($quote),
-					'tradeMode' => ($data['crossMargin'] ? 0 : 1),
-					'buyLeverage' => $data['longLeverage'],
-					'sellLeverage' => $data['shortLeverage'],
+					if (isset ($data['leverage']))
+						$data['longLeverage'] =
+						$data['shortLeverage'] =
+						$data['leverage'];
 					
-				];
+					$this->params = [
+						
+						'symbol' => $this->pair ($base, $quote),
+						'category' => $this->category ($quote),
+						'buyLeverage' => $this->leverageRound ($data['longLeverage']),
+						'sellLeverage' => $this->leverageRound ($data['shortLeverage']),
+						
+					];
+					
+					foreach ($this->connect ('v5/position/set-leverage')['result'] as $key => $value)
+						$output[$key] = $value;
+					
+				}
 				
-				$request->connect ('v5/position/switch-isolated');
+				if (isset ($data['crossMargin'])) {
+					
+					if (!isset ($data['longLeverage'])) $data['longLeverage'] = $this->leverage;
+					if (!isset ($data['shortLeverage'])) $data['shortLeverage'] = $this->leverage;
+					
+					if (isset ($data['leverage']))
+						$data['longLeverage'] =
+						$data['shortLeverage'] =
+						$data['leverage'];
+					
+					$this->params = [
+						
+						'symbol' => $this->pair ($base, $quote),
+						'category' => $this->category ($quote),
+						'tradeMode' => ($data['crossMargin'] ? 0 : 1),
+						'buyLeverage' => $this->leverageRound ($data['longLeverage']),
+						'sellLeverage' => $this->leverageRound ($data['shortLeverage']),
+						
+					];
+					
+					foreach ($this->connect ('v5/position/switch-isolated')['result'] as $key => $value)
+						$output[$key] = $value;
+					
+				}
+				
+				if (!isset ($data['margin']) and $this->extraMargin != 0)
+					$data['margin'] = $this->extraMargin;
+				
+				if (isset ($data['margin']) and $data['margin'] != 0) {
+					
+					$this->params = [
+						
+						'symbol' => $this->pair ($base, $quote),
+						'category' => $this->category ($quote),
+						'margin' => round ($data['margin'], 4),
+						
+					];
+					
+					if ($this->isHedgeMode ())
+						$this->params['positionIdx'] = ($this->isLong () ? 1 : 2);
+					else
+						$this->params['positionIdx'] = 0;
+					
+					foreach ($this->connect ('v5/position/add-margin')['result'] as $key => $value)
+						$output[$key] = $value;
+					
+				}
 				
 			}
 			
-			if (!isset ($data['margin']) and $this->extraMargin != 0)
-				$data['margin'] = $this->extraMargin;
-			
-			if ($data['margin'] != 0) {
-				
-				$request->params = [
-					
-					'symbol' => $this->pair ($base, $quote),
-					'category' => $this->category ($quote),
-					'margin' => round ($data['margin'], 4),
-					
-				];
-				
-				if ($this->isHedgeMode ())
-					$request->params['positionIdx'] = ($this->isLong () ? 1 : 2);
-				else
-					$request->params['positionIdx'] = 0;
-				
-				$request->connect ('v5/position/add-margin');
-				
-			}
+			return $output;
 			
 		}
 		
 		function cancelOrders ($base = '', $quote = '', $filter = '') {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
 			
-			$request->params = [
+			$this->method = self::POST;
+			$this->signed = true;
+			
+			$this->params = [
 				
 				'category' => $this->category ($quote),
 				
 			];
 			
 			if ($base and $quote)
-				$request->params['symbol'] = $this->pair ($base, $quote);
+				$this->params['symbol'] = $this->pair ($base, $quote);
 			elseif ($base)
-				$request->params['baseCoin'] = $base;
+				$this->params['baseCoin'] = $base;
 			else
-				$request->params['settleCoin'] = $quote;
+				$this->params['settleCoin'] = $quote;
 			
 			if ($filter == 'stop')
-				$request->params['orderFilter'] = 'StopOrder';
+				$this->params['orderFilter'] = 'StopOrder';
 			elseif ($filter == 'tpsl')
-				$request->params['orderFilter'] = 'tpslOrder';
+				$this->params['orderFilter'] = 'tpslOrder';
 			
-			return $request->connect ('v5/order/cancel-all')['result']['list'];
+			return $this->connect ('v5/order/cancel-all')['result']['list'];
 			
 		}
 		
@@ -859,18 +834,21 @@
 			
 			$summary = [];
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
 			
-			$request->params = [
+			$this->method = self::GET;
+			$this->signed = false;
+			
+			$this->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
 				'period' => $period,
 				
 			];
 			
-			$request->signed = false;
+			$this->signed = false;
 			
-			foreach ($request->connect ('futures/data/topLongShortAccountRatio') as $value) {
+			foreach ($this->connect ('futures/data/topLongShortAccountRatio') as $value) {
 				
 				$date = ($value['timestamp'] / 1000);
 				
@@ -889,97 +867,34 @@
 			
 		}
 		
-		function isOrderStopLoss ($order) {
-			return ($order['stop_order_type'] == 'StopLoss');
-		}
-		
-		function isOrderTakeProfit ($order) {
-			return ($order['stop_order_type'] == 'TakeProfit');
-		}
-		
-		function orderName ($order) {
-			return $order['order_link_id'];
-		}
-		
-		function cancelFuturesOrders ($base, $quote, array $ids) {
-			
-			$output = [];
-			
-			foreach ($ids as $id) {
-				
-				$request = $this->getRequest (__FUNCTION__);
-				
-				$request->params = [
-					
-					'symbol' => $this->pair ($base, $quote),
-					'stop_order_id' => $id,
-					
-				];
-				
-				$output[] = $request->connect ('private/linear/stop-order/cancel')['result'];
-				
-			}
-			
-			return $output;
-			
-		}
-		
-		function cancelFuturesOrdersNames ($base, $quote, $ids) {
-			
-			$output = [];
-			
-			foreach ($ids as $id) {
-				
-				$request = $this->getRequest (__FUNCTION__);
-				
-				$request->params = [
-					
-					'symbol' => $this->pair ($base, $quote),
-					'order_link_id' => $id,
-					
-				];
-				
-				$output[] = $request->connect ('private/linear/stop-order/cancel')['result'];
-				
-			}
-			
-			return $output;
-			
-		}
-		
-		protected function getRequest ($func, $order = []): BybitRequest {
-			return new BybitRequest ($this, $func, $order);
-		}
-		
-		function orderCreateDate ($order) {
-			return strtotime ($order['created_time']);
-		}
-		
 		function getAccountStatus () {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
 			
-			return $request->connect ('sapi/v1/account/status')['data'];
+			$this->method = self::GET;
+			$this->signed = true;
+			
+			return $this->connect ('sapi/v1/account/status')['data'];
 			
 		}
 		
 		function getTickerPrice ($base, $quote) {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
 			
-			$request->method = BybitRequest::GET;
-			$request->signed = false;
+			$this->method = self::GET;
+			$this->signed = false;
 			
-			$request->params = [
+			$this->params = [
 				
 				'category' => $this->category ($quote),
 				
 			];
 			
 			if ($base and $quote)
-				$request->params['symbol'] = $this->pair ($base, $quote);
+				$this->params['symbol'] = $this->pair ($base, $quote);
 			
-			if ($pairs = $request->connect ('v5/market/tickers')['result']['list']) {
+			if ($pairs = $this->connect ('v5/market/tickers')['result']['list']) {
 				
 				$output = [];
 				
@@ -1014,16 +929,16 @@
 		
 		function setFuturesHedgeMode (bool $hedge, $base = '', $quote = '') {
 			
-			/*$request = $this->getRequest (__FUNCTION__);
+			/*$this->func = __FUNCTION__;
 			
-			$request->params = [
+			$this->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
 				'mode' => $hedge ? 'BothSide' : 'MergedSingle',
 				
 			];
 			
-			return $request->connect ('private/linear/position/switch-mod')['result'];*/
+			return $this->connect ('private/linear/position/switch-mod')['result'];*/
 			
 			return '';
 			
@@ -1031,16 +946,18 @@
 		
 		function futuresTradingStatus ($base = '', $quote = '') {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
+			
+			$this->params = [];
 			
 			if ($base and $quote)
-				$request->params['symbol'] = $this->pair ($base, $quote);
+				$this->params['symbol'] = $this->pair ($base, $quote);
 			
-			$request->method = BybitRequest::GET;
+			$this->method = self::GET;
 			
-			$request->debug = 0;
+			$this->debug = 0;
 			
-			$data = $request->connect ('fapi/v1/apiTradingStatus');
+			$data = $this->connect ('fapi/v1/apiTradingStatus');
 			
 			$output = [];
 			
@@ -1080,9 +997,12 @@
 		
 		function withdraw ($coin, $address, $chain, $amount, $data = []): array {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
 			
-			$request->params = [
+			$this->method = self::POST;
+			$this->signed = true;
+			
+			$this->params = [
 				
 				'coin' => $coin,
 				'chain' => $chain,
@@ -1094,17 +1014,20 @@
 			];
 			
 			foreach ($data as $key => $value)
-				$request->params[$key] = $value;
+				$this->params[$key] = $value;
 			
-			return $request->connect ('v5/asset/withdraw/create')['result'];
+			return $this->connect ('v5/asset/withdraw/create')['result'];
 			
 		}
 		
 		function longShortGlobalAccountsRatio ($base, $quote, $data) {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
 			
-			$request->params = [
+			$this->method = self::GET;
+			$this->signed = false;
+			
+			$this->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
 				'category' => $this->category ($quote),
@@ -1115,14 +1038,14 @@
 			if (!isset ($data['limit']) or $data['limit'] <= 0)
 				$data['limit'] = 500;
 			
-			$request->params['limit'] = $data['limit'];
+			$this->params['limit'] = $data['limit'];
 			
-			$request->market = BinanceRequest::FUTURES;
-			$request->signed = false;
+			$this->market = BinanceRequest::FUTURES;
+			$this->signed = false;
 			
 			$summary = [];
 			
-			foreach ($request->connect ('v5/market/account-ratio')['result']['list'] as $value) {
+			foreach ($this->connect ('v5/market/account-ratio')['result']['list'] as $value) {
 				
 				$summary[] = [
 					
@@ -1144,9 +1067,9 @@
 		
 		function getOpenInterest ($base, $quote, $data) {
 			
-			$request = $this->getRequest (__FUNCTION__);
+			$this->func = __FUNCTION__;
 			
-			$request->params = [
+			$this->params = [
 				
 				'symbol' => $this->pair ($base, $quote),
 				'category' => $this->category ($quote),
@@ -1157,20 +1080,22 @@
 			if (!isset ($data['limit']) or $data['limit'] <= 0)
 				$data['limit'] = 500;
 			
-			$request->params['limit'] = $data['limit'];
+			$this->params['limit'] = $data['limit'];
 			
 			if (isset ($data['start_time']))
-				$request->params['startTime'] = ($data['start_time'] * 1000);
+				$this->params['startTime'] = ($data['start_time'] * 1000);
 			
 			if (isset ($data['end_time']))
-				$request->params['endTime'] = ($data['end_time'] * 1000);
+				$this->params['endTime'] = ($data['end_time'] * 1000);
 			
-			$request->market = BinanceRequest::FUTURES;
-			$request->signed = false;
+			$this->market = BinanceRequest::FUTURES;
+			
+			$this->method = self::GET;
+			$this->signed = false;
 			
 			$summary = [];
 			
-			foreach ($request->connect ('v5/market/open-interest')['result']['list'] as $value) {
+			foreach ($this->connect ('v5/market/open-interest')['result']['list'] as $value) {
 				
 				$summary[] = [
 					
@@ -1186,13 +1111,9 @@
 			
 		}
 		
-		function createSocket (): \Socket {
-			return new BybitSocket ($this);
+		function createSocket (): ?Socket {
+			return new Socket\BybitSocket ($this);
 		}
-		
-	}
-	
-	class BybitRequest extends \Request {
 		
 		public
 			$apiUrl = 'https://api.bybit.com',
@@ -1205,28 +1126,19 @@
 			
 			$ch = curl_init ();
 			
-			if ($this->exchange->debug == 1 and $this->debug == 1) {
+			if ($this->debug == 1 and $this->debug == 1) {
 				
-				if ($this->exchange->market == \Exchange::FUTURES)
+				if ($this->market == \Exchange::FUTURES)
 					$url = $this->testFuturesUrl;
 				else
 					$url = $this->testApiUrl;
 				
 			} else {
 				
-				if ($this->exchange->market == \Exchange::FUTURES)
+				if ($this->market == \Exchange::FUTURES)
 					$url = $this->futuresUrl;
 				else
 					$url = $this->apiUrl;
-				
-			}
-			
-			if ($this->signed) {
-				
-				$this->params['api_key'] = $this->exchange->cred['key'];
-				$this->params['recv_window'] =	$this->exchange->recvWindow;
-				$this->params['timestamp'] = $this->time ();
-				$this->params['sign'] = $this->signature ();
 				
 			}
 			
@@ -1238,31 +1150,41 @@
 				CURLOPT_URL => $url.'/'.$path,
 				CURLOPT_RETURNTRANSFER => true,
 				CURLOPT_FOLLOWLOCATION => true,
-				CURLOPT_USERAGENT => 'User-Agent: Mozilla/4.0 (compatible; PHP '.$this->exchange->getTitle ().' API)',
-				CURLOPT_SSL_VERIFYPEER => false,
-				CURLOPT_SSL_VERIFYHOST => false,
+				//CURLOPT_SSL_VERIFYPEER => false,
+				//CURLOPT_SSL_VERIFYHOST => false,
 				//CURLOPT_HEADER => 1,
 				
 			];
 			
-			if ($this->exchange->debug == 2)
+			if ($this->debug == 2)
 				debug ($options[CURLOPT_URL]);
+			
+			$this->time = $this->time ();
 			
 			if ($this->method == self::POST) {
 				
-				$options[CURLOPT_POST] = 1;
+				$options[CURLOPT_CUSTOMREQUEST] = $this->method;
 				$options[CURLOPT_POSTFIELDS] = http_build_query ($this->params);
+				
+				if ($this->signed) {
+					
+					$options[CURLOPT_HTTPHEADER][] = 'X-BAPI-SIGN: '.$this->signature ();
+					$options[CURLOPT_HTTPHEADER][] = 'X-BAPI-API-KEY: '.$this->cred['key'];
+					$options[CURLOPT_HTTPHEADER][] = 'X-BAPI-TIMESTAMP: '.$this->time ();
+					$options[CURLOPT_HTTPHEADER][] = 'X-BAPI-RECV-WINDOW: '.$this->recvWindow;
+					
+				}
 				
 			} elseif ($this->method == self::PUT)
 				$options[CURLOPT_PUT] = true;
 			elseif ($this->method != self::GET)
 				$options[CURLOPT_CUSTOMREQUEST] = $this->method;
 			
-			$options[CURLOPT_HTTPHEADER] = ['Connection: keep-alive'];
+			$options[CURLOPT_HTTPHEADER][] = 'Connection: keep-alive';
 			
-			if ($this->exchange->proxies) {
+			if ($this->proxies) {
 				
-				$proxy = trim ($this->exchange->proxies[mt_rand (0, count ($this->exchange->proxies) - 1)]);
+				$proxy = trim ($this->proxies[mt_rand (0, count ($this->proxies) - 1)]);
 				
 				$parts = explode ('@', $proxy);
 				
@@ -1283,131 +1205,30 @@
 			$data = curl_exec ($ch);
 			$info = curl_getinfo ($ch);
 			
-			$this->exchange->queryNum++;
+			$this->queryNum++;
 			
 			$options[CURLOPT_SSL_CIPHER_LIST] = 'TLSv1';
 			
 			if ($error = curl_error ($ch))
-				throw new \ExchangeException ($this->exchange, $error, curl_errno ($ch), $options, $this->func);
+				throw new \ExchangeException ($this, $error, curl_errno ($ch), $options, $this->func);
 			elseif (in_array ($info['http_code'], $this->errorCodes))
-				throw new \ExchangeException ($this->exchange, http_get_message ($info['http_code']).' ('.$options[CURLOPT_URL].')', $info['http_code'], $options, $this->func);
+				throw new \ExchangeException ($this, http_get_message ($info['http_code']).' ('.$options[CURLOPT_URL].')', $info['http_code'], $options, $this->func);
 			//debug ($data);
 			$data = json2array ($data);
 			
 			curl_close ($ch);
 			
 			if (isset ($data['ret_code']) and $data['ret_code'] != 0)
-				throw new \ExchangeException ($this->exchange, $data['ret_msg'], $data['ret_code'], $options, $this->func);
+				throw new \ExchangeException ($this, $data['ret_msg'], $data['ret_code'], $options, $this->func);
 			elseif (isset ($data['retCode']) and $data['retCode'] != 0) // v5
-				throw new \ExchangeException ($this->exchange, $data['retMsg'], $data['retCode'], $options, $this->func);
+				throw new \ExchangeException ($this, $data['retMsg'], $data['retCode'], $options, $this->func);
 			
 			return $data;
 			
 		}
 		
-		function connect5 ($path) {
-			
-			$ch = curl_init ();
-			
-			if ($this->exchange->debug and $this->debug) {
-				
-				if ($this->exchange->market == self::FUTURES)
-					$url = $this->testFuturesUrl;
-				else
-					$url = $this->testApiUrl;
-				
-			} else {
-				
-				if ($this->exchange->market == self::FUTURES)
-					$url = $this->futuresUrl;
-				else
-					$url = $this->apiUrl;
-				
-			}
-			
-			if ($this->params and $this->method != self::POST)
-				$path .= '?'.http_build_query ($this->params);
-			
-			$options = [
-				
-				CURLOPT_URL => $url.'/'.$path,
-				CURLOPT_RETURNTRANSFER => true,
-				CURLOPT_FOLLOWLOCATION => true,
-				CURLOPT_USERAGENT => 'User-Agent: Mozilla/4.0 (compatible; PHP '.$this->exchange->getTitle ().' API)',
-				CURLOPT_SSL_VERIFYPEER => false,
-				CURLOPT_SSL_VERIFYHOST => false,
-				
-			];
-			
-			//debug ($options[CURLOPT_URL]);
-			
-			if ($this->method == self::POST) {
-				
-				$options[CURLOPT_POST] = 1;
-				
-				if ($this->signed) {
-					
-					$options[CURLOPT_POSTFIELDS] = http_build_query ([
-						
-						'X-BAPI-API-KEY' => $this->exchange->cred['key'],
-						'X-BAPI-RECV-WINDOW' =>	$this->exchange->recvWindow,
-						'X-BAPI-TIMESTAMP' => $this->time (),
-						'X-BAPI-SIGN' => $this->signature (),
-						
-					]);
-					
-				}
-				
-			} elseif ($this->method == self::PUT)
-				$options[CURLOPT_PUT] = true;
-			elseif ($this->method != self::GET)
-				$options[CURLOPT_CUSTOMREQUEST] = $this->method;
-			
-			$options[CURLOPT_HTTPHEADER] = ['Connection: keep-alive'];
-			
-			if ($this->exchange->proxies) {
-				
-				$proxy = trim ($this->exchange->proxies[mt_rand (0, count ($this->exchange->proxies) - 1)]);
-				
-				$parts = explode ('@', $proxy);
-				
-				if (count ($parts) > 1) {
-					
-					$proxy = $parts[1];
-					$options[CURLOPT_PROXYUSERPWD] = $parts[0];
-					
-				}
-				
-				$options[CURLOPT_PROXY] = $proxy;
-				$options[CURLOPT_PROXYTYPE] = CURLPROXY_SOCKS5;
-				
-			} else $proxy = '';
-			
-			curl_setopt_array ($ch, $options);
-			
-			$data = curl_exec ($ch);
-			$info = curl_getinfo ($ch);
-			
-			$this->exchange->queryNum++;
-			
-			$options[CURLOPT_SSL_CIPHER_LIST] = 'TLSv1';
-			
-			if ($error = curl_error ($ch))
-				throw new \ExchangeException ($this->exchange, $error, curl_errno ($ch), $options, $this->func);
-			elseif (in_array ($info['http_code'], $this->errorCodes))
-				throw new \ExchangeException ($this->exchange, http_get_message ($info['http_code']).' ('.$options[CURLOPT_URL].')', $info['http_code'], $options, $this->func);
-			
-			$data = json2array ($data);
-			
-			curl_close ($ch);
-			
-			if (isset ($data['ret_code']) and $data['ret_code'] != 0)
-				throw new \ExchangeException ($this->exchange, $data['ret_msg'], $data['ret_code'], $options, $this->func);
-			elseif (isset ($data['retCode']) and $data['retCode'] != 0) // v5
-				throw new \ExchangeException ($this->exchange, $data['retMsg'], $data['retCode'], $options, $this->func);
-			
-			return $data;
-			
+		protected function signature () {
+			return hash_hmac ('sha256', $this->time.$this->cred['key'].$this->recvWindow.http_build_query ($this->params), $this->cred['secret']);
 		}
 		
 		function connect2 ($url) {
@@ -1416,16 +1237,16 @@
 			
 			curl_setopt ($ch, CURLOPT_URL, $url);
 			curl_setopt ($ch, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt ($ch, CURLOPT_USERAGENT, $this->exchange->userAgent ? $this->exchange->userAgent : get_useragent ());
-			curl_setopt ($ch, CURLOPT_COOKIE, $this->exchange->cookies);
+			curl_setopt ($ch, CURLOPT_USERAGENT, $this->userAgent ? $this->userAgent : get_useragent ());
+			curl_setopt ($ch, CURLOPT_COOKIE, $this->cookies);
 			
 			$data = curl_exec ($ch);
 			$info = curl_getinfo ($ch);
 			
 			if ($error = curl_error ($ch))
-				throw new \ExchangeException ($this->exchange, $error, curl_errno ($ch), $info, $this->func);
+				throw new \ExchangeException ($this, $error, curl_errno ($ch), $info, $this->func);
 			elseif ($info['http_code'] != 200)
-				throw new \ExchangeException ($this->exchange, 'Access denied', $info['http_code'], $info, $this->func);
+				throw new \ExchangeException ($this, 'Access denied', $info['http_code'], $info, $this->func);
 			
 			curl_close ($ch);
 			
@@ -1433,125 +1254,4 @@
 			
 		}
 		
-		protected function time () {
-			
-			$ts = $this->milliseconds () + $this->exchange->timeOffset;
-			return number_format ($ts, 0, '.', '');
-			
-		}
-		
-		public function milliseconds () {
-			
-			if (PHP_INT_SIZE == 4)
-				return $this->milliseconds32 ();
-			else
-				return $this->milliseconds64 ();
-			
-		}
-		
-		public function milliseconds32 () {
-			
-			list ($msec, $sec) = explode (' ', microtime ());
-			
-			return $sec.substr ($msec, 2, 3);
-			
-		}
-		
-		public function milliseconds64 () {
-			
-			list ($msec, $sec) = explode (' ', microtime ());
-			
-			return (int) ($sec . substr ($msec, 2, 3));
-			
-		}
-		
-		protected function signature () {
-			
-			ksort ($this->params);
-			return hash_hmac ('sha256', http_build_query ($this->params), $this->exchange->cred['secret']);
-			
-		}
-		
 	}
-	
-	class BybitSocket extends \Socket {
-		
-		public
-			$streamsUrl = 'stream.bybit.com',
-			$testStreamsUrl = 'testnet-dex.bybit.org';
-		
-		function connect ($path): \Socket {
-			
-			$this->url = $this->streamsUrl;
-			
-			$this->data = [
-				
-				'req_id' => 1,
-				'op' => 'subscribe',
-				'args' => [],
-				
-			];
-			
-			foreach ($this->topics as $topic)
-				$this->data['args'][] = $topic;
-			
-			return parent::connect ($path);
-			
-		}
-		
-		function publicConnect (): ?\Socket {
-			return $this->connect ('v5/public/linear');
-		}
-		
-		function privateConnect (): ?\Socket {
-			return null;
-		}
-		
-		function ping () {
-			
-			$this->url = $this->streamsUrl;
-			
-			$this->data = ['req_id' => 1, 'op' => 'ping'];
-			
-			return parent::connect ('v5/public/linear');
-			
-		}
-		
-		function getPricesTopic (int $type, string $base, string $quote, array $data): string {
-			return 'kline.'.$this->exchange->intervalChanges[$data['interval']].'.'.$this->exchange->pair ($base, $quote);
-		}
-		
-		function getPrice ($start): array {
-			
-			try {
-				
-				$con = $this->read ();
-				
-				if ($start)
-					$con = explode ("\r\n\r\n", $con)[1];
-				
-				$data = json2array ($con);
-				
-				$price = $data['data'][0];
-				
-				return [
-					
-					'topic' => $data['topic'],
-					'low' => (float) $price['low'],
-					'high' => (float) $price['high'],
-					'open' => (float) $price['open'],
-					'close' => (float) $price['close'],
-					'volume' => (float) $price['volume'],
-					'closed' => $price['confirm'],
-					'date' => ($price['timestamp'] / 1000),
-					'date_text' => $this->exchange->date (($price['timestamp'] / 1000)),
-					
-				];
-				
-			} catch (\JsonException $e) {
-				return [];
-			}
-			
-		}
-		
-	}		

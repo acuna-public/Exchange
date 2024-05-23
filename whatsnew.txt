@@ -1,0 +1,4 @@
+1.4  18.05.2024
+
++ leverageRound () method added
++ Bybit: Transfer to UTA account
