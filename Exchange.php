@@ -20,7 +20,7 @@
 		public
 			$marginPercent = 100,
 			$balancePercent = 100,
-			$prunedPercent = 100,
+			$prunedPercent = 99,
 			$leverage = 0,
 			$quantity = 0,
 			$balance = 0,
