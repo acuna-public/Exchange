@@ -816,7 +816,7 @@
 		
 		const GET = 'GET', POST = 'POST', PUT = 'PUT', DELETE = 'DELETE';
 		
-		protected function time () {
+		function time () {
 			
 			$ts = $this->milliseconds () + $this->timeOffset;
 			return number_format ($ts, 0, '.', '');
@@ -848,7 +848,7 @@
 			
 		}
 		
-		protected function signature () {
+		function signature () {
 			
 			ksort ($this->params);
 			return hash_hmac ('sha256', http_build_query ($this->params), $this->cred['secret']);

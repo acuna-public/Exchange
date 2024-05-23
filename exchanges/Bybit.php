@@ -198,7 +198,7 @@
 			
 			$this->params = [
 				
-				'accountType' => ($this->market == self::SPOT ? 'SPOT' : 'CONTRACT'),
+				'accountType' => ($quote == 'USD' ? 'CONTRACT' : 'UNIFIED'),
 				
 			];
 			
@@ -1009,7 +1009,7 @@
 				'forceChain' => 1,
 				'address' => $address,
 				'amount' => $this->quantity ($amount),
-				'accountType' => ($this->market == self::SPOT ? 'SPOT' : 'FUND'),
+				//'accountType' => ($this->market == self::SPOT ? 'SPOT' : 'FUND'),
 				
 			];
 			
@@ -1161,26 +1161,21 @@
 			
 			$this->time = $this->time ();
 			
-			if ($this->method == self::POST) {
-				
-				$options[CURLOPT_CUSTOMREQUEST] = $this->method;
-				$options[CURLOPT_POSTFIELDS] = http_build_query ($this->params);
-				
-				if ($this->signed) {
-					
-					$options[CURLOPT_HTTPHEADER][] = 'X-BAPI-SIGN: '.$this->signature ();
-					$options[CURLOPT_HTTPHEADER][] = 'X-BAPI-API-KEY: '.$this->cred['key'];
-					$options[CURLOPT_HTTPHEADER][] = 'X-BAPI-TIMESTAMP: '.$this->time ();
-					$options[CURLOPT_HTTPHEADER][] = 'X-BAPI-RECV-WINDOW: '.$this->recvWindow;
-					
-				}
-				
-			} elseif ($this->method == self::PUT)
-				$options[CURLOPT_PUT] = true;
-			elseif ($this->method != self::GET)
-				$options[CURLOPT_CUSTOMREQUEST] = $this->method;
+			$options[CURLOPT_CUSTOMREQUEST] = $this->method;
 			
-			$options[CURLOPT_HTTPHEADER][] = 'Connection: keep-alive';
+			//$options[CURLOPT_HTTPHEADER][] = 'Content-Type: application/json';
+			
+			if ($this->method == self::POST)
+				$options[CURLOPT_POSTFIELDS] = http_build_query ($this->params);
+			
+			if ($this->signed) {
+				
+				$options[CURLOPT_HTTPHEADER][] = 'X-BAPI-API-KEY: '.$this->cred['key'];
+				$options[CURLOPT_HTTPHEADER][] = 'X-BAPI-TIMESTAMP: '.$this->time;
+				$options[CURLOPT_HTTPHEADER][] = 'X-BAPI-RECV-WINDOW: '.$this->recvWindow;
+				$options[CURLOPT_HTTPHEADER][] = 'X-BAPI-SIGN: '.$this->signature ();
+				
+			}
 			
 			if ($this->proxies) {
 				
@@ -1207,27 +1202,23 @@
 			
 			$this->queryNum++;
 			
-			$options[CURLOPT_SSL_CIPHER_LIST] = 'TLSv1';
-			
 			if ($error = curl_error ($ch))
 				throw new \ExchangeException ($this, $error, curl_errno ($ch), $options, $this->func);
 			elseif (in_array ($info['http_code'], $this->errorCodes))
 				throw new \ExchangeException ($this, http_get_message ($info['http_code']).' ('.$options[CURLOPT_URL].')', $info['http_code'], $options, $this->func);
-			//debug ($data);
+			
 			$data = json2array ($data);
 			
 			curl_close ($ch);
 			
-			if (isset ($data['ret_code']) and $data['ret_code'] != 0)
-				throw new \ExchangeException ($this, $data['ret_msg'], $data['ret_code'], $options, $this->func);
-			elseif (isset ($data['retCode']) and $data['retCode'] != 0) // v5
+			if (isset ($data['retCode']) and $data['retCode'] != 0)
 				throw new \ExchangeException ($this, $data['retMsg'], $data['retCode'], $options, $this->func);
 			
 			return $data;
 			
 		}
 		
-		protected function signature () {
+		function signature () {
 			return hash_hmac ('sha256', $this->time.$this->cred['key'].$this->recvWindow.http_build_query ($this->params), $this->cred['secret']);
 		}
 		
