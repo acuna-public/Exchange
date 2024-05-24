@@ -718,7 +718,7 @@
 					$this->params['positionIdx'] = ($this->isLong () ? 1 : 2);
 				else
 					$this->params['positionIdx'] = 0;
-				debug ($this->params);
+				
 				foreach ($this->connect ('v5/position/trading-stop')['result'] as $key => $value)
 					$output[$key] = $value;
 				
@@ -770,7 +770,7 @@
 						'sellLeverage' => (string) $this->leverageRound ($data['shortLeverage']),
 						
 					];
-					debug ($this->params);
+					
 					foreach ($this->connect ('v5/position/switch-isolated')['result'] as $key => $value)
 						$output[$key] = $value;
 					
@@ -793,7 +793,7 @@
 						$this->params['positionIdx'] = ($this->isLong () ? 1 : 2);
 					else
 						$this->params['positionIdx'] = 0;
-					debug ($this->params);
+					
 					foreach ($this->connect ('v5/position/add-margin')['result'] as $key => $value)
 						$output[$key] = $value;
 					
