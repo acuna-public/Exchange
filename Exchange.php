@@ -13,7 +13,7 @@
 		public
 			$debug = 0,
 			$amount = 0,
-			$precision = 2,
+			$basePrecision = 2,
 			$quotePrecision = 2,
 			$leveragePrecision = 2;
 		

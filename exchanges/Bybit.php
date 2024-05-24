@@ -571,13 +571,13 @@
 			$data['qty'] = (string) $this->quantity ($order['quantity']);
 			
 			if (isset ($order['take_profit']))
-				$data['takeProfit'] = $this->price ($order['take_profit']);
+				$data['takeProfit'] = (string) $this->price ($order['take_profit']);
 			
 			if (isset ($order['stop_loss']))
-				$data['stopLoss'] = $this->price ($order['stop_loss']);
+				$data['stopLoss'] = (string) $this->price ($order['stop_loss']);
 			
 			if (isset ($order['price']))
-				$data['price'] = $this->price ($order['price']);
+				$data['price'] = (string) $this->price ($order['price']);
 			
 			if (isset ($order['name']))
 				$data['orderLinkId'] = $order['name'];
@@ -667,7 +667,7 @@
 					$order['orderLinkId'] = $order['name'];
 				
 				if (isset ($order['quantity']))
-					$order['qty'] = $order['quantity'];
+					$order['qty'] = (string) $this->quantity ($order['quantity']);
 				
 				$list[] = $order;
 				
@@ -709,16 +709,16 @@
 				];
 				
 				if ($data['takeProfit'])
-					$this->params['takeProfit'] = $data['takeProfit'];
+					$this->params['takeProfit'] = (string) $data['takeProfit'];
 				
 				if ($data['stopLoss'])
-					$this->params['stopLoss'] = $data['stopLoss'];
+					$this->params['stopLoss'] = (string) $data['stopLoss'];
 				
 				if ($this->isHedgeMode ())
 					$this->params['positionIdx'] = ($this->isLong () ? 1 : 2);
 				else
 					$this->params['positionIdx'] = 0;
-				
+				debug ($this->params);
 				foreach ($this->connect ('v5/position/trading-stop')['result'] as $key => $value)
 					$output[$key] = $value;
 				
@@ -741,8 +741,8 @@
 						
 						'symbol' => $this->pair ($base, $quote),
 						'category' => $this->category ($quote),
-						'buyLeverage' => $this->leverageRound ($data['longLeverage']),
-						'sellLeverage' => $this->leverageRound ($data['shortLeverage']),
+						'buyLeverage' => (string) $this->leverageRound ($data['longLeverage']),
+						'sellLeverage' => (string) $this->leverageRound ($data['shortLeverage']),
 						
 					];
 					
@@ -766,11 +766,11 @@
 						'symbol' => $this->pair ($base, $quote),
 						'category' => $this->category ($quote),
 						'tradeMode' => ($data['crossMargin'] ? 0 : 1),
-						'buyLeverage' => $this->leverageRound ($data['longLeverage']),
-						'sellLeverage' => $this->leverageRound ($data['shortLeverage']),
+						'buyLeverage' => (string) $this->leverageRound ($data['longLeverage']),
+						'sellLeverage' => (string) $this->leverageRound ($data['shortLeverage']),
 						
 					];
-					
+					debug ($this->params);
 					foreach ($this->connect ('v5/position/switch-isolated')['result'] as $key => $value)
 						$output[$key] = $value;
 					
@@ -785,7 +785,7 @@
 						
 						'symbol' => $this->pair ($base, $quote),
 						'category' => $this->category ($quote),
-						'margin' => round ($data['margin'], 4),
+						'margin' => (string) round ($data['margin'], 4),
 						
 					];
 					
@@ -793,7 +793,7 @@
 						$this->params['positionIdx'] = ($this->isLong () ? 1 : 2);
 					else
 						$this->params['positionIdx'] = 0;
-					
+					debug ($this->params);
 					foreach ($this->connect ('v5/position/add-margin')['result'] as $key => $value)
 						$output[$key] = $value;
 					
@@ -1012,7 +1012,7 @@
 				'chain' => $chain,
 				'forceChain' => 1,
 				'address' => $address,
-				'amount' => $this->quantity ($amount),
+				'amount' => (string) $this->quantity ($amount),
 				//'accountType' => ($this->market == self::SPOT ? 'SPOT' : 'FUND'),
 				
 			];
