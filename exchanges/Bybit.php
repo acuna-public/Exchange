@@ -545,7 +545,7 @@
 		
 		protected function createTypeOrder (string $symbol, array $order, string $side, string $func) {
 			
-			$this->func = __FUNCTION__;
+			$this->func = $func;
 			
 			$this->method = self::POST;
 			$this->signed = true;
@@ -558,7 +558,7 @@
 				'side' => $side,
 				'timeInForce' => 'GTC',
 				'reduceOnly' => ((isset ($order['close']) and $order['close']) ? 'true' : 'false'),
-				//'closeOnTrigger' => ((isset ($order['close']) and $order['close']) ? 'true' : 'false'),
+				'closeOnTrigger' => ((isset ($order['close']) and $order['close']) ? 'true' : 'false'),
 				'triggerBy' => 'MarkPrice',
 				'tpTriggerBy' => 'MarkPrice',
 				'slTriggerBy' => 'MarkPrice',
@@ -568,7 +568,7 @@
 			if (!isset ($order['quantity']))
 				$order['quantity'] = $this->quantity;
 			
-			$data['qty'] = $this->quantity ($order['quantity']);
+			$data['qty'] = (string) $this->quantity ($order['quantity']);
 			
 			if (isset ($order['take_profit']))
 				$data['takeProfit'] = $this->price ($order['take_profit']);
@@ -589,8 +589,12 @@
 			
 			$this->params = $data;
 			
-			return $this->connect ('v5/order/create')['result'];
+			return $this->prepOrder ($this->connect ('v5/order/create')['result']);
 			
+		}
+		
+		protected function prepOrder ($data) {
+			return ['id' => $data['orderId']];
 		}
 		
 		function createOrder ($base, $quote, $data = []) {
@@ -1163,10 +1167,10 @@
 			
 			$options[CURLOPT_CUSTOMREQUEST] = $this->method;
 			
-			//$options[CURLOPT_HTTPHEADER][] = 'Content-Type: application/json';
+			$options[CURLOPT_HTTPHEADER][] = 'Content-Type: application/json';
 			
 			if ($this->method == self::POST)
-				$options[CURLOPT_POSTFIELDS] = http_build_query ($this->params);
+				$options[CURLOPT_POSTFIELDS] = array2json ($this->params);
 			
 			if ($this->signed) {
 				
@@ -1176,24 +1180,6 @@
 				$options[CURLOPT_HTTPHEADER][] = 'X-BAPI-SIGN: '.$this->signature ();
 				
 			}
-			
-			if ($this->proxies) {
-				
-				$proxy = trim ($this->proxies[mt_rand (0, count ($this->proxies) - 1)]);
-				
-				$parts = explode ('@', $proxy);
-				
-				if (count ($parts) > 1) {
-					
-					$proxy = $parts[1];
-					$options[CURLOPT_PROXYUSERPWD] = $parts[0];
-					
-				}
-				
-				$options[CURLOPT_PROXY] = $proxy;
-				$options[CURLOPT_PROXYTYPE] = CURLPROXY_SOCKS5;
-				
-			} else $proxy = '';
 			
 			curl_setopt_array ($ch, $options);
 			
@@ -1219,7 +1205,16 @@
 		}
 		
 		function signature () {
-			return hash_hmac ('sha256', $this->time.$this->cred['key'].$this->recvWindow.http_build_query ($this->params), $this->cred['secret']);
+			
+			$result = $this->time.$this->cred['key'].$this->recvWindow;
+			
+			if ($this->method == self::GET)
+				$result .= http_build_query ($this->params);
+			else
+				$result .= array2json ($this->params);
+			
+			return hash_hmac ('sha256', $result, $this->cred['secret']);
+			
 		}
 		
 		function connect2 ($url) {

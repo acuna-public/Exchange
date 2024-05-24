@@ -752,6 +752,10 @@
 		function decreaseOrder ($base, $quote, $data = []) {}
 		function closeAllPositions ($data = []) {}
 		
+		protected function prepOrder ($data) {
+			return $data;
+		}
+		
 		function timeframe ($timeframe) { // From cctx
 			
 			$scales = [];
