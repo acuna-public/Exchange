@@ -170,7 +170,7 @@
 		
 		function getExtraMargin () {
 			
-			if ($this->balance > 0 and !$this->crossMargin/* and $this->marginPercent < 100*/)
+			if ($this->balance > 0 and !$this->crossMargin and $this->marginPercent < 100)
 				$extraMargin = ($this->balance - $this->margin);
 			else
 				$extraMargin = 0;
