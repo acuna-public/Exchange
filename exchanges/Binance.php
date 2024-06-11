@@ -30,6 +30,12 @@
 			
 		];
 		
+		public
+			$ftype = self::FTYPE_USD;
+		
+		const
+			FTYPE_USD = 'USD', FTYPE_COIN = 'COIN';
+		
 		public $curChanges = [
 			
 			'SHIB1000' => '1000SHIB',
@@ -124,6 +130,21 @@
 			}
 			
 			return $summary;
+			
+		}
+		
+		function getFeeRate ($marketType) {
+			
+			if ($this->market == self::FUTURES)
+				$value = $this->feesRate[$this->market][$this->ftype][$this->flevel][($marketType == self::MAKER ? 0 : 1)];
+			else
+				$value = $this->feesRate[$this->market][$this->flevel][($marketType == self::TAKER ? 0 : 1)];
+			
+			$percent = new \Percent ($value);
+			
+			$value -= $percent->valueOf ($this->rebate[$this->market]);
+			
+			return $value;
 			
 		}
 		
@@ -738,6 +759,22 @@
 			return $order['clientOrderId'];
 		}
 		
+		function getLiquidationPrice2 ($quote) {
+			
+			if ($this->quantity > 0) {
+				
+				$price = $this->walletBalance - 0 + 0 + ((($this->maintenanceMarginRate / 100) * $this->entryPrice) / 100) + 0 + 0;
+				$price -= ($this->isLong () ? 1 : -1) * $this->quantity * $this->entryPrice - 0 * 0 + 0 * 0;
+				$price /= $this->quantity * ($this->maintenanceMarginRate / 100) + 0 * 0 + 0 * 0;
+				
+				$price = $this->price ($price);
+				
+				return ($price > 0 ? $price : 0);
+				
+			} else return 0;
+			
+		}
+		
 		function cancelFuturesOrders ($base, $quote, array $ids) {
 			
 			$request = $this->getRequest (__FUNCTION__);
@@ -875,7 +912,7 @@
 			
 		}
 		
-		function getTickerPrice ($base, $quote) {
+		function getTickers ($base = '', $quote = '') {
 			
 			$request = $this->getRequest (__FUNCTION__);
 			

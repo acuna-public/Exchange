@@ -20,26 +20,13 @@
 			
 			self::FUTURES => [
 				
-				self::FTYPE_USD => [
-					
-					[0.010, 0.06],
-					[0.006, 0.05],
-					[0.004, 0.045],
-					[0.002, 0.0425],
-					[0, 0.04],
-					[0, 0.035],
-					[0, 0.03],
-					
-				],
-				
-				self::FTYPE_COIN => [
-					
-					[0.0100, 0.0500],
-					[0.0080, 0.0450],
-					[0.0050, 0.0400],
-					[0.0030, 0.0300],
-					
-				],
+				[0.036, 0.1],
+				[0.033, 0.073],
+				[0.029, 0.068],
+				[0.025, 0.064],
+				[0.012, 0.03],
+				[0.01, 0.03],
+				[0, 0.028],
 				
 			],
 			
@@ -882,7 +869,7 @@
 			
 		}
 		
-		function getTickerPrice ($base, $quote) {
+		function getTickers ($base = '', $quote = '') {
 			
 			$this->func = __FUNCTION__;
 			
@@ -909,7 +896,7 @@
 				
 			}
 			
-			return ['index_price' => 0, 'mark_price' => 0];
+			return ['indexPrice' => 0, 'markPrice' => 0];
 			
 		}
 		
@@ -917,11 +904,11 @@
 			
 			return [
 				
-				'mark_price' => $item['markPrice'],
-				'index_price' => $item['indexPrice'],
-				'last_price' => $item['lastPrice'],
+				'markPrice' => $item['markPrice'],
+				'indexPrice' => $item['indexPrice'],
+				'lastPrice' => $item['lastPrice'],
 				'prev' => $item['prevPrice24h'],
-				'change_percent' => $item['price24hPcnt'],
+				'changePercent' => $item['price24hPcnt'],
 				
 			];
 			
