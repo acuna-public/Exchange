@@ -81,8 +81,10 @@
 				}
 				
 			} catch (\JsonException $e) {
-				return [];
+				
 			}
+			
+			return [];
 			
 		}
 		
