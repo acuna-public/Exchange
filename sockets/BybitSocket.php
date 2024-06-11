@@ -60,21 +60,25 @@
 				
 				$data = json2array ($con);
 				
-				$price = $data['data'][0];
-				
-				return [
+				if (isset ($data['data'])) {
 					
-					'topic' => $data['topic'],
-					'low' => (float) $price['low'],
-					'high' => (float) $price['high'],
-					'open' => (float) $price['open'],
-					'close' => (float) $price['close'],
-					'volume' => (float) $price['volume'],
-					'closed' => $price['confirm'],
-					'date' => ($price['timestamp'] / 1000),
-					'date_text' => $this->exchange->date (($price['timestamp'] / 1000)),
+					$price = $data['data'][0];
 					
-				];
+					return [
+						
+						'topic' => $data['topic'],
+						'low' => (float) $price['low'],
+						'high' => (float) $price['high'],
+						'open' => (float) $price['open'],
+						'close' => (float) $price['close'],
+						'volume' => (float) $price['volume'],
+						'closed' => $price['confirm'],
+						'date' => ($price['timestamp'] / 1000),
+						'date_text' => $this->exchange->date (($price['timestamp'] / 1000)),
+						
+					];
+					
+				}
 				
 			} catch (\JsonException $e) {
 				return [];
