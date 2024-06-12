@@ -446,6 +446,16 @@
 			
 		}
 		
+		final function open2 (): bool {
+			
+			return (
+				$this->maxQuantity > 0 and
+				$this->quantity >= $this->minQuantity and
+				$this->quantity <= $this->maxQuantity
+			);
+			
+		}
+		
 		final function update ($quote) {
 			
 			$this->openFee = $this->getOpenFee ();

@@ -986,7 +986,7 @@
 			return ($this->crossMargin and $this->position and $this->position['crossMargin']);
 		}
 		
-		function withdraw ($coin, $address, $chain, $amount, $data = []): array {
+		function withdraw ($coin, $data = []): array {
 			
 			$this->func = __FUNCTION__;
 			
@@ -996,16 +996,16 @@
 			$this->params = [
 				
 				'coin' => $coin,
-				'chain' => $chain,
 				'forceChain' => 1,
-				'address' => $address,
-				'amount' => (string) $this->quantity ($amount),
-				//'accountType' => ($this->market == self::SPOT ? 'SPOT' : 'FUND'),
+				'amount' => (string) $this->quantity ($data['quantity']),
+				'timestamp' => time (),
+				'accountType' => ($this->market == self::SPOT ? 'SPOT' : 'FUND'),
 				
 			];
 			
 			foreach ($data as $key => $value)
-				$this->params[$key] = $value;
+				if ($key != 'quantity')
+					$this->params[$key] = $value;
 			
 			return $this->connect ('v5/asset/withdraw/create')['result'];
 			
