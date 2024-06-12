@@ -31,27 +31,30 @@
 			$openBalance = 0,
 			$walletBalance = 0,
 			$fixedBalance = 0,
+			$maxBalance = 0,
 			$stopLoss = 0,
-			$entryPrice = 0,
-			$markPrice = 0,
 			$minQuantity = 0,
 			$maxQuantity = 0,
 			$minValue = [self::SPOT => 0, self::FUTURES => 0],
 			$balanceAvailable = 0,
 			$initialMarginRate = 0,
-			$maintenanceMarginRate = 0;
+			$maintenanceMarginRate = 0,
+			$base = '', $quote = '';
 		
 		public
 			$fixedSumm = 0;
 		
 		public
+			$pnl = 0,
+			$unreleasedPNL = 0,
 			$margin = 0,
 			$extraMargin = 0,
+			$entryPrice = 0,
+			$markPrice = 0,
 			$openFee = 0,
 			$closeFee = 0,
 			$liquidPrice = 0,
-			$liquidPercent = 0,
-			$base = '', $quote = '';
+			$liquidPercent = 0;
 		
 		public
 			$cred = [],
@@ -66,7 +69,6 @@
 			$curChanges = [];
 		
 		protected
-			$pnl = 0,
 			$lastDate = 0,
 			$balances = [];
 		
@@ -325,14 +327,6 @@
 			return $this->amount ($this->getNotional () / $this->entryPrice);
 		}
 		
-		function getPNL () {
-			return ($this->pnl - $this->closeFee);
-		}
-		
-		function getUnreleasedPNL () {
-			return $this->pnl;
-		}
-		
 		function getROE ($margin) {
 			return ($this->getROI ($margin) / $this->leverage);
 		}
@@ -457,7 +451,8 @@
 			$this->openFee = $this->getOpenFee ();
 			$this->closeFee = $this->getCloseFee ();
 			
-			$this->pnl = ($this->getProfit ($this->entryPrice, $this->markPrice) * $this->quantity);
+			$this->unreleasedPNL = ($this->getProfit ($this->entryPrice, $this->markPrice) * $this->quantity);
+			$this->pnl = ($this->unreleasedPNL - $this->closeFee);
 			
 			$this->extraMargin = $this->getExtraMargin ();
 			$this->liquidPrice = $this->getLiquidationPrice ($quote);
@@ -469,17 +464,29 @@
 		
 		final function close () {
 			
-			$this->margin += $this->getPNL ();
-			$this->balance += $this->getPNL ();
-			$this->totalPNL += $this->getPNL ();
-			$this->walletBalance += $this->getPNL ();
+			$this->margin += $this->pnl;
+			$this->balance += $this->pnl;
+			$this->totalPNL += $this->pnl;
+			$this->walletBalance += $this->pnl;
 			
 			$this->balanceAvailable += $this->balance;
 			
-			if ($this->getPNL () > 0)
-			if ($this->fixedBalance > 0)
-			if ($this->getWalletBalance () > $this->fixedBalance)
-				$this->fixedSumm += $this->getPNL ();
+			if ($this->pnl > 0) {
+				
+				if ($this->maxBalance > 0) {
+					
+					if (($this->getWalletBalance () - $this->maxBalance) > $this->maxBalance)
+						$this->fixedSumm += $this->pnl;
+					
+				} elseif ($this->fixedBalance > 0) {
+					
+					if (($this->getWalletBalance () - $this->fixedBalance) > $this->fixedBalance)
+						if ($this->fixedSumm < $this->fixedBalance)
+							$this->fixedSumm += $this->pnl;
+					
+				}
+				
+			}
 			
 		}
 		
@@ -635,6 +642,10 @@
 		
 		function date ($date) {
 			return date ($this->dateFormat, $date);
+		}
+		
+		function prepDate ($date) {
+			return $date;
 		}
 		
 		abstract function setFuturesHedgeMode (bool $hedge, $base = '', $quote = '');
@@ -801,7 +812,7 @@
 		}
 		
 		function debug (...$data) {
-			return debug ($this->date ($this->markDate).': '.$this->pair ($this->base, $this->quote).$this->side.': '.array2json ($data));
+			return debug ($this->date ().': '.$this->pair ($this->base, $this->quote).$this->side.': '.array2json ($data));
 		}
 		
 		public

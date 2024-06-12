@@ -135,8 +135,8 @@
 					'open' => (float) $value[1],
 					'close' => (float) $value[4],
 					'volume' => (float) $value[5],
-					'date' => ($value[0] / 1000),
-					'date_text' => $this->date (($value[0] / 1000)),
+					'date' => $this->prepDate ($value[0] / 1000),
+					'date_text' => $this->date ($this->prepDate ($value[0] / 1000)),
 					
 				];
 				
@@ -152,7 +152,7 @@
 				
 				'price' => $order['price'],
 				'quantity' => $order['origQty'],
-				'date' => ($order['time'] / 1000),
+				'date' => $this->prepDate ($order['time'] / 1000),
 				'done' => ($order['status'] == 'FILLED' ? 1 : 0),
 				
 			];
@@ -841,7 +841,7 @@
 			
 			foreach ($this->connect ('futures/data/topLongShortAccountRatio') as $value) {
 				
-				$date = ($value['timestamp'] / 1000);
+				$date = $this->prepDate ($value['timestamp'] / 1000);
 				
 				$summary[$date] = [
 					
@@ -1043,8 +1043,8 @@
 					'long' => $value['buyRatio'],
 					'short' => $value['sellRatio'],
 					'ratio' => ($value['buyRatio'] / $value['sellRatio']),
-					'date' => ($value['timestamp'] / 1000),
-					'date_text' => $this->date ($value['timestamp'] / 1000),
+					'date' => $this->prepDate ($value['timestamp'] / 1000),
+					'date_text' => $this->date ($this->prepDate ($value['timestamp'] / 1000)),
 					
 				];
 				
@@ -1091,8 +1091,8 @@
 				$summary[] = [
 					
 					'value' => $value['openInterest'],
-					'date' => ($value['timestamp'] / 1000),
-					'date_text' => $this->date ($value['timestamp'] / 1000),
+					'date' => $this->prepDate ($value['timestamp'] / 1000),
+					'date_text' => $this->date ($this->prepDate ($value['timestamp'] / 1000)),
 					
 				];
 				
@@ -1100,6 +1100,10 @@
 			
 			return $summary;
 			
+		}
+		
+		function prepDate ($date) {
+			return round ($date);
 		}
 		
 		function createSocket (): ?Socket {

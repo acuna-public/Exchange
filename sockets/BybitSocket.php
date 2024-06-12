@@ -73,8 +73,8 @@
 						'close' => (float) $price['close'],
 						'volume' => (float) $price['volume'],
 						'closed' => $price['confirm'],
-						'date' => ($price['timestamp'] / 1000),
-						'date_text' => $this->exchange->date (($price['timestamp'] / 1000)),
+						'date' => $this->exchange->prepDate ($price['timestamp'] / 1000),
+						'date_text' => $this->exchange->date ($this->exchange->prepDate ($price['timestamp'] / 1000)),
 						
 					];
 					
