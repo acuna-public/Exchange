@@ -53,6 +53,8 @@
 			
 			try {
 				
+				sleep (1);
+				
 				$con = $this->read ();
 				
 				if ($start)
