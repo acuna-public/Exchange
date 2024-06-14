@@ -290,7 +290,7 @@
 		
 		function getPositionData ($base, $quote) {
 			
-			if (isset ($this->positions[$this->pair ($base, $quote)]))
+			if (isset ($this->positions[$this->pair ($base, $quote)][$this->getSide ()]))
 				$this->position = $this->positions[$this->pair ($base, $quote)][$this->getSide ()];
 			else
 				$this->position = [];
