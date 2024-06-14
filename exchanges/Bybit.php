@@ -128,17 +128,21 @@
 			if ($prices = $this->connect ('v5/market/'.($type == self::PRICES_MARK ? 'mark-price-kline' : 'kline'))['result']['list'])
 			foreach ($prices as $value) {
 				
-				$output[] = [
+				$data = [
 					
 					'low' => (float) $value[3],
 					'high' => (float) $value[2],
 					'open' => (float) $value[1],
 					'close' => (float) $value[4],
-					'volume' => (float) $value[5],
 					'date' => $this->prepDate ($value[0] / 1000),
 					'date_text' => $this->date ($this->prepDate ($value[0] / 1000)),
 					
 				];
+				
+				if ($type != self::PRICES_MARK)
+					$data['volume'] = $value[5];
+				
+				$output[] = $data;
 				
 			}
 			

@@ -399,9 +399,6 @@
 			
 			if ($this->openBalance > 0 and $balanceAvailable > 0 and $this->pruneValue >= 0) {
 				
-				//if ($balanceAvailable < $this->balance)
-				//	$this->balance = $balanceAvailable;
-				
 				if ($this->margin <= 0)
 					$this->balance = $this->openBalance;
 				else
@@ -458,13 +455,7 @@
 		}
 		
 		final function open2 (): bool {
-			
-			return (
-				$this->maxQuantity > 0 and
-				$this->quantity >= $this->minQuantity and
-				$this->quantity <= $this->maxQuantity
-			);
-			
+			return ($this->maxQuantity <= 0 or $this->quantity <= $this->maxQuantity);
 		}
 		
 		final function update ($quote) {
