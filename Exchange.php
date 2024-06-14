@@ -27,6 +27,7 @@
 			$quantity = 0,
 			$balance = 0,
 			$totalPNL = 0,
+			$markDate = 0,
 			$upnl = 0,
 			$openBalance = 0,
 			$walletBalance = 0,
@@ -350,6 +351,19 @@
 			
 		}
 		
+		function getEquity () {
+			return ($this->getWalletBalance () + $this->upnl);
+		}
+		
+		function getActiveBalance () {
+			
+			$balance = $this->getWalletBalance ();
+			if ($this->upnl < 0) $balance += $this->upnl;
+			
+			return $balance;
+			
+		}
+		
 		function getWalletBalance () {
 			
 			$percent = new \Percent ($this->walletBalance);
@@ -366,13 +380,10 @@
 			
 		}
 		
-		function getEquity () {
-			return ($this->getWalletBalance () + $this->upnl);
-		}
-		
 		function getAvailableBalance () {
 			
 			$balance = $this->balanceAvailable;
+			
 			if ($this->upnl < 0) $balance += $this->upnl;
 			
 			if ($this->fixedSumm > 0)
@@ -485,12 +496,12 @@
 				
 				if ($this->maxBalance > 0) {
 					
-					if (($this->getWalletBalance () - $this->maxBalance) > $this->maxBalance)
+					if (($this->getActiveBalance () - $this->maxBalance) > $this->maxBalance)
 						$this->fixedSumm += $this->pnl;
 					
 				} elseif ($this->fixedBalance > 0) {
 					
-					if (($this->getWalletBalance () - $this->fixedBalance) > $this->fixedBalance)
+					if (($this->getActiveBalance () - $this->fixedBalance) > $this->fixedBalance)
 						if ($this->fixedSumm < $this->fixedBalance)
 							$this->fixedSumm += $this->pnl;
 					
@@ -822,7 +833,7 @@
 		}
 		
 		function debug (...$data) {
-			return debug ($this->date ().': '.$this->pair ($this->base, $this->quote).$this->side.': '.array2json ($data));
+			return debug ($this->date ($this->markDate).': '.$this->pair ($this->base, $this->quote).$this->side.': '.array2json ($data));
 		}
 		
 		public

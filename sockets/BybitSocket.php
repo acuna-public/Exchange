@@ -53,8 +53,6 @@
 			
 			try {
 				
-				sleep (1);
-				
 				$con = $this->read ();
 				
 				if ($start)
@@ -65,7 +63,7 @@
 				if (isset ($data['data'])) {
 					
 					$price = $data['data'][0];
-					
+					//if ($price['confirm']) debug ([$data['topic'], $this->exchange->date ($this->exchange->prepDate ($price['timestamp'] / 1000))]);
 					return [
 						
 						'topic' => $data['topic'],
