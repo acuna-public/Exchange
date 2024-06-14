@@ -593,8 +593,8 @@
 			$data['base'] = $base;
 			$data['quote'] = $quote;
 			
-			if ($this->openMarketType == self::MAKER)
-				$data['price'] = (isset ($data['price']) ? $data['price'] : $this->entryPrice);
+			if ($this->openMarketType == self::MAKER and !isset ($data['price']))
+				$data['price'] = $this->entryPrice;
 			
 			if ($this->market == self::SPOT)
 				$data['marketUnit'] = 'baseCoin';
@@ -612,6 +612,9 @@
 			if ($this->market == self::SPOT)
 				$data['marketUnit'] = 'quoteCoin';
 			
+			if ($this->closeMarketType == self::MAKER and !isset ($data['price']))
+				$data['price'] = $this->markPrice;
+			
 			return $this->createTypeOrder ($this->pair ($data['base'], $data['quote']), $data, ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
 			
 		}
@@ -621,8 +624,8 @@
 			$data['base'] = $base;
 			$data['quote'] = $quote;
 			
-			if ($this->closeMarketType == self::MAKER)
-				$data['price'] = (isset ($data['price']) ? $data['price'] : $this->markPrice);
+			if ($this->closeMarketType == self::MAKER and !isset ($data['price']))
+				$data['price'] = $this->markPrice;
 			
 			return $this->createTypeOrder ($this->pair ($data['base'], $data['quote']), $data, ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
 			
