@@ -3,8 +3,6 @@
   require 'ExchangeException.php';
   require 'NotEnoughFundsException.php';
   
-  require 'Calculator.php';
-  
   abstract class Exchange {
     
     public
@@ -86,9 +84,6 @@
       $hedgeMode = false,
       $crossMargin = true;
     
-    public
-      \Exchange\Calculator $calculator;
-    
     public $side = self::LONG, $market = self::SPOT;
     
     const SPOT = 'SPOT', FUTURES = 'FUTURES';
@@ -108,10 +103,6 @@
       'y' => 'years',
       
     ];
-    
-    function __construct () {
-      $this->calculator = new \Exchange\Calculator ();
-    }
     
     abstract function getName ();
     abstract function getTitle ();
