@@ -6,24 +6,23 @@
   abstract class Exchange {
     
     public
+      $debug = 0,
       $timeOffset = 0,
       $recvWindow = 60000, // 1 minute
       $dateFormat = 'd.m.y H:i';
     
     public
-      $debug = 0,
       $amount = 0,
       $basePrecision = 2,
       $quotePrecision = 2,
-      $leveragePrecision = 2;
+      $leveragePrecision = 0;
     
     public
-      $marginPercent = 100,
+      $riskPercent = 0,
       $balancePercent = 100,
       $pruneValue = 0.1,
       $leverage = 0,
       $quantity = 0,
-      $balance = 0,
       $totalPNL = 0,
       $markDate = 0,
       $upnl = 0,
@@ -32,11 +31,11 @@
       $walletBalance = 0,
       $fixedBalance = 0,
       $maxBalance = 0,
-      $stopLoss = 0,
       $quantitys = [],
       $entryPrices = [],
       $minQuantity = 0,
       $maxQuantity = 0,
+			$maxLeverage = 0,
       $minValue = [self::SPOT => 0, self::FUTURES => 0],
       $balanceAvailable = 0,
       $initialMarginRate = 0,
@@ -136,19 +135,8 @@
       
     }
     
-    function getRiskLeverage ($maxLeverage = 100) {
-      
-      $leverage = 0;
-      
-      do {
-        
-        $leverage++;
-        $value = ($this->margin * $leverage);
-        
-      } while ($leverage <= $maxLeverage);
-      
-      return $leverage;
-      
+    function getRiskLeverage ($stopPercent) {
+			return $this->leverageRound ($this->riskPercent / $stopPercent);
     }
     
     function getSides () {
@@ -215,62 +203,8 @@
       
     }
     
-    function getMarginPercent ($stopLoss) {
-      
-      $entryPrice = $this->getEntryPrice ();
-      
-      if ($this->isLong ())
-        $stopPrice = ($entryPrice - $stopLoss);
-      else
-        $stopPrice = ($entryPrice + $stopLoss);
-      
-      $diff = $this->getProfit ($entryPrice, $percent->valueOf ($stopLoss));
-      
-    }
-    
     function initialMarginRate () {
       return (1 / $this->leverage);
-    }
-    
-    function getStopLoss ($quote, $entryPrice) {
-      
-      if ($this->stopLoss > 0) {
-        
-        $percent = (($entryPrice * $this->stopLoss) / 100);
-        
-        if ($this->isLong ()) {
-          
-          $stopPrice = $this->price ($entryPrice - $percent);
-          if ($stopPrice > $this->liquidPrice) return $stopPrice;
-          
-        } else {
-          
-          $stopPrice = $this->price ($entryPrice + $percent);
-          if ($stopPrice < $this->liquidPrice) return $stopPrice;
-          
-        }
-        
-      }
-      
-      return 0;
-      
-    }
-    
-    function getTakeProfit ($entryPrice) {
-      
-      if ($this->takeProfit < 0) $this->takeProfit = $this->liquid;
-      
-      if ($this->takeProfit > 0) {
-        
-        $percent = (($entryPrice * $this->takeProfit) / 100);
-        
-        if ($this->isLong ())
-          return $this->price ($entryPrice + $percent);
-        else
-          return $this->price ($entryPrice - $percent);
-        
-      } else return 0;
-      
     }
     
     function liquidPricePercent () {
@@ -343,15 +277,15 @@
       return $this->amount ($this->getNotional () / $this->entryPrice);
     }
     
-    function getROE ($margin) {
-      return ($this->getROI ($margin) / $this->leverage);
+    function getROE () {
+      return ($this->getROI () / $this->leverage);
     }
     
-    function getROI ($margin) {
+    function getROI () {
       
       $percent = new \Percent ($this->pnl);
       
-      $percent->delim = $margin;
+      $percent->delim = $this->margin;
       
       return $percent->valueOf (100);
       
@@ -441,26 +375,14 @@
       $this->entryPrice = $this->markPrice;
       $this->openFee = $this->closeFee = 0;
       
-      if ($this->openBalance > 0 and $balanceAvailable > 0) {
+      if ($balanceAvailable > 0) {
         
-        if ($this->margin == 0)
-          $this->balance = $this->openBalance;
-        else
-          $this->balance = $this->margin;
-        
-        if ($this->margin == 0) {
+        if ($this->openBalance > 0 and $this->margin == 0) {
           
-          $balance = $this->balance;
+          $this->margin = $this->openBalance;
           
-          if ($this->pruneValue > 0 and ($balance + $this->pruneValue) > $balanceAvailable)
-            $balance -= $this->pruneValue;
-          
-          $percent = new \Percent ($balance);
-          
-          if ($this->marginPercent <= 0 or $this->marginPercent > 100)
-            $this->marginPercent = 100;
-          
-          $this->margin = $percent->valueOf ($this->marginPercent);
+          if ($this->pruneValue > 0 and ($this->margin + $this->pruneValue) > $balanceAvailable)
+            $this->margin -= $this->pruneValue;
           
         }
         
@@ -484,43 +406,40 @@
     
     final function open ($quote): bool {
       
-      if ($this->checkMargin ($quote)) {
-        
-        if ($this->margin > 0 and $this->openFee > 0)
-          $this->margin -= $this->openFee;
-        
-        $this->fullBalance = $this->balance;
-        
-        if ($this->openFee > 0)
-          $this->balance -= $this->openFee;
-        
-        //if (($this->margin + $this->openFee) > $this->minValue[$this->market]) {
-          
-          $this->quantity = $this->getQuantity (); // Final
-          
-          $this->openFee = $this->getOpenFee ($quote);
-          
-          if ($this->quantity >= $this->minQuantity) {
-            
-            $balanceAvailable = $this->getAvailableBalance ();
-            
-            //$this->debug ($this->fullBalance, $balanceAvailable);
-            
-            $balanceAvailable -= $this->fullBalance;
-            
-            if ($balanceAvailable >= 0) {
-              
-              $this->quantitys[] = $this->quantity;
-              $this->entryPrices[] = $this->entryPrice;
-              
-              return true;
-              
-            }
-            
-          }// else $this->debug ($this->quantity, $this->minQuantity);
-          
-        //}// else throw new \NotEnoughFundsException ($this, 'Position value must be more than '.$this->minValue[$this->market].'. Current value: '.$this->margin);
-        
+      if ($this->checkMargin ($quote) and $this->margin > 0) {
+				
+				$this->fullBalance = $this->margin;
+				
+				if ($this->openFee > 0)
+					$this->margin -= $this->openFee;
+				
+				//if ($this->margin > $this->minValue[$this->market]) {
+				
+				$this->quantity = $this->getQuantity (); // Final
+				
+				$this->openFee = $this->getOpenFee ($quote); // Fees with new quantity
+				
+				if ($this->quantity >= $this->minQuantity) {
+					
+					$balanceAvailable = $this->getAvailableBalance ();
+					
+					//$this->debug ($this->fullBalance, $balanceAvailable);
+					
+					$balanceAvailable -= $this->fullBalance;
+					
+					if ($balanceAvailable >= 0) {
+						
+						$this->quantitys[] = $this->quantity;
+						$this->entryPrices[] = $this->entryPrice;
+						
+						return true;
+						
+					}
+					
+				}// else $this->debug ($this->quantity, $this->minQuantity);
+				
+				//} else throw new \NotEnoughFundsException ($this, 'Position value must be more than '.$this->minValue[$this->market].'. Current value: '.$this->margin);
+				
       }
       
       return false;
@@ -557,20 +476,18 @@
         $this->unreleasedPNL = ($this->getProfit ($this->entryPrice, $this->markPrice) * $this->quantity);
         $this->pnl = ($this->unreleasedPNL - $this->closeFee);
         
-        $this->extraMargin = $this->getExtraMargin ();
         $this->liquidPrice = $this->getLiquidationPrice ($quote);
         $this->liquidPercent = $this->liquidPricePercent ();
         
-        //$this->debug ($this->balance, $this->margin, $this->extraMargin);
+        //$this->debug ($this->margin, $this->extraMargin);
         
       }
       
     }
     
     final function close () {
-      
+			
       $this->margin += $this->pnl;
-      $this->balance += $this->pnl;
       $this->totalPNL += $this->pnl;
       
       $this->walletBalance += $this->pnl;
@@ -581,7 +498,7 @@
       //if ($this->walletBalance < 0)
       //  $this->walletBalance = 0;
       
-      $this->balanceAvailable += $this->balance;
+      $this->balanceAvailable += $this->margin;
       
       //if ($this->balanceAvailable < 0)
       //  $this->balanceAvailable = 0;
@@ -608,20 +525,6 @@
       
     }
     
-    function getExtraMargin () {
-      
-      if (!$this->crossMargin)
-        $extraMargin = ($this->balance - $this->margin);
-      else
-        $extraMargin = 0;
-      //$this->debug ($this->balance, $this->margin, $extraMargin);
-      if ($extraMargin < 0)
-        $extraMargin = 0;
-      
-      return $extraMargin;
-      
-    }
-    
     function getInitialMargin () {
       
       if ($this->entryPrice > 0)
@@ -635,7 +538,7 @@
       
       if ($this->market == self::SPOT)
         return 1;
-      elseif ($this->leverage <= 0)
+      elseif ($this->leverage == 0 and $this->positionActive ())
         return $this->position['leverage'];
       else
         return $this->leverage;
