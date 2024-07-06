@@ -743,85 +743,84 @@
           $output[$key] = $value;
         
       }
-      
+			
       if ($this->market != self::SPOT) {
-        
-        if (isset ($data['leverage'])) {
-          
-          $this->params = [
-            
-            'symbol' => $this->pair ($base, $quote),
-            'category' => $this->category ($quote),
-            
-          ];
+				
+				if (
+					(isset ($data['longLeverage']) and $data['longLeverage'] != 0) or
+					(isset ($data['shortLeverage']) and $data['shortLeverage'] != 0) or
+					(isset ($data['leverage']) and $data['leverage'] != 0)
+				) {
 					
-					if ($this->isHedgeMode () and !$this->crossMargin) {
-						
-						if ($this->isLong ())
-							$this->params['buyLeverage'] = (string) $this->leverageRound ($data['leverage']);
-						else
-							$this->params['sellLeverage'] = (string) $this->leverageRound ($data['leverage']);
-						
-					} else $this->params['buyLeverage'] = $this->params['sellLeverage'] = (string) $this->leverageRound ($data['leverage']);
+					if (isset ($data['leverage']))
+						$data['longLeverage'] =
+						$data['shortLeverage'] =
+						$data['leverage'];
 					
-          foreach ($this->connect ('v5/position/set-leverage')['result'] as $key => $value)
-            $output[$key] = $value;
-          
-        }
-        
-        if (isset ($data['crossMargin'])) {
-          
-          $this->params = [
-            
-            'symbol' => $this->pair ($base, $quote),
-            'category' => $this->category ($quote),
-            'tradeMode' => ($data['crossMargin'] ? 0 : 1),
-            
-          ];
-          
-          if (isset ($data['leverage'])) {
+					$this->params = [
 						
-						if ($this->isHedgeMode () and !$this->crossMargin) {
-							
-							if ($this->isLong ())
-								$this->params['buyLeverage'] = (string) $this->leverageRound ($data['leverage']);
-							else
-								$this->params['sellLeverage'] = (string) $this->leverageRound ($data['leverage']);
-							
-						} else $this->params['buyLeverage'] = $this->params['sellLeverage'] = (string) $this->leverageRound ($data['leverage']);
+						'symbol' => $this->pair ($base, $quote),
+						'category' => $this->category ($quote),
+						'buyLeverage' => (string) $this->leverageRound ($data['longLeverage']),
+						'sellLeverage' => (string) $this->leverageRound ($data['shortLeverage']),
 						
-					}
+					];
 					
-          foreach ($this->connect ('v5/position/switch-isolated')['result'] as $key => $value)
-            $output[$key] = $value;
-          
-        }
-        
-        if (!isset ($data['margin']) and $this->extraMargin != 0)
-          $data['margin'] = $this->extraMargin;
-        
-        if (isset ($data['margin']) and $data['margin'] != 0) {
-          
-          $this->params = [
-            
-            'symbol' => $this->pair ($base, $quote),
-            'category' => $this->category ($quote),
-            'margin' => (string) round ($data['margin'], 4),
-            
-          ];
-          
-          if ($this->isHedgeMode ())
-            $this->params['positionIdx'] = ($this->isLong () ? 1 : 2);
-          else
-            $this->params['positionIdx'] = 0;
-          
-          foreach ($this->connect ('v5/position/add-margin')['result'] as $key => $value)
-            $output[$key] = $value;
-          
-        }
-        
-      }
-      
+					foreach ($this->connect ('v5/position/set-leverage')['result'] as $key => $value)
+						$output[$key] = $value;
+					
+				}
+				
+				if (isset ($data['crossMargin'])) {
+					
+					if (!isset ($data['longLeverage'])) $data['longLeverage'] = $this->leverage;
+					if (!isset ($data['shortLeverage'])) $data['shortLeverage'] = $this->leverage;
+					
+					if (isset ($data['leverage']))
+						$data['longLeverage'] =
+						$data['shortLeverage'] =
+						$data['leverage'];
+					
+					$this->params = [
+						
+						'symbol' => $this->pair ($base, $quote),
+						'category' => $this->category ($quote),
+						'tradeMode' => ($data['crossMargin'] ? 0 : 1),
+						'buyLeverage' => (string) $this->leverageRound ($data['longLeverage']),
+						'sellLeverage' => (string) $this->leverageRound ($data['shortLeverage']),
+						
+					];
+					
+					foreach ($this->connect ('v5/position/switch-isolated')['result'] as $key => $value)
+						$output[$key] = $value;
+					
+				}
+				
+				if (!isset ($data['margin']) and $this->extraMargin != 0)
+					$data['margin'] = $this->extraMargin;
+				
+				if (isset ($data['margin']) and $data['margin'] != 0) {
+					
+					$this->params = [
+						
+						'symbol' => $this->pair ($base, $quote),
+						'category' => $this->category ($quote),
+						'margin' => (string) round ($data['margin'], 4),
+						
+					];
+					
+					if ($this->isHedgeMode ())
+						$this->params['positionIdx'] = ($this->isLong () ? 1 : 2);
+					else
+						$this->params['positionIdx'] = 0;
+					
+					foreach ($this->connect ('v5/position/add-margin')['result'] as $key => $value)
+						$output[$key] = $value;
+					
+				}
+				
+			}
+			
       return $output;
       
     }
