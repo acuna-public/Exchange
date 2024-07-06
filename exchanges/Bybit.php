@@ -110,12 +110,8 @@
       
       $this->params['limit'] = $data['limit'];
       
-      if (isset ($data['start_time']) and $data['start_time']) {
-        
-        //$data['start_time'] -= $this->timeframe ($data['interval']);
+      if (isset ($data['start_time']) and $data['start_time'])
         $this->params['start'] = ($data['start_time'] * 1000);
-        //debug ([$this->date ($data['start_time'])]);
-      }
       
       if (isset ($data['end_time']) and $data['end_time'])
         $this->params['end'] = ($data['end_time'] * 1000);
@@ -124,22 +120,29 @@
       $this->debug = 0;
       
       $output = [];
+			
+			if ($type == self::PRICES_MARK)
+				$endpoint = 'mark-price-kline';
+			elseif ($type == self::PRICES_INDEX)
+				$endpoint = 'index-price-kline';
+			else
+				$endpoint = 'kline';
       
-      if ($prices = $this->connect ('v5/market/'.($type == self::PRICES_MARK ? 'mark-price-kline' : 'kline'))['result']['list'])
+      if ($prices = $this->connect ('v5/market/'.$endpoint)['result']['list'])
       foreach ($prices as $value) {
         
         $data = [
           
-          'low' => (float) $value[3],
-          'high' => (float) $value[2],
           'open' => (float) $value[1],
+          'high' => (float) $value[2],
+          'low' => (float) $value[3],
           'close' => (float) $value[4],
           'date' => $this->prepDate ($value[0] / 1000),
           'date_text' => $this->date ($this->prepDate ($value[0] / 1000)),
           
         ];
         
-        if ($type != self::PRICES_MARK)
+        if ($type == self::PRICES_LAST)
           $data['volume'] = $value[5];
         
         $output[] = $data;
@@ -681,6 +684,29 @@
       
     }
     
+    function cancelOrder ($base, $quote, $order) {
+      
+      $this->func = __FUNCTION__;
+      
+      $this->params = [
+        
+        'category' => $this->category ($quote),
+				'symbol' => $this->pair ($base, $quote),
+        
+      ];
+      
+			if (isset ($order['id']))
+				$this->params['orderId'] = $order['id'];
+			elseif (isset ($order['name']))
+				$this->params['orderLinkId'] = $order['name'];
+			
+      $this->method = self::POST;
+      $this->signed = true;
+      
+      return $this->connect ('v5/order/cancel')['result'];
+      
+    }
+    
     function editPosition ($base, $quote, $data): array {
       
       $this->func = __FUNCTION__;
@@ -720,26 +746,24 @@
       
       if ($this->market != self::SPOT) {
         
-        if (
-          (isset ($data['longLeverage']) and $data['longLeverage'] != 0) or
-          (isset ($data['shortLeverage']) and $data['shortLeverage'] != 0) or
-          (isset ($data['leverage']) and $data['leverage'] != 0)
-        ) {
-          
-          if (isset ($data['leverage']))
-            $data['longLeverage'] =
-            $data['shortLeverage'] =
-            $data['leverage'];
+        if (isset ($data['leverage'])) {
           
           $this->params = [
             
             'symbol' => $this->pair ($base, $quote),
             'category' => $this->category ($quote),
-            'buyLeverage' => (string) $this->leverageRound ($data['longLeverage']),
-            'sellLeverage' => (string) $this->leverageRound ($data['shortLeverage']),
             
           ];
-          
+					
+					if ($this->isHedgeMode () and !$this->crossMargin) {
+						
+						if ($this->isLong ())
+							$this->params['buyLeverage'] = (string) $this->leverageRound ($data['leverage']);
+						else
+							$this->params['sellLeverage'] = (string) $this->leverageRound ($data['leverage']);
+						
+					} else $this->params['buyLeverage'] = $this->params['sellLeverage'] = (string) $this->leverageRound ($data['leverage']);
+					
           foreach ($this->connect ('v5/position/set-leverage')['result'] as $key => $value)
             $output[$key] = $value;
           
@@ -747,24 +771,27 @@
         
         if (isset ($data['crossMargin'])) {
           
-          if (!isset ($data['longLeverage'])) $data['longLeverage'] = $this->leverage;
-          if (!isset ($data['shortLeverage'])) $data['shortLeverage'] = $this->leverage;
-          
-          if (isset ($data['leverage']))
-            $data['longLeverage'] =
-            $data['shortLeverage'] =
-            $data['leverage'];
-          
           $this->params = [
             
             'symbol' => $this->pair ($base, $quote),
             'category' => $this->category ($quote),
             'tradeMode' => ($data['crossMargin'] ? 0 : 1),
-            'buyLeverage' => (string) $this->leverageRound ($data['longLeverage']),
-            'sellLeverage' => (string) $this->leverageRound ($data['shortLeverage']),
             
           ];
           
+          if (isset ($data['leverage'])) {
+						
+						if ($this->isHedgeMode () and !$this->crossMargin) {
+							
+							if ($this->isLong ())
+								$this->params['buyLeverage'] = (string) $this->leverageRound ($data['leverage']);
+							else
+								$this->params['sellLeverage'] = (string) $this->leverageRound ($data['leverage']);
+							
+						} else $this->params['buyLeverage'] = $this->params['sellLeverage'] = (string) $this->leverageRound ($data['leverage']);
+						
+					}
+					
           foreach ($this->connect ('v5/position/switch-isolated')['result'] as $key => $value)
             $output[$key] = $value;
           
