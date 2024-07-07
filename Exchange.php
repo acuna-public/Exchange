@@ -177,8 +177,9 @@
         
         if ($this->crossMargin or $quote == 'USDC') {
           
-          $balance = $this->getAvailableBalance ();
-          
+					$balance = $this->balanceAvailable;
+					if ($this->upnl < 0) $balance += $this->upnl;
+					
           $loss = ($balance - $maitenanceMargin) / $this->quantity;
           
           if ($this->isLong ())
