@@ -24,9 +24,9 @@
       $leverage = 0,
       $quantity = 0,
       $totalPNL = 0,
-      $markDate = 0,
       $upnl = 0,
       $fees = 0,
+			$price = [],
       $openBalance = 0,
       $walletBalance = 0,
       $fixedBalance = 0,
@@ -46,12 +46,11 @@
       $fixedSumm = 0;
     
     public
-      $pnl = 0,
+      $pnl = 0, $roi = 0, $roe = 0,
       $unreleasedPNL = 0,
       $margin = 0,
       $extraMargin = 0,
       $entryPrice = 0,
-      $markPrice = 0,
       $openFee = 0,
       $closeFee = 0,
       $liquidPrice = 0,
@@ -270,26 +269,16 @@
       return $this->getTickers ($base, $quote)[$this->pair ($base, $quote)];
     }
     
+    function getPrice ($baseVolume, $quoteVolume) {
+      return $this->price ($quoteVolume / $baseVolume);
+    }
+    
     function getNotional () {
       return ($this->margin * $this->leverage);
     }
     
     function getQuantity () {
       return $this->amount ($this->getNotional () / $this->entryPrice);
-    }
-    
-    function getROE () {
-      return ($this->getROI () / $this->leverage);
-    }
-    
-    function getROI () {
-      
-      $percent = new \Percent ($this->pnl);
-      
-      $percent->delim = $this->margin;
-      
-      return $percent->valueOf (100);
-      
     }
     
     function getProfit ($entry, $exit) {
@@ -373,7 +362,7 @@
       
       $balanceAvailable = $this->getAvailableBalance ();
       
-      $this->entryPrice = $this->markPrice;
+      $this->entryPrice = $this->price['close'];
       $this->openFee = $this->closeFee = 0;
       
       if ($balanceAvailable > 0) {
@@ -462,6 +451,20 @@
       
     }
     
+		protected function getROI () {
+			
+			$percent = new \Percent ($this->pnl);
+			
+			$percent->delim = $this->margin;
+			
+			return $percent->valueOf (100);
+			
+		}
+		
+		protected function getROE () {
+			return ($this->getROI () / $this->leverage);
+		}
+		
     final function update ($quote) {
       
       if ($this->quantity == 0)
@@ -474,8 +477,11 @@
         $this->openFee = $this->getOpenFee ($quote);
         $this->closeFee = $this->getCloseFee ($quote);
         
-        $this->unreleasedPNL = ($this->getProfit ($this->entryPrice, $this->markPrice) * $this->quantity);
+        $this->unreleasedPNL = ($this->getProfit ($this->entryPrice, $this->price['close']) * $this->quantity);
+				
         $this->pnl = ($this->unreleasedPNL - $this->closeFee);
+        $this->roi = $this->getROI ();
+        $this->roe = $this->getROE ();
         
         $this->liquidPrice = $this->getLiquidationPrice ($quote);
         $this->liquidPercent = $this->liquidPricePercent ();
@@ -487,6 +493,18 @@
     }
     
     final function close () {
+			
+			if (
+				$this->liquidPrice > 0 and (
+					($this->isLong () and $this->price['low'] <= $this->liquidPrice) or
+					($this->isShort () and $this->price['high'] >= $this->liquidPrice)
+				)
+			) {
+				
+				$this->pnl = -$this->margin;
+				$this->roi = $this->roe = -100;
+				
+			}
 			
       $this->margin += $this->pnl;
       $this->totalPNL += $this->pnl;
@@ -561,7 +579,7 @@
     }
     
     function getCloseFee ($quote) {
-      return ($this->quantity * $this->markPrice) * ($this->getFeeRate ($this->closeMarketType) / 100);
+      return ($this->quantity * $this->price['close']) * ($this->getFeeRate ($this->closeMarketType) / 100);
     }
     
     function getBankruptcyPrice () {
@@ -632,7 +650,7 @@
       
       $date = new \Date ();
       
-      $charts = $this->getMarkPrices ($base, $quote, ['interval' => $interval, 'start_time' => $date->add (-\Date::DAY * 1)->getTime ()]);
+      $charts = $this->getPrices ($base, $quote, ['interval' => $interval, 'start_time' => $date->add (-\Date::DAY * 1)->getTime ()]);
       
       $min = $charts[0]['close'];
       $max = 0;
@@ -834,7 +852,7 @@
     }
     
     function debug (...$data) {
-      return debug ($this->date ($this->markDate).': '.$this->pair ($this->base, $this->quote).$this->side.': '.array2json ($data));
+      return debug ($this->date ($this->price['date']).': '.$this->pair ($this->base, $this->quote).$this->side.': '.array2json ($data));
     }
     
     public

@@ -475,6 +475,31 @@
       return $symbols;
       
     }
+		
+		function getChains () {
+			
+      $this->params = [];
+      
+      $this->func = __FUNCTION__;
+      
+      $this->method = self::GET;
+      $this->signed = true;
+			
+      $symbols = [];
+      
+      $rows = $this->connect ('v5/asset/coin/query-info')['result']['rows'];
+      
+      foreach ($rows as $row)
+        $symbols[$row['coin']][] = [
+					
+					'name' => $row['chain'],
+					'title' => $row['chainType'],
+					
+				];
+			
+			return $symbols;
+      
+		}
     
     function getSymbols2 ($quote = '') {
       
@@ -616,7 +641,7 @@
         $data['marketUnit'] = 'quoteCoin';
       
       if ($this->closeMarketType == self::MAKER and !isset ($data['price']))
-        $data['price'] = $this->markPrice;
+        $data['price'] = $this->price['close'];
       
       return $this->createTypeOrder ($this->pair ($data['base'], $data['quote']), $data, ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
       
@@ -628,7 +653,7 @@
       $data['quote'] = $quote;
       
       if ($this->closeMarketType == self::MAKER and !isset ($data['price']))
-        $data['price'] = $this->markPrice;
+        $data['price'] = $this->price['close'];
       
       return $this->createTypeOrder ($this->pair ($data['base'], $data['quote']), $data, ($this->isLong () ? 'Sell' : 'Buy'), __FUNCTION__);
       
