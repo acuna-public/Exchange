@@ -673,39 +673,34 @@
       
     }
     
-    function editOrder ($base, $quote, $orders) {
+    function editOrder ($base, $quote, $order) {
       
       $this->func = __FUNCTION__;
       
       $list = [];
       
-      foreach ($orders as $order) {
-        
-        $order['symbol'] = $this->pair ($base, $quote);
-        
-        if (isset ($order['id']))
-          $order['orderId'] = $order['id'];
-        elseif (isset ($order['name']))
-          $order['orderLinkId'] = $order['name'];
-        
-        if (isset ($order['quantity']))
-          $order['qty'] = (string) $this->quantity ($order['quantity']);
-        
-        $list[] = $order;
-        
-      }
-      
       $this->params = [
         
         'category' => $this->category ($quote),
-        'request' => $list,
-        
-      ];
+        'symbol' => $this->pair ($base, $quote),
+				
+			];
+			
+			if (isset ($order['id']))
+				$this->params['orderId'] = $order['id'];
+			elseif (isset ($order['name']))
+				$this->params['orderLinkId'] = $order['name'];
+			
+			if (isset ($order['quantity']))
+				$this->params['qty'] = (string) $this->quantity ($order['quantity']);
+			
+      if (isset ($order['price']))
+        $this->params['price'] = (string) $this->price ($order['price']);
       
       $this->method = self::POST;
       $this->signed = true;
       
-      return $this->connect ('v5/order/amend-batch')['result']['list'];
+      return $this->connect ('v5/order/amend')['result'];
       
     }
     
