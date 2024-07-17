@@ -33,6 +33,7 @@
       $maxBalance = 0,
       $quantitys = [],
       $entryPrices = [],
+      $balances = [],
       $minQuantity = 0,
       $maxQuantity = 0,
 			$maxLeverage = 0,
@@ -69,8 +70,7 @@
       $curChanges = [];
     
     protected
-      $lastDate = 0,
-      $balances = [];
+      $lastDate = 0;
     
     public $days = ['1m' => 1, '5m' => 2, '30m' => 10, '1h' => 20, '2h' => 499, '4h' => 120, '1d' => 1], $ratios = ['2h' => [1.2, 1.8]];
     
