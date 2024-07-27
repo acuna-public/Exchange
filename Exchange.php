@@ -362,7 +362,9 @@
       
       $balanceAvailable = $this->getAvailableBalance ();
       
-      $this->entryPrice = $this->price['close'];
+      if ($this->entryPrice == 0)
+				$this->entryPrice = $this->price['close'];
+			
       $this->openFee = $this->closeFee = 0;
       
       if ($balanceAvailable > 0) {
