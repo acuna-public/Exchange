@@ -18,7 +18,7 @@
       $leveragePrecision = 0,
       $walletBalance = 0,
       $fixedBalance = 0,
-			$witdrawPercent = 0;
+			$withdrawPercent = 0;
     
     public
       $riskPercent = 0,
@@ -31,7 +31,7 @@
       $fees = 0,
 			$price = [],
       $openBalance = 0,
-			$witdrawValue = 0,
+			$withdrawValue = 0,
       $maxBalance = 0,
       $quantitys = [],
       $entryPrices = [],
@@ -506,17 +506,17 @@
 				$this->pnl = -$this->margin;
 				$this->roi = $this->roe = -100; // TODO
 				
-			} elseif ($this->pnl > 0 and $this->witdrawPercent > 0) {
+			} elseif ($this->pnl > 0 and $this->withdrawPercent > 0) {
 				
 				$percent = new \Percent ($this->pnl);
 				
-				$this->witdrawValue = $percent->valueOf ($this->witdrawPercent);
+				$this->withdrawValue = $percent->valueOf ($this->withdrawPercent);
 				
-				$this->pnl -= $this->witdrawValue;
+				$this->pnl -= $this->withdrawValue;
 				
-				$this->fixedSumm += $this->witdrawValue;
+				$this->fixedSumm += $this->withdrawValue;
 				
-			} else $this->witdrawValue = 0;
+			} else $this->withdrawValue = 0;
 			
       $this->margin += $this->pnl;
       $this->totalPNL += $this->pnl;
