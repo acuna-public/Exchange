@@ -700,7 +700,7 @@
       $this->method = self::POST;
       $this->signed = true;
       
-      return $this->connect ('v5/order/amend')['result'];
+      return $this->connect ('v5/order/amend')['result']['list'];
       
     }
     

@@ -496,15 +496,13 @@
     
     final function close () {
 			
-			if (
-				$this->liquidPrice > 0 and (
-					($this->isLong () and $this->price['low'] <= $this->liquidPrice) or
-					($this->isShort () and $this->price['high'] >= $this->liquidPrice)
-				)
+			if ($this->liquidPrice > 0) if (
+				($this->isLong () and $this->price['low'] <= $this->liquidPrice) or
+				($this->isShort () and $this->price['high'] >= $this->liquidPrice)
 			) {
 				
 				$this->pnl = -$this->margin;
-				$this->roi = $this->roe = -100;
+				$this->roi = $this->roe = -100; // TODO
 				
 			}
 			
