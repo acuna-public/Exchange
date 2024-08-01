@@ -364,9 +364,6 @@
 			
 			$balanceAvailable = $this->getAvailableBalance ();
 			
-			if ($this->entryPrice == 0)
-				$this->entryPrice = $this->price['close'];
-			
 			$this->openFee = $this->closeFee = 0;
 			
 			if ($balanceAvailable > 0) {
@@ -605,7 +602,7 @@
 		
 		function getRPRatio ($entryPrice, $takeProfit, $stopLoss) {
 			
-			$output	= $this->getProfit ($entryPrice, $stopLoss);
+			$output  = $this->getProfit ($entryPrice, $stopLoss);
 			$output /= $this->getProfit ($takeProfit, $entryPrice);
 			
 			return $output;
