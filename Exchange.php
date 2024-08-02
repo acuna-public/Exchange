@@ -414,9 +414,10 @@
 					
 					$balanceAvailable = $this->getAvailableBalance ();
 					
-					//$this->debug ($this->fullBalance, $balanceAvailable);
-					
-					$balanceAvailable -= $this->fullBalance;
+					if ($balanceAvailable >= $this->fullBalance)
+						$balanceAvailable -= $this->fullBalance;
+					else
+						$balanceAvailable = $this->fullBalance;
 					
 					if ($balanceAvailable >= 0) {
 						
