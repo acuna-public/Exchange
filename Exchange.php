@@ -551,7 +551,7 @@
 						$this->fixedSumm += $this->pnl;
 					
 				} elseif ($this->fixedBalance > 0) {
-					$this->debug ($this->fixedSumm, $this->fixedBalance);
+					$this->debug ($this->getActiveBalance (), $this->fixedSumm, $this->fixedBalance);
 					if ($this->getActiveBalance () > $this->fixedBalance)
 						if ($this->fixedSumm < $this->fixedBalance)
 							$this->fixedSumm += $this->pnl;
