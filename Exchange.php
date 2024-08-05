@@ -15,7 +15,7 @@
 			$amount = 0,
 			$basePrecision = 2,
 			$quotePrecision = 2,
-			$leveragePrecision = 0,
+			$leveragePrecision = 2,
 			$walletBalance = 0,
 			$fixedBalance = 0,
 			$withdrawPercent = 0;
@@ -504,7 +504,7 @@
 					($this->isLong () and $this->price['low'] <= $this->liquidPrice) or
 					($this->isShort () and $this->price['high'] >= $this->liquidPrice)
 				) {
-					$this->debug ($this->price['high'], $this->price['low'], $this->liquidPrice);
+					//$this->debug ($this->price['high'], $this->price['low'], $this->liquidPrice);
 					$this->pnl = -$this->margin;
 					$this->roi = $this->roe = -100; // TODO
 					

@@ -589,13 +589,13 @@
 			
 			$data['qty'] = (string) $this->quantity ($order['quantity']);
 			
-			if (isset ($order['take_profit']))
-				$data['takeProfit'] = (string) $this->price ($order['take_profit']);
+			if (isset ($order['takeProfit']) and $order['takeProfit'] > 0)
+				$data['takeProfit'] = (string) $this->price ($order['takeProfit']);
 			
-			if (isset ($order['stop_loss']))
-				$data['stopLoss'] = (string) $this->price ($order['stop_loss']);
+			if (isset ($order['stopLoss']) and $order['stopLoss'] > 0)
+				$data['stopLoss'] = (string) $this->price ($order['stopLoss']);
 			
-			if (isset ($order['price']))
+			if (isset ($order['price']) and $order['price'] > 0)
 				$data['price'] = (string) $this->price ($order['price']);
 			
 			if (isset ($order['name']))
