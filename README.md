@@ -1,6 +1,6 @@
 # Exchange
  
-Exchange is a powerful crypto exchanges API wrapper library
+Exchange is a powerful crypto exchanges API wrapper library.
 
 Supported exchanges:
 
