@@ -1,8 +1,5 @@
 <?php
 	
-	require 'ExchangeException.php';
-	require 'NotEnoughFundsException.php';
-	
 	abstract class Exchange {
 		
 		public
@@ -22,6 +19,7 @@
 		
 		public
 			$riskPercent = 0,
+			$marginPercent = 100,
 			$balancePercent = 100,
 			$pruneValue = 0.1,
 			$leverage = 0,
@@ -51,6 +49,7 @@
 		public
 			$pnl = 0, $roi = 0, $roe = 0,
 			$unreleasedPNL = 0,
+			$balance = 0,
 			$margin = 0,
 			$extraMargin = 0,
 			$entryPrice = 0,
@@ -137,7 +136,14 @@
 		}
 		
 		function getRiskLeverage ($stopPercent) {
-			return $this->leverageRound ($this->riskPercent / $stopPercent);
+			
+			$leverage = $this->leverageRound ($this->riskPercent / $stopPercent);
+			
+			if ($this->maxLeverage > 0 and $leverage > $this->maxLeverage)
+				$leverage = $this->maxLeverage;
+			
+			return $leverage;
+			
 		}
 		
 		function getSides () {
@@ -166,7 +172,7 @@
 		
 		function getLiquidationPrice ($quote) {
 			
-			if ($this->market != self::SPOT and $this->leverage > 1) {
+			if ($this->market != self::SPOT) {
 				
 				$entryPrice = $this->getEntryPrice ();
 				
@@ -393,9 +399,28 @@
 			
 		}
 		
+		protected function getMargin () {
+			
+			$percent = new \Percent ($this->margin);
+			
+			if ($this->marginPercent <= 0 or $this->marginPercent > 100)
+				$this->marginPercent = 100;
+			
+			return $percent->valueOf ($this->marginPercent);
+			
+		}
+		
 		public $fullBalance = 0;
 		
 		final function open ($quote): bool {
+			
+			$this->liquidPrice = $this->liquidPercent = 0;
+			
+			$margin = $this->getMargin ();
+			
+			if ($this->pruneValue > 0 and $this->openFee >= 0 and $this->minValue[$this->market] > 0)
+			if (($this->margin - $this->openFee - $this->pruneValue) < $this->minValue[$this->market])
+				$this->margin = ($this->minValue[$this->market] + $this->openFee + $this->pruneValue);
 			
 			if ($this->checkMargin ($quote) and $this->margin > 0) {
 				
@@ -404,35 +429,40 @@
 				if ($this->openFee > 0)
 					$this->margin -= $this->openFee;
 				
-				//if ($this->margin > $this->minValue[$this->market]) {
-				
-				$this->quantity = $this->getQuantity (); // Final
-				
-				$this->openFee = $this->getOpenFee ($quote); // Fees with new quantity
-				
-				if ($this->quantity >= $this->minQuantity) {
+				if ($this->margin > $this->minValue[$this->market]) {
 					
-					$balanceAvailable = $this->getAvailableBalance ();
+					$this->quantity = $this->getQuantity (); // Final
 					
-					//$this->debug ($balanceAvailable, $this->fullBalance);
+					$this->openFee = $this->getOpenFee ($quote); // Fees with new quantity
 					
-					//if ($balanceAvailable >= $this->fullBalance)
-						$balanceAvailable -= $this->fullBalance;
-					//else
-					//	$balanceAvailable = $this->fullBalance;*/
-					
-					if ($balanceAvailable >= 0) {
+					if ($this->quantity >= $this->minQuantity) {
 						
-						$this->quantitys[] = $this->quantity;
-						$this->entryPrices[] = $this->entryPrice;
+						$balanceAvailable = $this->getAvailableBalance ();
 						
-						return true;
+						//$this->debug ($balanceAvailable, $this->fullBalance);
 						
-					}
+						//if ($balanceAvailable >= $this->fullBalance)
+							$balanceAvailable -= $this->quoteRound ($this->fullBalance);
+						//else
+						//	$balanceAvailable = $this->fullBalance;*/
+						
+						//$this->debug ($balanceAvailable, $this->fullBalance);
+						
+						if ($balanceAvailable >= 0) {
+							
+							$this->quantitys[] = $this->quantity;
+							$this->entryPrices[] = $this->entryPrice;
+							
+							$this->liquidPrice = $this->getLiquidationPrice ($quote);
+							$this->liquidPercent = $this->liquidPricePercent ();
+							
+							return true;
+							
+						}
+						
+					}// else $this->debug ($this->quantity, $this->minQuantity);
 					
-				}// else $this->debug ($this->quantity, $this->minQuantity);
-				
-				//} else throw new \NotEnoughFundsException ($this, 'Position value must be more than '.$this->minValue[$this->market].'. Current value: '.$this->margin);
+				}// else throw new \NotEnoughFundsException ($this, 'Position value must be more than '.$this->minValue[$this->market].'. Current value: '.$this->margin);
 				
 			}
 			

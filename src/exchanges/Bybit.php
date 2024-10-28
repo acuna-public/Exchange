@@ -598,7 +598,7 @@
 			if (isset ($order['price']) and $order['price'] > 0)
 				$data['price'] = (string) $this->price ($order['price']);
 			
-			if (isset ($order['name']))
+			if (isset ($order['name']) and $order['name'])
 				$data['orderLinkId'] = $order['name'];
 			
 			if ($this->isHedgeMode ())
@@ -688,7 +688,7 @@
 			
 			if (isset ($order['id']))
 				$this->params['orderId'] = $order['id'];
-			elseif (isset ($order['name']))
+			elseif (isset ($order['name']) and $order['name'])
 				$this->params['orderLinkId'] = $order['name'];
 			
 			if (isset ($order['quantity']))
@@ -717,7 +717,7 @@
 			
 			if (isset ($order['id']))
 				$this->params['orderId'] = $order['id'];
-			elseif (isset ($order['name']))
+			elseif (isset ($order['name']) and $order['name'])
 				$this->params['orderLinkId'] = $order['name'];
 			
 			$this->method = self::POST;
