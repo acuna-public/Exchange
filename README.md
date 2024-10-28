@@ -1,6 +1,6 @@
 # Exchange
  
-Exchange is a powerful crypto exchanges API wrapper library
+Exchange is a powerful crypto exchanges API wrapper library.
 
 Supported exchanges:
 
@@ -25,5 +25,3 @@ Supported exchanges:
 - Calculate position PNL & ROE
 - Calculate liquidation price
 - Calculate open/close & funding fees
-
-`Manual will be soon`
